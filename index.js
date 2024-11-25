@@ -26,9 +26,18 @@ async function asciiScreenshot(path) {
 
   const [screenshotJSON, linesJSON] = await Promise.all([p1, p2]);
 
-  const { originalText, linesText, finalText } = ascii(screenshotJSON, linesJSON);
+  const { finalText } = ascii(screenshotJSON, linesJSON);
 
   console.log(finalText);
 }
 
-asciiScreenshot('new.jpg');
+const path = process.argv[2];
+if (!path) {
+  console.error('Usage: ascii-screenshot <path-to-image>');
+  process.exit(1);
+}
+
+asciiScreenshot(path).catch((err) => {
+  console.error('Error:', err.message);
+  process.exit(1);
+});
