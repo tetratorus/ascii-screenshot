@@ -1,7 +1,7 @@
 {
-  "name": "screenshotter",
+  "name": "ascs",
   "version": "1.0.0",
-  "description": "",
+  "description": "generates an ascii representation of a screenshot",
   "main": "index.js",
   "bin": {
     "ascs": "./index.js"
