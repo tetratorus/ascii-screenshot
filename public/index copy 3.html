@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Line Detection with OpenCV.js</title>
+  <script async src="./opencv.js" type="text/javascript"></script>
+</head>
+<body>
+  <input type="file" id="imageInput" accept="image/*">
+  <canvas id="canvasOutput"></canvas>
+  <script type="text/javascript">
+    let imageInput = document.getElementById('imageInput');
+    imageInput.addEventListener('change', (e) => {
+      let file = e.target.files[0];
+      let reader = new FileReader();
+      reader.onload = function(event) {
+        let imgElement = document.createElement('img');
+        imgElement.onload = function() {
+          detectLines(imgElement);
+        }
+        imgElement.src = event.target.result;
+      }
+      reader.readAsDataURL(file);
+    });
+
+    function detectLines(imgElement) {
+      let src = cv.imread(imgElement);
+      let gray = new cv.Mat();
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+
+      let edges = new cv.Mat();
+      cv.Canny(gray, edges, 50, 150, 3);
+
+      let lines = new cv.Mat();
+      let higherThreshold = 800; // Increase the threshold for more robust line detection
+      cv.HoughLinesP(edges, lines, 1, Math.PI / 180, higherThreshold, 50, 10);
+
+      let boundingBoxes = []; // To store bounding boxes of lines
+      let imgWidth = src.cols;
+      let imgHeight = src.rows;
+
+      for (let i = 0; i < lines.rows; ++i) {
+        let x1 = lines.data32S[i * 4];
+        let y1 = lines.data32S[i * 4 + 1];
+        let x2 = lines.data32S[i * 4 + 2];
+        let y2 = lines.data32S[i * 4 + 3];
+
+        // Ensure the line is either horizontal or vertical
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+
+        if (Math.abs(dx) < 5) { // Consider as vertical line if x1 ≈ x2
+          x1 = x2 = Math.round((x1 + x2) / 2); // Make it perfectly vertical
+          cv.line(src, new cv.Point(x1, y1), new cv.Point(x2, y2), [255, 0, 0, 255], 2);
+
+          let x = x1 / imgWidth;
+          let y = (imgHeight - Math.min(y1, y2)) / imgHeight;
+          let height = Math.abs(y1 - y2) / imgHeight;
+          boundingBoxes.push({"text": "|", "origin": {"x": x, "y": y}, "size": {"width": 0, "height": height}});
+        } else if (Math.abs(dy) < 5) { // Consider as horizontal line if y1 ≈ y2
+          y1 = y2 = Math.round((y1 + y2) / 2); // Make it perfectly horizontal
+          cv.line(src, new cv.Point(x1, y1), new cv.Point(x2, y2), [255, 0, 0, 255], 2);
+
+          let x = Math.min(x1, x2) / imgWidth;
+          let y = (imgHeight - y1) / imgHeight;
+          let width = Math.abs(x1 - x2) / imgWidth;
+          boundingBoxes.push({"text": "_", "origin": {"x": x, "y": y}, "size": {"width": width, "height": 0}});
+        }
+      }
+
+      cv.imshow('canvasOutput', src);
+
+      src.delete();
+      gray.delete();
+      edges.delete();
+      lines.delete();
+
+      // Log bounding boxes to console
+      console.log('Bounding Boxes:', boundingBoxes);
+    }
+  </script>
+</body>
+</html>

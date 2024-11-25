@@ -1,185 +1,111 @@
-const fs = require('fs');
+function formatText(ocrData) {
+  const lineCluster = {};
+  ocrData.forEach(annotation => {
+      const yKey = Math.floor(100 - annotation.origin.y * 100); // Normalize and cluster by y-coordinate
+      if (!lineCluster[yKey]) {
+          lineCluster[yKey] = [];
+      }
+      lineCluster[yKey].push(annotation);
+  });
 
-// Function to read JSON data from a file
-function readJsonFile(filePath) {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-}
+  const canvasHeight = Object.keys(lineCluster).length;
+  const defaultCanvasWidth = 80;
+  let canvasWidth = defaultCanvasWidth;
 
-function formatText(boundingBoxData) {
-    // Cluster tokens by line
-    const lineCluster = {};
-    boundingBoxData.forEach(annotation => {
-        const midpointY = annotation.origin.y + annotation.size.height / 2;
-        const closestLine = Object.keys(lineCluster).find(
-            y => Math.abs(midpointY - y) < 0.02
-        );
+  Object.values(lineCluster).forEach(line => {
+      const lineWidth = line.reduce((acc, token) => acc + token.text.length + 1, 0);
+      canvasWidth = Math.max(canvasWidth, lineWidth);
+  });
 
-        if (closestLine) {
-            lineCluster[closestLine].push(annotation);
-        } else {
-            lineCluster[midpointY] = [annotation];
-        }
-    });
+  const canvas = Array.from({ length: canvasHeight }, () => Array(canvasWidth).fill(' '));
 
-    const canvasHeight = Object.keys(lineCluster).length;
-    const defaultCanvasWidth = 80;
+  Object.entries(lineCluster).sort((a, b) => a[0] - b[0]).forEach(([_, line], i) => {
+      line.sort((a, b) => a.origin.x - b.origin.x);
+      const groupedLineAnnotations = groupWordsInSentence(line);
 
-    // Determine canvas width
-    let canvasWidth = defaultCanvasWidth;
+      let lastX = 0;
+      groupedLineAnnotations.forEach(annotation => {
+          const text = annotation.text;
+          const x = Math.floor(annotation.origin.x * canvasWidth);
 
-    if (Object.keys(lineCluster).length > 0) {
-        canvasWidth = Math.max(
-            Math.max(
-                ...Object.values(lineCluster).map(line =>
-                    line.reduce((sum, token) => sum + token.text.length + 1, 0)
-                ),
-                defaultCanvasWidth
-            )
-        );
-    }
+          const startX = Math.max(x, lastX);
+          if (startX + text.length >= canvasWidth) {
+              canvas[i] = canvas[i].concat(Array(text.length + 1).fill(' '));
+          }
 
-    // Create an empty canvas
-    const canvas = Array.from({ length: canvasHeight }, () =>
-        Array(canvasWidth).fill(' ')
-    );
+          text.split('').forEach((char, j) => {
+              if (startX + j < canvasWidth) {
+                  canvas[i][startX + j] = char;
+              }
+          });
 
-    const letterHeight = 0.03;
-    const emptySpaceHeight = letterHeight + 0.005;
-    let maxPreviousLineHeight = emptySpaceHeight;
+          lastX = startX + text.length + 1;
+      });
+  });
 
-    // Place the annotations on the canvas
-    let i = 0;
-    Object.values(lineCluster).forEach(lineAnnotations => {
-        // Sort annotations in this line by x coordinate
-        lineAnnotations.sort((a, b) => a.origin.x - b.origin.x);
+  const pageText = canvas.map(row => row.join('').trimRight()).join('\n');
+  const borderedText = '-'.repeat(canvasWidth) + '\n' + pageText + '\n' + '-'.repeat(canvasWidth);
 
-        const groupedLineAnnotations = groupWordsInSentence(lineAnnotations);
-
-        // Use the TOP height of the letter
-        const maxLineHeight = Math.max(
-            ...groupedLineAnnotations.map(
-                annotation => annotation.origin.y - annotation.size.height
-            )
-        );
-        const heightToAdd = Math.floor(
-            (maxLineHeight - maxPreviousLineHeight) / emptySpaceHeight
-        );
-        if (heightToAdd > 0) {
-            for (let j = 0; j < heightToAdd; j++) {
-                canvas.push(Array(canvasWidth).fill(' '));
-                i++;
-            }
-        }
-
-        // Store the BOTTOM height of the letter
-        maxPreviousLineHeight = Math.max(
-            ...groupedLineAnnotations.map(
-                annotation => annotation.origin.y + annotation.size.height
-            )
-        );
-
-        let lastX = 0;
-        groupedLineAnnotations.forEach(annotation => {
-            const text = annotation.text;
-
-            let x = Math.floor(annotation.origin.x * canvasWidth);
-
-            // Move forward if there's an overlap
-            x = Math.max(x, lastX);
-
-            // Check if the text fits; if not, move to next line (this is simplistic)
-            if (x + text.length >= canvasWidth) {
-                canvas[i].push(...Array(text.length + 1).fill(' '));
-            }
-
-            // Place the text on the canvas
-            for (let j = 0; j < text.length; j++) {
-                canvas[i][x + j] = text[j];
-            }
-
-            // Update the last inserted position
-            lastX = x + text.length + 1; // +1 for a space between words
-        });
-
-        i++;
-    });
-
-    // Delete all whitespace characters after the last non-whitespace character in each row
-    const trimmedCanvas = canvas.map(row => row.join('').trimRight());
-
-    // Convert the canvas to a plaintext string
-    let pageText = trimmedCanvas.join('\n').trim();
-
-    pageText = '-'.repeat(canvasWidth) + '\n' + pageText + '\n' + '-'.repeat(canvasWidth);
-
-    return pageText;
+  return borderedText;
 }
 
 function groupWordsInSentence(lineAnnotations) {
-    const groupedAnnotations = [];
-    let currentGroup = [];
+  const groupedAnnotations = [];
+  let currentGroup = [];
 
-    lineAnnotations.forEach(annotation => {
-        if (currentGroup.length === 0) {
-            currentGroup.push(annotation);
-            return;
-        }
+  lineAnnotations.forEach(annotation => {
+      if (currentGroup.length === 0) {
+          currentGroup.push(annotation);
+          return;
+      }
 
-        const padding = 2;
-        const characterWidth = (currentGroup[currentGroup.length - 1].size.width / currentGroup[currentGroup.length - 1].text.length) * padding;
+      const previous = currentGroup[currentGroup.length - 1];
+      const characterWidth = (previous.size.width / previous.text.length) * 2; // Use width of last char in the group
+      const nextStartX = previous.origin.x + previous.size.width;
 
-        const isSingleCharacterAway = annotation.origin.x <= (currentGroup[currentGroup.length - 1].origin.x + currentGroup[currentGroup.length - 1].size.width) + characterWidth;
+      if (annotation.origin.x <= nextStartX + characterWidth) {
+          currentGroup.push(annotation);
+      } else {
+          groupedAnnotations.push(createGroupedAnnotation(currentGroup));
+          currentGroup = [annotation];
+      }
+  });
 
-        if (Math.abs(annotation.size.height - currentGroup[0].size.height) <= 0.04 && isSingleCharacterAway) {
-            currentGroup.push(annotation);
-        } else {
-            if (currentGroup.length > 0) {
-                groupedAnnotations.push(createGroupedAnnotation(currentGroup));
-                currentGroup = [annotation];
-            }
-        }
-    });
+  if (currentGroup.length > 0) {
+      groupedAnnotations.push(createGroupedAnnotation(currentGroup));
+  }
 
-    // Append the last group if it exists
-    if (currentGroup.length > 0) {
-        groupedAnnotations.push(createGroupedAnnotation(currentGroup));
-    }
-
-    return groupedAnnotations;
+  return groupedAnnotations;
 }
 
 function createGroupedAnnotation(group) {
-    let text = '';
+  let text = group.reduce((acc, word, index) => {
+      const separators = [".", ",", '"', "'", ":", ";", "!", "?", "{", "}", "’", "”"];
+      if (separators.includes(word.text)) {
+          return acc + word.text;
+      } else {
+          return acc + (index > 0 ? " " : "") + word.text;
+      }
+  }, '');
 
-    group.forEach(word => {
-        if (['.', ',', '"', "'", ':', ';', '!', '?', '{', '}', '’', '”'].includes(word.text)) {
-            text += word.text;
-        } else {
-            text += text !== '' ? ' ' + word.text : word.text;
-        }
-    });
+  const isWord = text.split('').some(char => char.match(/\w/));
+  if (isWord && group.map(word => word.size.height).sort((a, b) => b - a)[Math.floor(group.length / 2)] > 0.025) { // Example threshold
+      text = "**" + text + "**";
+  }
 
-    const isWord = text.length > 1 && /[a-zA-Z0-9]/.test(text);
-    if (isWord && group.map(word => word.size.height).reduce((a, b) => a + b, 0) / group.length > 0.025) {
-        text = '**' + text + '**';
-    }
-
-    return {
-        text: text,
-        origin: {
-            x: group[0].origin.x,
-            y: group[0].origin.y,
-        },
-        size: {
-            width: group.reduce((sum, word) => sum + word.size.width, 0),
-            height: group[0].size.height,
-        }
-    };
+  return {
+      text: text,
+      origin: {
+          x: group[0].origin.x,
+          y: group[0].origin.y
+      },
+      size: {
+          width: group.reduce((acc, word) => acc + word.size.width, 0),
+          height: group[0].size.height
+      }
+  };
 }
 
-// Read the bounding box data from the JSON file
-const boundingBoxData = readJsonFile('screenshot.json');
-// Format the text
-const formattedText = formatText(boundingBoxData);
-// Print the formatted text
-console.log(formattedText);
+// Example usage with OCR data
+const ocrData = require('./screenshot.json')
+console.log(formatText(ocrData));

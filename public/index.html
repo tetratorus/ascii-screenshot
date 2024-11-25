@@ -1,14 +1,182 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detect Borders</title>
+  <title>Line Detection with OpenCV.js</title>
+  <script async src="./opencv.js" type="text/javascript"></script>
 </head>
 <body>
-    <input type="file" id="upload" accept="image/*">
-    <canvas id="canvas"></canvas>
-    <script src="https://docs.opencv.org/3.4/opencv.js"></script>
-    <script src="detectBorders.js"></script>
+  <input type="file" id="imageInput" accept="image/*">
+  <canvas id="canvasOutput"></canvas>
+  <script type="text/javascript">
+    let imageInput = document.getElementById('imageInput');
+    imageInput.addEventListener('change', (e) => {
+      let file = e.target.files[0];
+      let reader = new FileReader();
+      reader.onload = function(event) {
+        let imgElement = document.createElement('img');
+        imgElement.onload = function() {
+          detectLines(imgElement);
+        }
+        imgElement.src = event.target.result;
+      }
+      reader.readAsDataURL(file);
+    });
+
+    function detectLines(imgElement) {
+      let src = cv.imread(imgElement);
+      let gray = new cv.Mat();
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+
+      let edges = new cv.Mat();
+      cv.Canny(gray, edges, 20, 200, 3);
+
+      let lines = new cv.Mat();
+      let higherThreshold = 800; // Increase the threshold for more robust line detection
+      cv.HoughLinesP(edges, lines, 1, Math.PI / 180, higherThreshold, 50, 10);
+
+      let boundingBoxes = []; // To store bounding boxes of lines
+      let imgWidth = src.cols;
+      let imgHeight = src.rows;
+
+      for (let i = 0; i < lines.rows; ++i) {
+        let x1 = lines.data32S[i * 4];
+        let y1 = lines.data32S[i * 4 + 1];
+        let x2 = lines.data32S[i * 4 + 2];
+        let y2 = lines.data32S[i * 4 + 3];
+
+        // Ensure the line is either horizontal or vertical
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+
+        if (Math.abs(dx) < 5) { // Consider as vertical line if x1 ≈ x2
+          x1 = x2 = Math.round((x1 + x2) / 2); // Make it perfectly vertical
+          // cv.line(src, new cv.Point(x1, y1), new cv.Point(x2, y2), [255, 0, 0, 255], 2);
+
+          let x = x1 / imgWidth;
+          let y = Math.min(y1, y2) / imgHeight;
+          let height = Math.abs(y1 - y2) / imgHeight;
+          boundingBoxes.push({"text": "|", "origin": {"x": x, "y": y}, "size": {"width": 0, "height": height}});
+        } else if (Math.abs(dy) < 5) { // Consider as horizontal line if y1 ≈ y2
+          y1 = y2 = Math.round((y1 + y2) / 2); // Make it perfectly horizontal
+          // cv.line(src, new cv.Point(x1, y1), new cv.Point(x2, y2), [255, 0, 0, 255], 2);
+
+          let x = Math.min(x1, x2) / imgWidth;
+          let y = y1 / imgHeight; // note that y is inverted
+          let width = Math.abs(x1 - x2) / imgWidth;
+          boundingBoxes.push({"text": "_", "origin": {"x": x, "y": y}, "size": {"width": width, "height": 0}});
+        }
+      }
+
+      // add lines for top bottom left and right edges
+      boundingBoxes.push({"text": "|", "origin": {"x": 0, "y": 0}, "size": {"width": 0, "height": 1}});
+      boundingBoxes.push({"text": "|", "origin": {"x": 1, "y": 0}, "size": {"width": 0, "height": 1}});
+      boundingBoxes.push({"text": "_", "origin": {"x": 0, "y": 0}, "size": {"width": 1, "height": 0}});
+      boundingBoxes.push({"text": "_", "origin": {"x": 0, "y": 1}, "size": {"width": 1, "height": 0}});
+
+      let verticalLines = boundingBoxes.filter((box) => box.text === '|');
+
+      console.log(JSON.stringify(verticalLines), verticalLines.length);
+      let horizontalLines = boundingBoxes.filter((box) => box.text === '_');
+
+      let groupedVerticalLines = [];
+      while (verticalLines.length > 0) {
+        let line = verticalLines.shift();
+        let group = [line];
+        let i = 0;
+        while (i < verticalLines.length) {
+          let nextLine = verticalLines[i];
+          if (Math.abs(line.origin.x - nextLine.origin.x) < 0.01) {
+            group.push(nextLine);
+            verticalLines.splice(i, 1);
+          } else {
+            i++;
+          }
+        }
+        groupedVerticalLines.push(group);
+      }
+
+      console.log('Grouped Vertical Lines:', groupedVerticalLines);
+      let groupedHorizontalLines = [];
+      while (horizontalLines.length > 0) {
+        let line = horizontalLines.shift();
+        let group = [line];
+        let i = 0;
+        while (i < horizontalLines.length) {
+          let nextLine = horizontalLines[i];
+          if (Math.abs(line.origin.y - nextLine.origin.y) < 0.01) {
+            group.push(nextLine);
+            horizontalLines.splice(i, 1);
+          } else {
+            i++;
+          }
+        }
+        groupedHorizontalLines.push(group);
+      }
+
+      // merge vertical line groups, find max and min y
+      let longestVerticalLines = [];
+      for (let i = 0; i < groupedVerticalLines.length; i++) {
+        let group = groupedVerticalLines[i];
+        let x = group[0].origin.x;
+        let minY = group[0].origin.y;
+        let maxY = group[0].origin.y + group[0].size.height;
+        for (var j = 1; j < group.length; j++) {
+          let line = group[j];
+          minY = Math.min(minY, line.origin.y);
+          maxY = Math.max(maxY, line.origin.y + line.size.height);
+        }
+        longestVerticalLines.push({"text": "|", "origin": {"x": x, "y": minY}, "size": {"width": 0, "height": maxY - minY}});
+      }
+
+      // merge horizontal line groups, find max and min x
+      let longestHorizontalLines = [];
+      for (let i = 0; i < groupedHorizontalLines.length; i++) {
+        let group = groupedHorizontalLines[i];
+        let y = group[0].origin.y;
+        let minX = group[0].origin.x;
+        let maxX = group[0].origin.x + group[0].size.width;
+        for (var j = 1; j < group.length; j++) {
+          let line = group[j];
+          minX = Math.min(minX, line.origin.x);
+          maxX = Math.max(maxX, line.origin.x + line.size.width);
+        }
+        longestHorizontalLines.push({"text": "_", "origin": {"x": minX, "y": y}, "size": {"width": maxX - minX, "height": 0}});
+      }
+
+      // merge
+      boundingBoxes = [...longestVerticalLines, ...longestHorizontalLines];
+
+      console.log(JSON.stringify(boundingBoxes, null, 2));
+
+      // for (let elem in boundingBoxes) {
+      //   let x1 = Math.round(boundingBoxes[elem].origin.x * imgWidth);
+      //   let y1 = Math.round((1 - boundingBoxes[elem].origin.y) * imgHeight);
+      //   let x2 = Math.round(x1 + boundingBoxes[elem].size.width * imgWidth);
+      //   let y2 = Math.round(y1 + boundingBoxes[elem].size.height * imgHeight);
+      //   cv.line(src, new cv.Point(x1, y1), new cv.Point(x2, y2), [255, 0, 0, 255], 2);
+      // }
+
+      for (let i = 0; i < boundingBoxes.length; i++) {
+        let elem = boundingBoxes[i];
+        let x1 = elem.origin.x * imgWidth;
+        let y1 = elem.origin.y * imgHeight;
+
+        let x2 = x1 + elem.size.width * imgWidth;
+        let y2 = y1 + elem.size.height * imgHeight;
+        console.log(elem.text, x1, y1, x2, y2);
+        cv.line(src, new cv.Point(x1, y1), new cv.Point(x2, y2), [255, 0, 0, 255], 2);
+      }
+
+      cv.imshow('canvasOutput', src);
+
+      src.delete();
+      gray.delete();
+      edges.delete();
+      lines.delete();
+
+      // Log bounding boxes to console
+      console.log('Bounding Boxes:', boundingBoxes);
+    }
+  </script>
 </body>
 </html>

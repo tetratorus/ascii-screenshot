@@ -10,8 +10,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@techstark/opencv-js": "^4.9.0-release.3",
+    "canvas": "^2.11.2",
     "express": "^4.19.2",
     "jimp": "^0.22.12",
-    "screenshot-desktop": "^1.15.0"
+    "jsdom": "^24.1.0",
+    "puppeteer": "^22.10.0",
+    "screenshot-desktop": "^1.15.0",
+    "sharp": "^0.33.4"
   }
 }
