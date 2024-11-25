@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const { spawn } = require('child_process');
 const { detectLines } = require('./detect_lines');
 const { ascii } = require('./ascii');

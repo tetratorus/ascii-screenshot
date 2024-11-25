@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
+  "bin": {
+    "ascs": "./index.js"
   },
   "keywords": [],
   "author": "",
