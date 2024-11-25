@@ -1,6 +1,6 @@
 const defaultCanvasWidth = 160;
 let canvasWidth = defaultCanvasWidth;
-let canvasHeight = 50;
+let canvasHeight = 60;
 
 function formatText(ocrData) {
   const lineCluster = [];
