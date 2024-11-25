@@ -1,6 +1,5 @@
-const defaultCanvasWidth = 80;
+const defaultCanvasWidth = 150;
 let canvasWidth = defaultCanvasWidth;
-let canvasHeight;
 
 function formatText(ocrData) {
   const lineCluster = {};
@@ -19,7 +18,14 @@ function formatText(ocrData) {
       canvasWidth = Math.max(canvasWidth, lineWidth);
   });
 
-  const canvas = Array.from({ length: canvasHeight }, () => Array(canvasWidth).fill(' '));
+  const canvas = []
+  for (let i = 0; i < canvasHeight; i++) {
+    let row = [];
+    for (let j = 0; j < canvasWidth; j++) {
+      row.push(' ');
+    }
+    canvas.push(row);
+  }
 
   Object.entries(lineCluster).sort((a, b) => a[0] - b[0]).forEach(([_, line], i) => {
       line.sort((a, b) => a.origin.x - b.origin.x);
@@ -45,7 +51,7 @@ function formatText(ocrData) {
       });
   });
 
-  const pageText = canvas.map(row => row.join('').trimRight()).join('\n');
+  const pageText = canvas.map(row => row.join('')).join('\n');
   const borderedText = '_'.repeat(canvasWidth) + '\n' + pageText + '\n' + '_'.repeat(canvasWidth);
 
   return borderedText;
@@ -111,21 +117,29 @@ function createGroupedAnnotation(group) {
 // Post-processing step to add horizontal and vertical lines
 function addLinesToAsciiText(asciiLines, lineData) {
 
-  const linesCanvas = Array.from({ length: canvasHeight }, () => Array(canvasWidth).fill(' '));
+  // const linesCanvas = Array.from({ length: canvasHeight }, () => Array(canvasWidth).fill(' '));
+  // problem with the above line, just do it the lame ass way with for loops
+  const linesCanvas = [];
+  for (let i = 0; i < canvasHeight; i++) {
+    let row = [];
+    for (let j = 0; j < canvasWidth; j++) {
+      row.push(' ');
+    }
+    linesCanvas.push(row);
+  }
 
   lineData.forEach(line => {
     if (line.text === '|') {
-      console.log("line", line)
       const x = Math.floor(line.origin.x * canvasWidth);
-      const startY = Math.max(Math.floor((1 - line.origin.y) * canvasHeight), 0);
-      console.log("startY", startY)
-      const endY = Math.min(Math.floor((1-line.origin.y+line.size.height) * canvasHeight), canvasHeight - 1);
-      console.log("endY", endY)
+      const startY = Math.max(Math.floor(line.origin.y * canvasHeight), 0);
+      // console.log("startY", startY)
+      const endY = Math.min(Math.floor((line.origin.y+line.size.height) * canvasHeight), canvasHeight - 1);
+      // console.log("endY", endY)
       for (let y = startY; y <= endY; y++) {
         linesCanvas[y][x] = '|';
       }
     } else if (line.text === '_') {
-      const y = Math.floor((1 - line.origin.y) * canvasHeight);
+      const y = Math.floor(line.origin.y * canvasHeight);
       const startX = Math.max(Math.floor(line.origin.x * canvasWidth), 0);
       const endX = Math.min(startX + Math.floor(line.size.width * canvasWidth), canvasWidth - 1);
       for (let x = startX; x <= endX; x++) {
@@ -150,8 +164,8 @@ function addLinesToAsciiText(asciiLines, lineData) {
     }).join('');
   });
 
-  // Add borders back to the final canvas
-  const finalText = '_'.repeat(canvasWidth) + '\n' + finalCanvas.join('\n') + '\n' + '_'.repeat(canvasWidth);
+  // TODO: add back missing top border
+  const finalText = finalCanvas.join('\n');
 
   return { originalText: asciiLines, linesText, finalText };
 }

@@ -146,16 +146,6 @@
       // merge
       boundingBoxes = [...longestVerticalLines, ...longestHorizontalLines];
 
-      console.log(JSON.stringify(boundingBoxes, null, 2));
-
-      // for (let elem in boundingBoxes) {
-      //   let x1 = Math.round(boundingBoxes[elem].origin.x * imgWidth);
-      //   let y1 = Math.round((1 - boundingBoxes[elem].origin.y) * imgHeight);
-      //   let x2 = Math.round(x1 + boundingBoxes[elem].size.width * imgWidth);
-      //   let y2 = Math.round(y1 + boundingBoxes[elem].size.height * imgHeight);
-      //   cv.line(src, new cv.Point(x1, y1), new cv.Point(x2, y2), [255, 0, 0, 255], 2);
-      // }
-
       for (let i = 0; i < boundingBoxes.length; i++) {
         let elem = boundingBoxes[i];
         let x1 = elem.origin.x * imgWidth;
@@ -163,7 +153,6 @@
 
         let x2 = x1 + elem.size.width * imgWidth;
         let y2 = y1 + elem.size.height * imgHeight;
-        console.log(elem.text, x1, y1, x2, y2);
         cv.line(src, new cv.Point(x1, y1), new cv.Point(x2, y2), [255, 0, 0, 255], 2);
       }
 
@@ -175,7 +164,7 @@
       lines.delete();
 
       // Log bounding boxes to console
-      console.log('Bounding Boxes:', boundingBoxes);
+      console.log('Bounding Boxes:', JSON.stringify(boundingBoxes, null, 2));
     }
   </script>
 </body>
