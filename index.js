@@ -6,7 +6,7 @@ const { ascii } = require('./ascii');
 async function asciiScreenshot(path) {
   // spawn process to call osascript
   const p1 = new Promise(resolve => {
-    const o = spawn('osascript', ['ocr.scpt', 'new.jpg'])
+    const o = spawn('osascript', ['ocr.scpt', path])
 
     // pipe stdout and stderr to a string
     let output = '';
@@ -26,6 +26,9 @@ async function asciiScreenshot(path) {
   const p2 = detectLines(path);
 
   const [screenshotJSON, linesJSON] = await Promise.all([p1, p2]);
+
+  // console.log(screenshotJSON);
+  // console.log(linesJSON);
 
   const { finalText } = ascii(screenshotJSON, linesJSON);
 

@@ -15,13 +15,13 @@ function formatText(ocrData) {
     lineCluster[yKey].push(annotation);
   });
 
-  Object.values(lineCluster).forEach((line) => {
-    const lineWidth = line.reduce(
-      (acc, token) => acc + token.text.length + 1,
-      0
-    );
-    canvasWidth = Math.max(canvasWidth, lineWidth);
-  });
+  // Object.values(lineCluster).forEach((line) => {
+  //   const lineWidth = line.reduce(
+  //     (acc, token) => acc + token.text.length + 1,
+  //     0
+  //   );
+  //   canvasWidth = Math.max(canvasWidth, lineWidth);
+  // });
 
   const canvas = [];
   for (let i = 0; i < canvasHeight; i++) {
@@ -150,9 +150,9 @@ function addLinesToAsciiText(asciiLines, lineData) {
 
   lineData.forEach((line) => {
     if (line.text === "|") {
-      const x = Math.floor(line.origin.x * canvasWidth);
+      const x = Math.min(Math.floor(line.origin.x * canvasWidth), canvasWidth - 1);
       const startY = Math.max(Math.floor(line.origin.y * canvasHeight), 0);
-      // console.log("startY", startY)
+      // console.log("startY", startY, "x", x)
       const endY = Math.min(
         Math.floor((line.origin.y + line.size.height) * canvasHeight),
         canvasHeight - 1
