@@ -152,22 +152,26 @@ function addLinesToAsciiText(asciiLines, lineData) {
     if (line.text === "|") {
       const x = Math.min(Math.floor(line.origin.x * canvasWidth), canvasWidth - 1);
       const startY = Math.max(Math.floor(line.origin.y * canvasHeight), 0);
-      // console.log("startY", startY, "x", x)
       const endY = Math.min(
         Math.floor((line.origin.y + line.size.height) * canvasHeight),
         canvasHeight - 1
       );
+      // console.log("startY", startY, "x", x)
       // console.log("endY", endY)
       for (let y = startY; y <= endY; y++) {
         linesCanvas[y][x] = "|";
       }
     } else if (line.text === "_") {
-      const y = Math.floor(line.origin.y * canvasHeight);
+      const y = Math.min(Math.floor(line.origin.y * canvasHeight), canvasHeight - 1);
       const startX = Math.max(Math.floor(line.origin.x * canvasWidth), 0);
       const endX = Math.min(
         startX + Math.floor(line.size.width * canvasWidth),
         canvasWidth - 1
       );
+
+
+      // console.log("startX", startX, "y", y)
+      // console.log("endX", endX)
       for (let x = startX; x <= endX; x++) {
         linesCanvas[y][x] = "_";
       }
