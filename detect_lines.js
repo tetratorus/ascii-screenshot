@@ -1,12 +1,11 @@
 const { Canvas, createCanvas, Image, ImageData, loadImage } = require('canvas');
 const { JSDOM } = require('jsdom');
 
-(async () => {
+const detectLines = async function(filePath) {
   installDOM();
-
   await loadOpenCV();
 
-  const image = await loadImage('./new.jpg');
+  const image = await loadImage(filePath);
   const src = cv.imread(image);
   const gray = new cv.Mat();
   cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
@@ -135,7 +134,7 @@ const { JSDOM } = require('jsdom');
     cv.line(src, new cv.Point(x1, y1), new cv.Point(x2, y2), [255, 0, 0, 255], 2);
   }
 
-  console.log(JSON.stringify(boundingBoxes, null, 2));
+  // console.log(JSON.stringify(boundingBoxes, null, 2));
 
   const canvas = createCanvas(imgWidth, imgHeight);
   cv.imshow(canvas, src);
@@ -144,7 +143,9 @@ const { JSDOM } = require('jsdom');
   gray.delete();
   edges.delete();
   lines.delete();
-})();
+
+  return boundingBoxes;
+}
 
 function loadOpenCV() {
   return new Promise((resolve) => {
@@ -160,4 +161,11 @@ function installDOM() {
   global.HTMLCanvasElement = Canvas;
   global.ImageData = ImageData;
   global.HTMLImageElement = Image;
+}
+
+
+module.exports = {
+  detectLines,
+  installDOM,
+  loadOpenCV,
 }
