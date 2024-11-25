@@ -1,23 +1,33 @@
+const defaultCanvasWidth = 160;
+let canvasWidth = defaultCanvasWidth;
+let canvasHeight = 50;
+
 function formatText(ocrData) {
-  const lineCluster = {};
+  const lineCluster = [];
+  for (let i = 0; i < canvasHeight; i++) {
+    lineCluster.push([]);
+  }
   ocrData.forEach(annotation => {
-      const yKey = Math.floor(100 - annotation.origin.y * 100); // Normalize and cluster by y-coordinate
+      const yKey = Math.floor((1 - annotation.origin.y) * canvasHeight); // Normalize and cluster by y-coordinate
       if (!lineCluster[yKey]) {
           lineCluster[yKey] = [];
       }
       lineCluster[yKey].push(annotation);
   });
 
-  const canvasHeight = Object.keys(lineCluster).length;
-  const defaultCanvasWidth = 80;
-  let canvasWidth = defaultCanvasWidth;
-
   Object.values(lineCluster).forEach(line => {
       const lineWidth = line.reduce((acc, token) => acc + token.text.length + 1, 0);
       canvasWidth = Math.max(canvasWidth, lineWidth);
   });
 
-  const canvas = Array.from({ length: canvasHeight }, () => Array(canvasWidth).fill(' '));
+  const canvas = []
+  for (let i = 0; i < canvasHeight; i++) {
+    let row = [];
+    for (let j = 0; j < canvasWidth; j++) {
+      row.push(' ');
+    }
+    canvas.push(row);
+  }
 
   Object.entries(lineCluster).sort((a, b) => a[0] - b[0]).forEach(([_, line], i) => {
       line.sort((a, b) => a.origin.x - b.origin.x);
@@ -43,8 +53,8 @@ function formatText(ocrData) {
       });
   });
 
-  const pageText = canvas.map(row => row.join('').trimRight()).join('\n');
-  const borderedText = '-'.repeat(canvasWidth) + '\n' + pageText + '\n' + '-'.repeat(canvasWidth);
+  const pageText = canvas.map(row => row.join('')).join('\n');
+  const borderedText = '_'.repeat(canvasWidth) + '\n' + pageText + '\n' + '_'.repeat(canvasWidth);
 
   return borderedText;
 }
@@ -89,9 +99,9 @@ function createGroupedAnnotation(group) {
   }, '');
 
   const isWord = text.split('').some(char => char.match(/\w/));
-  if (isWord && group.map(word => word.size.height).sort((a, b) => b - a)[Math.floor(group.length / 2)] > 0.025) { // Example threshold
-      text = "**" + text + "**";
-  }
+  // if (isWord && group.map(word => word.size.height).sort((a, b) => b - a)[Math.floor(group.length / 2)] > 0.025) { // Example threshold
+  //     text = "**" + text + "**";
+  // }
 
   return {
       text: text,
@@ -106,6 +116,74 @@ function createGroupedAnnotation(group) {
   };
 }
 
+// Post-processing step to add horizontal and vertical lines
+function addLinesToAsciiText(asciiLines, lineData) {
+
+  // const linesCanvas = Array.from({ length: canvasHeight }, () => Array(canvasWidth).fill(' '));
+  // problem with the above line, just do it the lame ass way with for loops
+  const linesCanvas = [];
+  for (let i = 0; i < canvasHeight; i++) {
+    let row = [];
+    for (let j = 0; j < canvasWidth; j++) {
+      row.push(' ');
+    }
+    linesCanvas.push(row);
+  }
+
+  lineData.forEach(line => {
+    if (line.text === '|') {
+      const x = Math.floor(line.origin.x * canvasWidth);
+      const startY = Math.max(Math.floor(line.origin.y * canvasHeight), 0);
+      // console.log("startY", startY)
+      const endY = Math.min(Math.floor((line.origin.y+line.size.height) * canvasHeight), canvasHeight - 1);
+      // console.log("endY", endY)
+      for (let y = startY; y <= endY; y++) {
+        linesCanvas[y][x] = '|';
+      }
+    } else if (line.text === '_') {
+      const y = Math.floor(line.origin.y * canvasHeight);
+      const startX = Math.max(Math.floor(line.origin.x * canvasWidth), 0);
+      const endX = Math.min(startX + Math.floor(line.size.width * canvasWidth), canvasWidth - 1);
+      for (let x = startX; x <= endX; x++) {
+        linesCanvas[y][x] = '_';
+      }
+    }
+  });
+
+  // Convert linesCanvas to string
+  const linesText = linesCanvas.map(row => row.join('')).join('\n');
+
+  // Merge lines with original ASCII text
+  const finalCanvas = asciiLines.split('\n').slice(1, -1).map((row, rowIndex) => {
+    return row.split('').map((char, colIndex) => {
+      if (char === ' ') {
+        return linesCanvas[rowIndex][colIndex];
+      } else if (linesCanvas[rowIndex][colIndex] === '_') {
+        return char + '\u0332'; // Combining diacritic for underline
+      } else {
+        return char;
+      }
+    }).join('');
+  });
+
+  // TODO: add back missing top border
+  const finalText = finalCanvas.join('\n');
+
+  return { originalText: asciiLines, linesText, finalText };
+}
+
 // Example usage with OCR data
-const ocrData = require('./screenshot.json')
-console.log(formatText(ocrData));
+const ocrData = require('./screenshot.json');
+
+const lineData = require('./lines.json');
+
+const originalAscii = formatText(ocrData);
+const { originalText, linesText, finalText } = addLinesToAsciiText(originalAscii, lineData);
+
+// console.log("Original ASCII Text:");
+// console.log(originalText);
+// console.log("Lines Only ASCII Text:");
+// console.log(linesText);
+// console.log("Final Merged ASCII Text:");
+console.log(finalText);
+
