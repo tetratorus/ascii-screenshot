@@ -12,7 +12,7 @@ A simple tool to generate an ASCII-like version of images, optimized for screens
 Install the package via npm:
 
 ```bash
-npm install ascii-screenshot
+npm install -g ascii-screenshot
 ```
 
 ## Usage
