@@ -10,7 +10,8 @@
     "index.js",
     "ocr.scpt",
     "detect_lines.js",
-    "ascii.js"
+    "ascii.js",
+    "opencv.js"
   ],
   "keywords": [],
   "author": "",
