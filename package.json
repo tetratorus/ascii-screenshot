@@ -6,6 +6,12 @@
   "bin": {
     "ascii-screenshot": "./index.js"
   },
+  "files": [
+    "index.js",
+    "ocr.scpt",
+    "detect_lines.js",
+    "ascii.js"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",
