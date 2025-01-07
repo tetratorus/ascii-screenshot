@@ -1,6 +1,6 @@
 {
   "name": "ascii-screenshot",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "generates an ascii representation of a screenshot",
   "main": "index.js",
   "bin": {
