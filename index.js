@@ -21,7 +21,6 @@ async function asciiScreenshot(path) {
 
     // log output when process exits
     o.on('exit', () => {
-      console.log("what is the output", output);
       resolve(JSON.parse(output));
     });
   })
