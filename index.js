@@ -2,11 +2,13 @@
 const { spawn } = require('child_process');
 const { detectLines } = require('./detect_lines');
 const { ascii } = require('./ascii');
+const p = require('path')
 
 async function asciiScreenshot(path) {
   // spawn process to call osascript
   const p1 = new Promise(resolve => {
-    const o = spawn('osascript', ['ocr.scpt', path])
+    const scriptPath = p.resolve(__dirname, 'ocr.scpt');
+    const o = spawn('osascript', [scriptPath, path])
 
     // pipe stdout and stderr to a string
     let output = '';
@@ -19,6 +21,7 @@ async function asciiScreenshot(path) {
 
     // log output when process exits
     o.on('exit', () => {
+      console.log("what is the output", output);
       resolve(JSON.parse(output));
     });
   })
