@@ -26,6 +26,21 @@ ascii-screenshot path/to/img
 - **macOS only**: This tool uses `osascript` for some functionalities.
 - Ensure your image resolution is close to **1600x1000** for best results.
 
+## Shell script to convert latest screenshot
+```
+tt () {
+	local screenshots_dir=~/Desktop
+	local sorted_files=$(ls -t $screenshots_dir)
+	local selected_file=$(echo "$sorted_files" | sed "${1}q;d")
+	if [ -n "$selected_file" ]
+	then
+		ascii-screenshot "$screenshots_dir/$selected_file" "${@:2}"
+	else
+		echo "No such file found at position $1." >&2
+	fi
+}
+```
+
 ## Acknowledgments
 Inspired by the work on the [Tarsier](https://github.com/tarsier-project) and [Textra](https://github.com/textra) GitHub projects.
 
