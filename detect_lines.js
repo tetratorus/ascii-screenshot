@@ -1,12 +1,16 @@
-const { Canvas, createCanvas, Image, ImageData, loadImage } = require('canvas');
 const { JSDOM } = require('jsdom');
+const Jimp = require('jimp');
 
 const detectLines = async function(filePath) {
   installDOM();
   await loadOpenCV();
 
-  const image = await loadImage(filePath);
-  const src = cv.imread(image);
+  const image = await Jimp.read(filePath);
+  const src = cv.matFromImageData({
+    data: image.bitmap.data,
+    width: image.bitmap.width,
+    height: image.bitmap.height,
+  });
   const gray = new cv.Mat();
   cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
 
@@ -136,9 +140,6 @@ const detectLines = async function(filePath) {
 
   // console.log(JSON.stringify(boundingBoxes, null, 2));
 
-  const canvas = createCanvas(imgWidth, imgHeight);
-  cv.imshow(canvas, src);
-
   src.delete();
   gray.delete();
   edges.delete();
@@ -157,10 +158,11 @@ function loadOpenCV() {
 function installDOM() {
   const dom = new JSDOM();
   global.document = dom.window.document;
-  global.Image = Image;
-  global.HTMLCanvasElement = Canvas;
-  global.ImageData = ImageData;
-  global.HTMLImageElement = Image;
+  // Mock objects that opencv.js expects.
+  global.Image = function() {};
+  global.HTMLCanvasElement = function() {};
+  global.ImageData = function() {};
+  global.HTMLImageElement = function() {};
 }
 
 
