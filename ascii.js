@@ -206,14 +206,51 @@ function addLinesToAsciiText(asciiLines, lineData) {
   return { originalText: asciiLines, linesText, finalText };
 }
 
-function ascii(ocrData, lineData) {
+// function ascii(ocrData, lineData) {
+//   const originalAscii = formatText(ocrData);
+//   const { originalText, linesText, finalText } = addLinesToAsciiText(
+//     originalAscii,
+//     lineData
+//   );
+//   return { originalText, linesText, finalText };
+// }
+
+function ascii(ocrData, lineData, normX, normY) {
+  // Step 1. Format text into ASCII canvas string
   const originalAscii = formatText(ocrData);
+
+  // Step 2. Convert that string back into a mutable 2D array (canvas)
+  let canvas = originalAscii
+    .split("\n")
+    .slice(1, -1) // drop top + bottom borders
+    .map(row => row.split(""));
+
+  // Step 3. Add cursor if normalized coords were passed
+  if (normX != null && normY != null) {
+    const canvasX = Math.floor(normX * canvas[0].length);
+    const canvasY = Math.floor((1 - normY) * canvas.length);
+
+    if (canvasY >= 0 && canvasY < canvas.length) {
+      if (canvasX >= 0 && canvasX < canvas[canvasY].length) {
+        canvas[canvasY][canvasX] = "👆"; // overwrite any char
+      }
+    }
+  }
+
+  // Step 4. Turn back into string with borders
+  const pageText = canvas.map(row => row.join("")).join("\n");
+  const borderedText =
+    "_".repeat(canvasWidth) + "\n" + pageText + "\n" + "_".repeat(canvasWidth);
+
+  // Step 5. Overlay detected lines
   const { originalText, linesText, finalText } = addLinesToAsciiText(
-    originalAscii,
+    borderedText,
     lineData
   );
+
   return { originalText, linesText, finalText };
 }
+
 
 module.exports = {
   ascii,

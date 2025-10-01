@@ -38,12 +38,15 @@ async function asciiScreenshot(path) {
 }
 
 const path = process.argv[2];
+const normX = process.argv[3] ? parseFloat(process.argv[3]) : null;
+const normY = process.argv[4] ? parseFloat(process.argv[4]) : null;
+
 if (!path) {
   console.error('Usage: ascii-screenshot <path-to-image>');
   process.exit(1);
 }
 
-asciiScreenshot(path).catch((err) => {
+asciiScreenshot(path, normX, normY).catch((err) => {
   console.error('Error:', err.message);
   process.exit(1);
 });
