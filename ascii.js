@@ -228,7 +228,7 @@ function ascii(ocrData, lineData, normX, normY) {
   // Step 3. Add cursor if normalized coords were passed
   if (normX != null && normY != null) {
     const canvasX = Math.floor(normX * canvas[0].length);
-    const canvasY = Math.floor((1 - normY) * canvas.length);
+    const canvasY = Math.floor((normY) * canvas.length);
 
     if (canvasY >= 0 && canvasY < canvas.length) {
       if (canvasX >= 0 && canvasX < canvas[canvasY].length) {
