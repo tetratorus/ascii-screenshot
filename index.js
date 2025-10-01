@@ -4,7 +4,7 @@ const { detectLines } = require('./detect_lines');
 const { ascii } = require('./ascii');
 const p = require('path')
 
-async function asciiScreenshot(path) {
+async function asciiScreenshot(path, normX, normY) {
   // spawn process to call osascript
   const p1 = new Promise(resolve => {
     const scriptPath = p.resolve(__dirname, 'ocr.scpt');
@@ -32,7 +32,7 @@ async function asciiScreenshot(path) {
   // console.log(screenshotJSON);
   // console.log(linesJSON);
 
-  const { finalText } = ascii(screenshotJSON, linesJSON);
+  const { finalText } = ascii(screenshotJSON, linesJSON, normX, normY);
 
   console.log(finalText);
 }
