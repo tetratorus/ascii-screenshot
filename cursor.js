@@ -1,6 +1,6 @@
 function addCursorToCanvas(canvas, normX, normY) {
   const canvasX = Math.floor(normX * canvas[0].length);
-  const canvasY = Math.floor((1 - normY) * canvas.length);
+  const canvasY = Math.floor(normY * canvas.length); // no flip
 
   if (canvasY >= 0 && canvasY < canvas.length) {
     if (canvasX >= 0 && canvasX < canvas[canvasY].length) {
@@ -9,6 +9,5 @@ function addCursorToCanvas(canvas, normX, normY) {
   }
   return canvas;
 }
-
 
 module.exports = { addCursorToCanvas };
