@@ -1,8 +1,4 @@
-const defaultCanvasWidth = 160;
-let canvasWidth = defaultCanvasWidth;
-let canvasHeight = 60;
-
-function formatText(ocrData) {
+function formatText(ocrData, canvasWidth, canvasHeight) {
   const lineCluster = [];
   for (let i = 0; i < canvasHeight; i++) {
     lineCluster.push([]);
@@ -14,14 +10,6 @@ function formatText(ocrData) {
     }
     lineCluster[yKey].push(annotation);
   });
-
-  // Object.values(lineCluster).forEach((line) => {
-  //   const lineWidth = line.reduce(
-  //     (acc, token) => acc + token.text.length + 1,
-  //     0
-  //   );
-  //   canvasWidth = Math.max(canvasWidth, lineWidth);
-  // });
 
   const canvas = [];
   for (let i = 0; i < canvasHeight; i++) {
@@ -136,7 +124,7 @@ function createGroupedAnnotation(group) {
 }
 
 // Post-processing step to add horizontal and vertical lines
-function addLinesToAsciiText(asciiLines, lineData) {
+function addLinesToAsciiText(asciiLines, lineData, canvasWidth, canvasHeight) {
   // const linesCanvas = Array.from({ length: canvasHeight }, () => Array(canvasWidth).fill(' '));
   // problem with the above line, just do it the lame ass way with for loops
   const linesCanvas = [];
@@ -215,9 +203,9 @@ function addLinesToAsciiText(asciiLines, lineData) {
 //   return { originalText, linesText, finalText };
 // }
 
-function ascii(ocrData, lineData, normX, normY) {
+function ascii(ocrData, lineData, normX, normY, canvasWidth, canvasHeight) {
   // Step 1. Format text into ASCII canvas string
-  const originalAscii = formatText(ocrData);
+  const originalAscii = formatText(ocrData, canvasWidth, canvasHeight);
 
   // Step 2. Convert that string back into a mutable 2D array (canvas)
   let canvas = originalAscii
@@ -245,7 +233,9 @@ function ascii(ocrData, lineData, normX, normY) {
   // Step 5. Overlay detected lines
   const { originalText, linesText, finalText } = addLinesToAsciiText(
     borderedText,
-    lineData
+    lineData,
+    canvasWidth,
+    canvasHeight,
   );
 
   return { originalText, linesText, finalText };
