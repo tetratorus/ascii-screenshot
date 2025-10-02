@@ -1,5 +1,5 @@
 const { JSDOM } = require('jsdom');
-const Jimp = require('jimp');
+const { Jimp } = require('jimp');
 
 const detectLines = async function(filePath) {
   installDOM();
