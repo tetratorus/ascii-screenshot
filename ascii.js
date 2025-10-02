@@ -179,6 +179,8 @@ function addLinesToAsciiText(asciiLines, lineData, canvasWidth, canvasHeight) {
         .map((char, colIndex) => {
           if (char === " ") {
             return linesCanvas[rowIndex][colIndex];
+          } else if (char === "👆") { // Cursor icon takes priority
+            return "👆";
           } else if (linesCanvas[rowIndex][colIndex] === "_") {
             return char + "\u0332"; // Combining diacritic for underline
           } else {
@@ -215,8 +217,8 @@ function ascii(ocrData, lineData, normX, normY, canvasWidth, canvasHeight) {
 
   // Step 3. Add cursor if normalized coords were passed
   if (normX != null && normY != null) {
-    const canvasX = Math.floor(normX * canvas[0].length);
-    const canvasY = Math.floor((normY) * canvas.length);
+    const canvasX = Math.min(canvas[0].length - 1, Math.round(normX * canvas[0].length));
+    const canvasY = Math.min(canvas.length - 1, Math.round((normY) * canvas.length));
 
     if (canvasY >= 0 && canvasY < canvas.length) {
       if (canvasX >= 0 && canvasX < canvas[canvasY].length) {
