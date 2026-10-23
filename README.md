@@ -26,6 +26,16 @@ ascii-screenshot path/to/img
 - **macOS only**: This tool uses `osascript` for some functionalities.
 - Ensure your image resolution is close to **1600x1000** for best results.
 
+## Python port (cross-platform)
+`index.py` mirrors the CLI using RapidOCR by default, so it runs off macOS too. Requires Python 3.9+.
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python index.py path/to/img [--width 160] [--height 60] [--px 0.5 --py 0.5] [--ocr rapidocr|apple]
+```
+
+`./compare.sh path/to/img` runs the JS, Python + RapidOCR and Python + Apple Vision pipelines side by side (uses `python3` on `PATH`).
+
 ## Shell script to convert latest screenshot
 ```
 tt () {

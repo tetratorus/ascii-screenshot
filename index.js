@@ -5,7 +5,7 @@ const { ascii } = require('./ascii');
 const pathLib = require('path');
 
 async function asciiScreenshot(path, normX, normY, canvasWidth, canvasHeight) {
-  const p1 = new Promise(resolve => {
+  const p1 = new Promise((resolve, reject) => {
     const scriptPath = pathLib.resolve(__dirname, 'ocr.scpt');
     const o = spawn('osascript', [scriptPath, path]);
 
@@ -13,8 +13,14 @@ async function asciiScreenshot(path, normX, normY, canvasWidth, canvasHeight) {
     o.stdout.on('data', (data) => { output += data; });
     o.stderr.on('data', (data) => { output += data; });
 
+    // JXA console.log writes to stderr, which can also carry system log noise
     o.on('exit', () => {
-      resolve(JSON.parse(output));
+      const jsonLine = output.split('\n').reverse().find(line => line.startsWith('['));
+      if (!jsonLine) {
+        reject(new Error(`OCR failed: ${output.trim()}`));
+        return;
+      }
+      resolve(JSON.parse(jsonLine));
     });
   });
 

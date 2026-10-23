@@ -176,9 +176,16 @@ class AppleVisionBackend:
             if proc.returncode != 0:
                 logger.debug("osascript failed: %s", proc.stderr)
                 return None
-            # JXA console.log writes to stderr, not stdout
+            # JXA console.log writes to stderr, which can also carry system log noise
             output = proc.stderr or proc.stdout
-            annotations: list[Annotation] = json.loads(output)
+            json_line = next(
+                (line for line in reversed(output.splitlines()) if line.startswith("[")),
+                None,
+            )
+            if json_line is None:
+                logger.debug("osascript returned no OCR JSON: %s", output)
+                return None
+            annotations: list[Annotation] = json.loads(json_line)
             logger.debug("AppleVision extracted %d fragments from %s", len(annotations), image_path)
             return annotations
         except Exception:
@@ -355,8 +362,8 @@ def detect_lines(
         bounding_boxes: list[dict[str, Any]] = []
 
         if lines is not None:
-            for line in lines:
-                x1, y1, x2, y2 = line[0]
+            # OpenCV 4 returns shape (N, 1, 4); OpenCV 5 returns (N, 4)
+            for x1, y1, x2, y2 in lines.reshape(-1, 4):
                 dx = x2 - x1
                 dy = y2 - y1
 
