@@ -10,14 +10,12 @@
     "index.js",
     "ocr.scpt",
     "detect_lines.js",
-    "ascii.js",
-    "opencv.js"
+    "ascii.js"
   ],
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "jimp": "^1.6.0",
-    "jsdom": "^27.0.0"
+    "jimp": "^1.6.0"
   }
 }

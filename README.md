@@ -5,7 +5,7 @@ A simple tool to generate an ASCII-like version of images, optimized for screens
 ## Features
 - Converts images to ASCII-like art.
 - Optimized for screenshots.
-- Basic line detection for enhanced ASCII output.
+- Detects straight UI boundaries: rules, table cells, filled panels and cards.
 - Works best with images sized around **1600x1000 pixels**.
 
 ## Installation
@@ -35,6 +35,32 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ```
 
 `./compare.sh path/to/img` runs the JS, Python + RapidOCR and Python + Apple Vision pipelines side by side (uses `python3` on `PATH`).
+
+## Boundary detection
+
+The JS and Python detectors find long horizontal/vertical colour transitions,
+including boundaries between filled regions with no explicit border stroke.
+Nearby edges are merged, and locally solid colours distinguish UI regions from
+photo texture. The detector retains the four image borders.
+
+This is a pixel heuristic, not semantic segmentation: rounded corners are
+approximated by straight segments, and gradual shadows or translucent panels
+can be missed. Large glyph stems, underlines and icons can still produce false
+segments. Lossless screenshots work best; JPEG compression affects flat-colour
+filtering.
+
+Rendering suppresses segments contained in OCR text boxes (usually glyph stems
+or underlines). Crossings use `+` so both directions remain visible. Vertical
+boundaries take precedence over colliding characters on the coarse ASCII grid;
+horizontal rules underline text. Use a wider canvas for dense tables to reduce
+text collisions. The renderer's `originalText` field retains text before the
+boundary overlay.
+
+Run the generated-image regressions (including JS/Python output parity):
+
+```bash
+.venv/bin/python -m unittest discover -s tests -v
+```
 
 ## Shell script to convert latest screenshot
 ```
