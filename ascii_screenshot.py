@@ -344,62 +344,130 @@ def create_grouped_annotation(group: list[dict[str, Any]]) -> dict[str, Any]:
 def detect_lines(
     image_path: str, img_w: int, img_h: int
 ) -> list[dict[str, Any]]:
-    """Detect visual separator lines in the screenshot using OpenCV.
+    """Detect UI borders and separators as horizontal/vertical line segments.
 
-    Port of detectLines() from detect_lines.js.
-    Uses Canny edge detection + HoughLinesP.
-    Returns lines in ascii-screenshot format.
+    Finds long runs of colour change between adjacent pixel rows/columns,
+    merges runs that belong to the same edge, and drops edges with texture on
+    both sides (photos). Mirrors detectLines() in detect_lines.js.
     """
     try:
         img = cv2.imread(image_path, cv2.IMREAD_COLOR)
         if img is None:
             return _edge_lines()
+        img = img.astype(np.int16)
+        h, w = img.shape[:2]
+        tol = max(2, _round(h * EDGE_TOL_FRAC))
 
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        edges = cv2.Canny(gray, 20, 200, 3)
-        lines = cv2.HoughLinesP(edges, 1, math.pi / 180, 800, minLineLength=50, maxLineGap=10)
+        h_edges = np.abs(img[1:] - img[:-1]).max(axis=2) >= EDGE_THRESHOLD
+        v_edges = (np.abs(img[:, 1:] - img[:, :-1]).max(axis=2) >= EDGE_THRESHOLD).T
+        horizontal = [
+            c for c in _merge_runs(_runs(h_edges, _round(w * MIN_LINE_FRAC)), tol)
+            if _has_flat_side(img, c, tol)
+        ]
+        vertical = [
+            c for c in _merge_runs(_runs(v_edges, _round(h * MIN_LINE_FRAC)), tol)
+            if _has_flat_side(img.transpose(1, 0, 2), c, tol)
+        ]
 
-        bounding_boxes: list[dict[str, Any]] = []
-
-        if lines is not None:
-            # OpenCV 4 returns shape (N, 1, 4); OpenCV 5 returns (N, 4)
-            for x1, y1, x2, y2 in lines.reshape(-1, 4):
-                dx = x2 - x1
-                dy = y2 - y1
-
-                if abs(dx) < 5:
-                    # Vertical line
-                    avg_x = (x1 + x2) / 2
-                    bounding_boxes.append(
-                        {
-                            "text": "|",
-                            "origin": {"x": avg_x / img_w, "y": min(y1, y2) / img_h},
-                            "size": {"width": 0, "height": abs(y1 - y2) / img_h},
-                        }
-                    )
-                elif abs(dy) < 5:
-                    # Horizontal line
-                    avg_y = (y1 + y2) / 2
-                    bounding_boxes.append(
-                        {
-                            "text": "_",
-                            "origin": {"x": min(x1, x2) / img_w, "y": avg_y / img_h},
-                            "size": {"width": abs(x1 - x2) / img_w, "height": 0},
-                        }
-                    )
-
-        # Add edge lines (borders)
-        bounding_boxes.extend(_edge_lines())
-
-        # Group and merge line segments
-        vertical = [b for b in bounding_boxes if b["text"] == "|"]
-        horizontal = [b for b in bounding_boxes if b["text"] == "_"]
-
-        return _merge_vertical_lines(vertical) + _merge_horizontal_lines(horizontal)
+        lines = [
+            {
+                "text": "|",
+                "origin": {"x": (p0 + p1) / 2 / w, "y": a / h},
+                "size": {"width": 0, "height": (b - a) / h},
+            }
+            for p0, p1, a, b in vertical
+        ] + [
+            {
+                "text": "_",
+                "origin": {"x": a / w, "y": (p0 + p1) / 2 / h},
+                "size": {"width": (b - a) / w, "height": 0},
+            }
+            for p0, p1, a, b in horizontal
+        ]
+        return lines + _edge_lines()
 
     except Exception:
         logger.debug("Line detection failed for %s", image_path, exc_info=True)
         return _edge_lines()
+
+
+EDGE_THRESHOLD = 4  # include faint panel fills, not just high-contrast rules
+STRONG_EDGE_THRESHOLD = 10
+MIN_LINE_FRAC = 0.025  # min line length as a fraction of image width/height
+EDGE_TOL_FRAC = 0.004  # merge tolerance as a fraction of image height
+FLAT_TOL = 0  # max per-channel distance from the chunk median for a pixel to count as solid
+FLAT_PIX_FRAC = 0.9  # min fraction of solid pixels for a chunk to count as flat
+FLAT_CHUNK = 4  # flatness is checked in chunks of FLAT_CHUNK * merge tolerance
+FLAT_MIN_FRAC = 0.5  # min fraction of chunks with a flat side to keep an edge
+
+
+def _round(x: float) -> int:
+    return math.floor(x + 0.5)
+
+
+def _runs(mask: np.ndarray, min_len: int) -> list[tuple[int, int, int]]:
+    """(row, start, end) for each run of True along each row with length >= min_len."""
+    padded = np.zeros((mask.shape[0], mask.shape[1] + 2), np.int8)
+    padded[:, 1:-1] = mask
+    d = np.diff(padded, axis=1)
+    rows, starts = np.nonzero(d == 1)
+    _, ends = np.nonzero(d == -1)
+    keep = (ends - starts) >= min_len
+    return list(zip(rows[keep].tolist(), starts[keep].tolist(), ends[keep].tolist()))
+
+
+def _merge_runs(
+    runs: list[tuple[int, int, int]], tol: int
+) -> list[list[int]]:
+    """Merge runs within `tol` rows of each other whose spans overlap or nearly touch.
+
+    Returns [first_row, last_row, start, end] per merged edge.
+    """
+    edges: list[list[int]] = []
+    for row, a, b in sorted(runs):
+        target = None
+        for e in reversed(edges):
+            if row - e[0] > tol:
+                break
+            if a <= e[3] + tol and b >= e[2] - tol:
+                target = e
+                break
+        if target is None:
+            edges.append([row, row, a, b])
+        else:
+            target[1] = row
+            target[2] = min(target[2], a)
+            target[3] = max(target[3], b)
+    return edges
+
+
+def _has_flat_side(img: np.ndarray, edge: list[int], offset: int) -> bool:
+    """True if, along most of the edge, the strip just before or after it is a solid colour.
+
+    UI fills repeat the exact same pixel value; smooth photo regions do not.
+
+    Checked in chunks so a separator between differently coloured cells still counts.
+    """
+    p0, p1, a, b = edge
+    before, after = p0 - offset + 1, p1 + offset
+    if before >= 0 and after < img.shape[0]:
+        across = np.abs(img[before, a:b] - img[after, a:b]).max(axis=1) >= EDGE_THRESHOLD
+        strong = np.abs(img[p0 + 1:p1 + 2, a:b] - img[p0:p1 + 1, a:b]).max(axis=(0, 2)) >= STRONG_EDGE_THRESHOLD
+        # Reject faint narrow stripes whose two surrounding regions are the same.
+        if (across | strong).mean() < FLAT_MIN_FRAC:
+            return False
+    n = b - a
+    n_chunks = max(1, n // (offset * FLAT_CHUNK))
+    flat = np.zeros(n_chunks, bool)
+    for r in (p0 - offset + 1, p1 + offset):
+        if 0 <= r < img.shape[0]:
+            strip = img[r, a:b]
+            for i in range(n_chunks):
+                chunk = strip[i * n // n_chunks:(i + 1) * n // n_chunks]
+                near = np.abs(chunk - np.median(chunk, axis=0)).max(axis=1) <= FLAT_TOL
+                if near.mean() >= FLAT_PIX_FRAC:
+                    flat[i] = True
+    return flat.mean() >= FLAT_MIN_FRAC
 
 
 def _edge_lines() -> list[dict[str, Any]]:
@@ -410,78 +478,6 @@ def _edge_lines() -> list[dict[str, Any]]:
         {"text": "_", "origin": {"x": 0, "y": 0}, "size": {"width": 1, "height": 0}},
         {"text": "_", "origin": {"x": 0, "y": 1}, "size": {"width": 1, "height": 0}},
     ]
-
-
-def _merge_vertical_lines(
-    lines: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Group vertical line segments by X proximity, merge into longest spans."""
-    remaining = list(lines)
-    groups: list[list[dict[str, Any]]] = []
-
-    while remaining:
-        line = remaining.pop(0)
-        group = [line]
-        i = 0
-        while i < len(remaining):
-            if abs(line["origin"]["x"] - remaining[i]["origin"]["x"]) < 0.01:
-                group.append(remaining.pop(i))
-            else:
-                i += 1
-        groups.append(group)
-
-    merged: list[dict[str, Any]] = []
-    for group in groups:
-        x = group[0]["origin"]["x"]
-        min_y = group[0]["origin"]["y"]
-        max_y = group[0]["origin"]["y"] + group[0]["size"]["height"]
-        for line in group:
-            min_y = min(min_y, line["origin"]["y"])
-            max_y = max(max_y, line["origin"]["y"] + line["size"]["height"])
-        merged.append(
-            {
-                "text": "|",
-                "origin": {"x": x, "y": min_y},
-                "size": {"width": 0, "height": max_y - min_y},
-            }
-        )
-    return merged
-
-
-def _merge_horizontal_lines(
-    lines: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Group horizontal line segments by Y proximity, merge into longest spans."""
-    remaining = list(lines)
-    groups: list[list[dict[str, Any]]] = []
-
-    while remaining:
-        line = remaining.pop(0)
-        group = [line]
-        i = 0
-        while i < len(remaining):
-            if abs(line["origin"]["y"] - remaining[i]["origin"]["y"]) < 0.01:
-                group.append(remaining.pop(i))
-            else:
-                i += 1
-        groups.append(group)
-
-    merged: list[dict[str, Any]] = []
-    for group in groups:
-        y = group[0]["origin"]["y"]
-        min_x = group[0]["origin"]["x"]
-        max_x = group[0]["origin"]["x"] + group[0]["size"]["width"]
-        for line in group:
-            min_x = min(min_x, line["origin"]["x"])
-            max_x = max(max_x, line["origin"]["x"] + line["size"]["width"])
-        merged.append(
-            {
-                "text": "_",
-                "origin": {"x": min_x, "y": y},
-                "size": {"width": max_x - min_x, "height": 0},
-            }
-        )
-    return merged
 
 
 # ---------------------------------------------------------------------------
