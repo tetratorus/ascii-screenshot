@@ -509,7 +509,7 @@ def add_lines_to_ascii(
                 canvas_height - 1,
             )
             for y in range(start_y, end_y + 1):
-                lines_canvas[y][x] = "|"
+                lines_canvas[y][x] = "+" if lines_canvas[y][x] in ("_", "+") else "|"
 
         elif line["text"] == "_":
             y = min(math.floor(line["origin"]["y"] * canvas_height), canvas_height - 1)
@@ -519,7 +519,7 @@ def add_lines_to_ascii(
                 canvas_width - 1,
             )
             for x in range(start_x, end_x + 1):
-                lines_canvas[y][x] = "_"
+                lines_canvas[y][x] = "+" if lines_canvas[y][x] in ("|", "+") else "_"
 
     lines_text = "\n".join("".join(row) for row in lines_canvas)
 
@@ -534,7 +534,9 @@ def add_lines_to_ascii(
         new_row_chars: list[str] = []
         for col_idx, ch in enumerate(row):
             lc = lines_canvas[row_idx][col_idx] if row_idx < len(lines_canvas) and col_idx < len(lines_canvas[row_idx]) else " "
-            if ch == " ":
+            if ch == "\U0001F446":
+                new_row_chars.append(ch)
+            elif ch == " " or lc in ("|", "+"):
                 new_row_chars.append(lc)
             elif lc == "_":
                 new_row_chars.append(ch + "\u0332")  # combining underline
@@ -554,6 +556,26 @@ def add_lines_to_ascii(
 # ---------------------------------------------------------------------------
 # 6. ascii() — main orchestrator (ported from ascii.js)
 # ---------------------------------------------------------------------------
+
+
+def _is_text_edge(line: dict[str, Any], ocr_data: list[dict[str, Any]]) -> bool:
+    """Reject glyph stems/underlines inside OCR boxes, not long structural edges."""
+    vertical = line["text"] == "|"
+    pos = line["origin"]["x" if vertical else "y"]
+    start = line["origin"]["y" if vertical else "x"]
+    length = line["size"]["height" if vertical else "width"]
+    if length == 1 and pos in (0, 1):
+        return False
+    for box in ocr_data:
+        top = 1 - box["origin"]["y"] - box["size"]["height"]
+        lo = top if vertical else box["origin"]["x"]
+        hi = lo + box["size"]["height" if vertical else "width"]
+        side = box["origin"]["x"] if vertical else top
+        side_end = side + box["size"]["width" if vertical else "height"]
+        overlap = max(0, min(start + length, hi) - max(start, lo))
+        if side <= pos <= side_end and length > 0 and overlap >= 0.8 * length:
+            return True
+    return False
 
 
 def ascii(
@@ -592,7 +614,8 @@ def ascii(
     bordered = "_" * canvas_width + "\n" + page_text + "\n" + "_" * canvas_width
 
     # Step 5. Overlay detected lines
-    result = add_lines_to_ascii(bordered, line_data, canvas_width, canvas_height)
+    structural_lines = [line for line in line_data if not _is_text_edge(line, ocr_data)]
+    result = add_lines_to_ascii(bordered, structural_lines, canvas_width, canvas_height)
 
     return {"originalText": bordered, "linesText": result["linesText"], "finalText": result["finalText"]}
 

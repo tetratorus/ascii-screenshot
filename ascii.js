@@ -46,7 +46,7 @@ function formatText(ocrData, canvasWidth, canvasHeight) {
       });
     });
 
-  const pageText = canvas.map((row) => row.join("")).join("\n");
+  const pageText = canvas.map((row) => row.slice(0, canvasWidth).join("")).join("\n");
   const borderedText =
     "_".repeat(canvasWidth) + "\n" + pageText + "\n" + "_".repeat(canvasWidth);
 
@@ -147,7 +147,7 @@ function addLinesToAsciiText(asciiLines, lineData, canvasWidth, canvasHeight) {
       // console.log("startY", startY, "x", x)
       // console.log("endY", endY)
       for (let y = startY; y <= endY; y++) {
-        linesCanvas[y][x] = "|";
+        linesCanvas[y][x] = ["_", "+"].includes(linesCanvas[y][x]) ? "+" : "|";
       }
     } else if (line.text === "_") {
       const y = Math.min(Math.floor(line.origin.y * canvasHeight), canvasHeight - 1);
@@ -161,7 +161,7 @@ function addLinesToAsciiText(asciiLines, lineData, canvasWidth, canvasHeight) {
       // console.log("startX", startX, "y", y)
       // console.log("endX", endX)
       for (let x = startX; x <= endX; x++) {
-        linesCanvas[y][x] = "_";
+        linesCanvas[y][x] = ["|", "+"].includes(linesCanvas[y][x]) ? "+" : "_";
       }
     }
   });
@@ -174,14 +174,14 @@ function addLinesToAsciiText(asciiLines, lineData, canvasWidth, canvasHeight) {
     .split("\n")
     .slice(1, -1)
     .map((row, rowIndex) => {
-      return row
-        .split("")
+      return Array.from(row)
         .map((char, colIndex) => {
-          if (char === " ") {
-            return linesCanvas[rowIndex][colIndex];
-          } else if (char === "👆") { // Cursor icon takes priority
+          const line = linesCanvas[rowIndex]?.[colIndex] ?? " ";
+          if (char === "👆") { // Cursor icon takes priority
             return "👆";
-          } else if (linesCanvas[rowIndex][colIndex] === "_") {
+          } else if (char === " " || line === "|" || line === "+") {
+            return line;
+          } else if (line === "_") {
             return char + "\u0332"; // Combining diacritic for underline
           } else {
             return char;
@@ -213,7 +213,7 @@ function ascii(ocrData, lineData, normX, normY, canvasWidth, canvasHeight) {
   let canvas = originalAscii
     .split("\n")
     .slice(1, -1) // drop top + bottom borders
-    .map(row => row.split(""));
+    .map(row => Array.from(row));
 
   // Step 3. Add cursor if normalized coords were passed
   if (normX != null && normY != null) {
@@ -235,12 +235,30 @@ function ascii(ocrData, lineData, normX, normY, canvasWidth, canvasHeight) {
   // Step 5. Overlay detected lines
   const { originalText, linesText, finalText } = addLinesToAsciiText(
     borderedText,
-    lineData,
+    lineData.filter(line => !isTextEdge(line, ocrData)),
     canvasWidth,
     canvasHeight,
   );
 
   return { originalText, linesText, finalText };
+}
+
+// Glyph stems/underlines can look like boundaries, but lie inside OCR text boxes.
+function isTextEdge(line, ocrData) {
+  const vertical = line.text === "|";
+  const pos = line.origin[vertical ? "x" : "y"];
+  const start = line.origin[vertical ? "y" : "x"];
+  const length = line.size[vertical ? "height" : "width"];
+  if (length === 1 && (pos === 0 || pos === 1)) return false;
+  return ocrData.some(box => {
+    const top = 1 - box.origin.y - box.size.height;
+    const lo = vertical ? top : box.origin.x;
+    const hi = lo + box.size[vertical ? "height" : "width"];
+    const side = vertical ? box.origin.x : top;
+    const sideEnd = side + box.size[vertical ? "width" : "height"];
+    const overlap = Math.max(0, Math.min(start + length, hi) - Math.max(start, lo));
+    return pos >= side && pos <= sideEnd && length > 0 && overlap >= 0.8 * length;
+  });
 }
 
 
@@ -251,4 +269,3 @@ module.exports = {
   createGroupedAnnotation,
   addLinesToAsciiText,
 }
-

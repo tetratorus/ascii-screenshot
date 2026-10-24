@@ -49,6 +49,13 @@ can be missed. Large glyph stems, underlines and icons can still produce false
 segments. Lossless screenshots work best; JPEG compression affects flat-colour
 filtering.
 
+Rendering suppresses segments contained in OCR text boxes (usually glyph stems
+or underlines). Crossings use `+` so both directions remain visible. Vertical
+boundaries take precedence over colliding characters on the coarse ASCII grid;
+horizontal rules underline text. Use a wider canvas for dense tables to reduce
+text collisions. The renderer's `originalText` field retains text before the
+boundary overlay.
+
 Run the generated-image regressions (including JS/Python output parity):
 
 ```bash
