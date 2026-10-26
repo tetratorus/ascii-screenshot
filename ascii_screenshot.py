@@ -509,7 +509,7 @@ def add_lines_to_ascii(
                 canvas_height - 1,
             )
             for y in range(start_y, end_y + 1):
-                lines_canvas[y][x] = "+" if lines_canvas[y][x] in ("_", "+") else "|"
+                lines_canvas[y][x] = "|\u0332" if lines_canvas[y][x] in ("_", "|\u0332") else "|"
 
         elif line["text"] == "_":
             y = min(math.floor(line["origin"]["y"] * canvas_height), canvas_height - 1)
@@ -519,7 +519,7 @@ def add_lines_to_ascii(
                 canvas_width - 1,
             )
             for x in range(start_x, end_x + 1):
-                lines_canvas[y][x] = "+" if lines_canvas[y][x] in ("|", "+") else "_"
+                lines_canvas[y][x] = "|\u0332" if lines_canvas[y][x] in ("|", "|\u0332") else "_"
 
     lines_text = "\n".join("".join(row) for row in lines_canvas)
 
@@ -536,7 +536,7 @@ def add_lines_to_ascii(
             lc = lines_canvas[row_idx][col_idx] if row_idx < len(lines_canvas) and col_idx < len(lines_canvas[row_idx]) else " "
             if ch == "\U0001F446":
                 new_row_chars.append(ch)
-            elif ch == " " or lc in ("|", "+"):
+            elif ch == " " or lc in ("|", "|\u0332"):
                 new_row_chars.append(lc)
             elif lc == "_":
                 new_row_chars.append(ch + "\u0332")  # combining underline

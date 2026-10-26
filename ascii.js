@@ -147,7 +147,7 @@ function addLinesToAsciiText(asciiLines, lineData, canvasWidth, canvasHeight) {
       // console.log("startY", startY, "x", x)
       // console.log("endY", endY)
       for (let y = startY; y <= endY; y++) {
-        linesCanvas[y][x] = ["_", "+"].includes(linesCanvas[y][x]) ? "+" : "|";
+        linesCanvas[y][x] = ["_", "|\u0332"].includes(linesCanvas[y][x]) ? "|\u0332" : "|";
       }
     } else if (line.text === "_") {
       const y = Math.min(Math.floor(line.origin.y * canvasHeight), canvasHeight - 1);
@@ -161,7 +161,7 @@ function addLinesToAsciiText(asciiLines, lineData, canvasWidth, canvasHeight) {
       // console.log("startX", startX, "y", y)
       // console.log("endX", endX)
       for (let x = startX; x <= endX; x++) {
-        linesCanvas[y][x] = ["|", "+"].includes(linesCanvas[y][x]) ? "+" : "_";
+        linesCanvas[y][x] = ["|", "|\u0332"].includes(linesCanvas[y][x]) ? "|\u0332" : "_";
       }
     }
   });
@@ -179,7 +179,7 @@ function addLinesToAsciiText(asciiLines, lineData, canvasWidth, canvasHeight) {
           const line = linesCanvas[rowIndex]?.[colIndex] ?? " ";
           if (char === "👆") { // Cursor icon takes priority
             return "👆";
-          } else if (char === " " || line === "|" || line === "+") {
+          } else if (char === " " || line === "|" || line === "|\u0332") {
             return line;
           } else if (line === "_") {
             return char + "\u0332"; // Combining diacritic for underline

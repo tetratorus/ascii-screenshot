@@ -29,14 +29,32 @@ class RenderingTests(unittest.TestCase):
     def test_intersections_preserve_both_orientations_in_either_order(self):
         vertical = line("|", .5, 0, height=1)
         horizontal = line("_", 0, .5, width=1)
-        for lines in ([vertical, horizontal], [horizontal, vertical]):
+        for lines in ([vertical, horizontal], [horizontal, vertical],
+                      [vertical, horizontal, vertical, horizontal]):
             with self.subTest(lines=lines):
                 result = self.compare("addLinesToAsciiText", [
                     "__________\n" + (" " * 10 + "\n") * 6 + "__________", lines, 10, 6,
                 ])
                 rows = result["finalText"].splitlines()
-                self.assertEqual(rows[3], "_____+____")
-                self.assertTrue(all(row[5] in "|+" for row in rows))
+                self.assertEqual(rows[3], "_____|\u0332____")
+                self.assertEqual(result["linesText"].splitlines()[3], "_____|\u0332____")
+                self.assertTrue(all(row[5] == "|" for row in rows))
+                self.assertTrue(all(len(row.replace("\u0332", "")) == 10 for row in rows))
+                self.assertNotIn("+", result["finalText"])
+
+    def test_intersection_overwrites_text_without_shifting_following_columns(self):
+        original = "__________\nABCDEFGHIJ\nABCDEFGHIJ\n__________"
+        result = self.compare("addLinesToAsciiText", [
+            original, [line("|", .4, 0, height=1), line("_", 0, 0, width=1)], 10, 2,
+        ])
+        self.assertEqual(result["originalText"], original)
+        self.assertEqual(result["finalText"].splitlines(), [
+            "".join(char + "\u0332" for char in "ABCD|FGHIJ"), "ABCD|FGHIJ",
+        ])
+
+    def test_ocr_plus_sign_is_preserved(self):
+        result = self.compare("addLinesToAsciiText", ["___\nA+B\n___", [], 3, 1])
+        self.assertEqual(result["finalText"], "A+B")
 
     def test_vertical_boundaries_take_precedence_over_colliding_text(self):
         original = "__________\nABCDEFGHIJ\nABCDEFGHIJ\n__________"
@@ -56,11 +74,11 @@ class RenderingTests(unittest.TestCase):
         boundary = line("|", .3, .1, height=.8)
         frame = [line("|", 0, 0, height=1), line("_", 0, 1, width=1)]
         result = self.compare("ascii", [text, [glyph, boundary, *frame], None, None, 40, 10])
-        rows = result["linesText"].splitlines()
+        rows = result["linesText"].replace("\u0332", "").splitlines()
         self.assertTrue(all(row[18] != "|" for row in rows))
-        self.assertEqual(sum(row[12] in "|+" for row in rows), 9)
-        self.assertTrue(all(row[0] in "|+" for row in rows))
-        self.assertTrue(all(ch in "_+" for ch in rows[-1]))
+        self.assertEqual(sum(row[12] == "|" for row in rows), 9)
+        self.assertTrue(all(row[0] == "|" for row in rows))
+        self.assertTrue(all(ch in "_|" for ch in rows[-1]))
 
     def test_cursor_takes_precedence_at_a_boundary_intersection(self):
         result = self.compare("ascii", [[], [line("|", .4, 0, height=1),
