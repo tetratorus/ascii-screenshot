@@ -123,10 +123,36 @@ function createGroupedAnnotation(group) {
   };
 }
 
-// Post-processing step to add horizontal and vertical lines
+const UNDERLINE = "\u0332";
+
+// Post-processing step to add horizontal and vertical lines.
+// "_" draws a boundary along the bottom of its cell, so a box renders as:
+//    ______        top row: "_" only, corners blank; verticals start on the next row
+//   |      |
+//   |______|       bottom row: verticals end here; "|" marks every junction
 function addLinesToAsciiText(asciiLines, lineData, canvasWidth, canvasHeight) {
-  // const linesCanvas = Array.from({ length: canvasHeight }, () => Array(canvasWidth).fill(' '));
-  // problem with the above line, just do it the lame ass way with for loops
+  const clampX = (x) => Math.max(0, Math.min(x, canvasWidth - 1));
+  const clampY = (y) => Math.max(0, Math.min(y, canvasHeight - 1));
+  const horizontals = [];
+  const verticals = [];
+  lineData.forEach((line) => {
+    if (line.text === "|") {
+      verticals.push({
+        x: clampX(Math.floor(line.origin.x * canvasWidth)),
+        y0: clampY(Math.floor(line.origin.y * canvasHeight)),
+        y1: clampY(Math.floor((line.origin.y + line.size.height) * canvasHeight)),
+      });
+    } else if (line.text === "_") {
+      const x0 = clampX(Math.floor(line.origin.x * canvasWidth));
+      horizontals.push({
+        y: clampY(Math.floor(line.origin.y * canvasHeight)),
+        x0,
+        x1: clampX(x0 + Math.floor(line.size.width * canvasWidth)),
+      });
+    }
+  });
+  snapCorners(horizontals, verticals);
+
   const linesCanvas = [];
   for (let i = 0; i < canvasHeight; i++) {
     let row = [];
@@ -135,36 +161,17 @@ function addLinesToAsciiText(asciiLines, lineData, canvasWidth, canvasHeight) {
     }
     linesCanvas.push(row);
   }
-
-  lineData.forEach((line) => {
-    if (line.text === "|") {
-      const x = Math.min(Math.floor(line.origin.x * canvasWidth), canvasWidth - 1);
-      const startY = Math.max(Math.floor(line.origin.y * canvasHeight), 0);
-      const endY = Math.min(
-        Math.floor((line.origin.y + line.size.height) * canvasHeight),
-        canvasHeight - 1
-      );
-      // console.log("startY", startY, "x", x)
-      // console.log("endY", endY)
-      for (let y = startY; y <= endY; y++) {
-        linesCanvas[y][x] = ["_", "|\u0332"].includes(linesCanvas[y][x]) ? "|\u0332" : "|";
-      }
-    } else if (line.text === "_") {
-      const y = Math.min(Math.floor(line.origin.y * canvasHeight), canvasHeight - 1);
-      const startX = Math.max(Math.floor(line.origin.x * canvasWidth), 0);
-      const endX = Math.min(
-        startX + Math.floor(line.size.width * canvasWidth),
-        canvasWidth - 1
-      );
-
-
-      // console.log("startX", startX, "y", y)
-      // console.log("endX", endX)
-      for (let x = startX; x <= endX; x++) {
-        linesCanvas[y][x] = ["|", "|\u0332"].includes(linesCanvas[y][x]) ? "|\u0332" : "_";
-      }
-    }
+  horizontals.forEach(({ y, x0, x1 }) => {
+    for (let x = x0; x <= x1; x++) linesCanvas[y][x] = "_";
   });
+  verticals.forEach(({ x, y0, y1 }) => {
+    for (let y = y0; y <= y1; y++) linesCanvas[y][x] = "|";
+  });
+  // Blank top corners so box tops read " ____ " rather than overhanging the verticals.
+  verticals
+    .filter(({ x, y0 }) => y0 > 0 && linesCanvas[y0 - 1][x] === "_" &&
+      (linesCanvas[y0 - 1][x - 1] === "_") !== (linesCanvas[y0 - 1][x + 1] === "_"))
+    .forEach(({ x, y0 }) => { linesCanvas[y0 - 1][x] = " "; });
 
   // Convert linesCanvas to string
   const linesText = linesCanvas.map((row) => row.join("")).join("\n");
@@ -179,10 +186,10 @@ function addLinesToAsciiText(asciiLines, lineData, canvasWidth, canvasHeight) {
           const line = linesCanvas[rowIndex]?.[colIndex] ?? " ";
           if (char === "👆") { // Cursor icon takes priority
             return "👆";
-          } else if (char === " " || line === "|" || line === "|\u0332") {
+          } else if (char === " " || line === "|") {
             return line;
           } else if (line === "_") {
-            return char + "\u0332"; // Combining diacritic for underline
+            return char + UNDERLINE;
           } else {
             return char;
           }
@@ -194,6 +201,32 @@ function addLinesToAsciiText(asciiLines, lineData, canvasWidth, canvasHeight) {
   const finalText = finalCanvas.join("\n");
 
   return { originalText: asciiLines, linesText, finalText };
+}
+
+// Quantising to the coarse grid leaves line ends that should meet off by a cell.
+// Pull horizontal ends onto nearby verticals, then start verticals on the row below a
+// horizontal they hang from and end them on the row of one they stand on.
+function snapCorners(horizontals, verticals) {
+  const nearest = (candidates, target) => candidates.reduce(
+    (best, c) => (best === null || Math.abs(c - target) < Math.abs(best - target) ? c : best), null);
+  horizontals.forEach((h) => {
+    const cols = verticals.filter(v => h.y >= v.y0 - 1 && h.y <= v.y1 + 1).map(v => v.x);
+    const x0 = nearest(cols.filter(x => Math.abs(x - h.x0) <= 1), h.x0);
+    const x1 = nearest(cols.filter(x => Math.abs(x - h.x1) <= 1), h.x1);
+    if (x0 !== null) h.x0 = x0;
+    if (x1 !== null) h.x1 = x1;
+  });
+  verticals.forEach((v) => {
+    const rows = horizontals.filter(h => v.x >= h.x0 && v.x <= h.x1).map(h => h.y);
+    const top = nearest(rows.filter(y => Math.abs(y - v.y0) <= 1), v.y0);
+    const bottom = nearest(rows.filter(y => Math.abs(y - v.y1) <= 1), v.y1);
+    if (top !== null && top === bottom) return; // a short vertical crossing one rule
+    if (top !== null) v.y0 = top + 1;
+    if (bottom !== null) v.y1 = bottom;
+  });
+  for (let i = verticals.length - 1; i >= 0; i--) {
+    if (verticals[i].y0 > verticals[i].y1) verticals.splice(i, 1);
+  }
 }
 
 // function ascii(ocrData, lineData) {

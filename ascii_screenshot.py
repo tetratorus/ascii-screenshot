@@ -495,31 +495,54 @@ def add_lines_to_ascii(
 
     Port of addLinesToAsciiText() from ascii.js.
     """
-    # Create line-only canvas
-    lines_canvas: list[list[str]] = []
-    for _ in range(canvas_height):
-        lines_canvas.append([" "] * canvas_width)
+    def clamp_x(x: int) -> int:
+        return max(0, min(x, canvas_width - 1))
 
+    def clamp_y(y: int) -> int:
+        return max(0, min(y, canvas_height - 1))
+
+    horizontals: list[dict[str, int]] = []
+    verticals: list[dict[str, int]] = []
     for line in line_data:
+        o, sz = line["origin"], line["size"]
         if line["text"] == "|":
-            x = min(math.floor(line["origin"]["x"] * canvas_width), canvas_width - 1)
-            start_y = max(math.floor(line["origin"]["y"] * canvas_height), 0)
-            end_y = min(
-                math.floor((line["origin"]["y"] + line["size"]["height"]) * canvas_height),
-                canvas_height - 1,
-            )
-            for y in range(start_y, end_y + 1):
-                lines_canvas[y][x] = "|\u0332" if lines_canvas[y][x] in ("_", "|\u0332") else "|"
-
+            verticals.append({
+                "x": clamp_x(math.floor(o["x"] * canvas_width)),
+                "y0": clamp_y(math.floor(o["y"] * canvas_height)),
+                "y1": clamp_y(math.floor((o["y"] + sz["height"]) * canvas_height)),
+            })
         elif line["text"] == "_":
-            y = min(math.floor(line["origin"]["y"] * canvas_height), canvas_height - 1)
-            start_x = max(math.floor(line["origin"]["x"] * canvas_width), 0)
-            end_x = min(
-                start_x + math.floor(line["size"]["width"] * canvas_width),
-                canvas_width - 1,
-            )
-            for x in range(start_x, end_x + 1):
-                lines_canvas[y][x] = "|\u0332" if lines_canvas[y][x] in ("|", "|\u0332") else "_"
+            x0 = clamp_x(math.floor(o["x"] * canvas_width))
+            horizontals.append({
+                "y": clamp_y(math.floor(o["y"] * canvas_height)),
+                "x0": x0,
+                "x1": clamp_x(x0 + math.floor(sz["width"] * canvas_width)),
+            })
+    verticals = _snap_corners(horizontals, verticals)
+
+    # "_" draws a boundary along the bottom of its cell, so a box renders as:
+    #    ______        top row: "_" only, corners blank; verticals start on the next row
+    #   |      |
+    #   |______|       bottom row: verticals end here; "|" marks every junction
+    lines_canvas: list[list[str]] = [[" "] * canvas_width for _ in range(canvas_height)]
+    for h in horizontals:
+        for x in range(h["x0"], h["x1"] + 1):
+            lines_canvas[h["y"]][x] = "_"
+    for v in verticals:
+        for y in range(v["y0"], v["y1"] + 1):
+            lines_canvas[y][v["x"]] = "|"
+
+    def is_h(y: int, x: int) -> bool:
+        return 0 <= x < canvas_width and lines_canvas[y][x] == "_"
+
+    # Blank top corners so box tops read " ____ " rather than overhanging the verticals.
+    top_corners = [
+        (v["y0"] - 1, v["x"]) for v in verticals
+        if v["y0"] > 0 and is_h(v["y0"] - 1, v["x"])
+        and is_h(v["y0"] - 1, v["x"] - 1) != is_h(v["y0"] - 1, v["x"] + 1)
+    ]
+    for y, x in top_corners:
+        lines_canvas[y][x] = " "
 
     lines_text = "\n".join("".join(row) for row in lines_canvas)
 
@@ -536,7 +559,7 @@ def add_lines_to_ascii(
             lc = lines_canvas[row_idx][col_idx] if row_idx < len(lines_canvas) and col_idx < len(lines_canvas[row_idx]) else " "
             if ch == "\U0001F446":
                 new_row_chars.append(ch)
-            elif ch == " " or lc in ("|", "|\u0332"):
+            elif ch == " " or lc == "|":
                 new_row_chars.append(lc)
             elif lc == "_":
                 new_row_chars.append(ch + "\u0332")  # combining underline
@@ -551,6 +574,38 @@ def add_lines_to_ascii(
         "linesText": lines_text,
         "finalText": final_text,
     }
+
+
+def _snap_corners(
+    horizontals: list[dict[str, int]], verticals: list[dict[str, int]],
+) -> list[dict[str, int]]:
+    """Join line ends that grid quantisation left a cell apart (mirrors snapCorners)."""
+    def nearest(candidates: list[int], target: int) -> int | None:
+        best = None
+        for c in candidates:
+            if best is None or abs(c - target) < abs(best - target):
+                best = c
+        return best
+
+    for h in horizontals:
+        cols = [v["x"] for v in verticals if v["y0"] - 1 <= h["y"] <= v["y1"] + 1]
+        x0 = nearest([x for x in cols if abs(x - h["x0"]) <= 1], h["x0"])
+        x1 = nearest([x for x in cols if abs(x - h["x1"]) <= 1], h["x1"])
+        if x0 is not None:
+            h["x0"] = x0
+        if x1 is not None:
+            h["x1"] = x1
+    for v in verticals:
+        rows = [h["y"] for h in horizontals if h["x0"] <= v["x"] <= h["x1"]]
+        top = nearest([y for y in rows if abs(y - v["y0"]) <= 1], v["y0"])
+        bottom = nearest([y for y in rows if abs(y - v["y1"]) <= 1], v["y1"])
+        if top is not None and top == bottom:
+            continue  # a short vertical crossing one rule
+        if top is not None:
+            v["y0"] = top + 1
+        if bottom is not None:
+            v["y1"] = bottom
+    return [v for v in verticals if v["y0"] <= v["y1"]]
 
 
 # ---------------------------------------------------------------------------

@@ -36,21 +36,45 @@ class RenderingTests(unittest.TestCase):
                     "__________\n" + (" " * 10 + "\n") * 6 + "__________", lines, 10, 6,
                 ])
                 rows = result["finalText"].splitlines()
-                self.assertEqual(rows[3], "_____|\u0332____")
-                self.assertEqual(result["linesText"].splitlines()[3], "_____|\u0332____")
+                self.assertEqual(rows[3], "_____|____")
+                self.assertEqual(result["linesText"].splitlines()[3], "_____|____")
                 self.assertTrue(all(row[5] == "|" for row in rows))
                 self.assertTrue(all(len(row.replace("\u0332", "")) == 10 for row in rows))
                 self.assertNotIn("+", result["finalText"])
 
     def test_intersection_overwrites_text_without_shifting_following_columns(self):
-        original = "__________\nABCDEFGHIJ\nABCDEFGHIJ\n__________"
+        original = "__________\nABCDEFGHIJ\nABCDEFGHIJ\nABCDEFGHIJ\n__________"
         result = self.compare("addLinesToAsciiText", [
-            original, [line("|", .4, 0, height=1), line("_", 0, 0, width=1)], 10, 2,
+            original, [line("|", .4, 0, height=1), line("_", 0, .5, width=1)], 10, 3,
         ])
         self.assertEqual(result["originalText"], original)
         self.assertEqual(result["finalText"].splitlines(), [
-            "".join(char + "\u0332" for char in "ABCD|FGHIJ"), "ABCD|FGHIJ",
+            "ABCD|FGHIJ", "".join(char + "\u0332" for char in "ABCD") + "|"
+            + "".join(char + "\u0332" for char in "FGHIJ"), "ABCD|FGHIJ",
         ])
+
+    def test_box_has_blank_top_corners_and_bar_bottom_corners(self):
+        # Edges as detected: verticals start a row above the top edge and the
+        # horizontals overshoot the right vertical by a cell.
+        box = [line("_", .2, .21, width=.62), line("_", .2, .81, width=.62),
+               line("|", .2, .1, height=.72), line("|", .8, .1, height=.72)]
+        result = self.compare("addLinesToAsciiText", [
+            "__________\n" + (" " * 10 + "\n") * 5 + "__________", box, 10, 5,
+        ])
+        self.assertEqual(result["finalText"].splitlines(), [
+            "          ",
+            "   _____  ",
+            "  |     | ",
+            "  |     | ",
+            "  |_____| ",
+        ])
+
+    def test_vertical_hanging_from_a_rule_starts_below_it(self):
+        result = self.compare("addLinesToAsciiText", [
+            "_____\n" + (" " * 5 + "\n") * 3 + "_____",
+            [line("_", 0, .1, width=1), line("|", .5, .1, height=.9)], 5, 3,
+        ])
+        self.assertEqual(result["finalText"].splitlines(), ["_____", "  |  ", "  |  "])
 
     def test_ocr_plus_sign_is_preserved(self):
         result = self.compare("addLinesToAsciiText", ["___\nA+B\n___", [], 3, 1])
