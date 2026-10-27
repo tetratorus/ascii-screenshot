@@ -26,6 +26,37 @@ ascii-screenshot path/to/img
 - **macOS only**: This tool uses `osascript` for some functionalities.
 - Ensure your image resolution is close to **1600x1000** for best results.
 
+## Live screen mode (macOS, battery-friendly)
+
+`macos/` is a native Swift binary that keeps an ASCII view of your screen up to date, refreshing at most once per `--interval` (default 1s). It is built to keep CPU, and so battery drain, as low as possible:
+
+- **Change-driven.** ScreenCaptureKit only hands over a frame when something on screen changed, so a static screen costs ~0 CPU. Frames that are pixel-identical to the last one are dropped after a `memcmp`.
+- **Incremental OCR.** Changed 32px tiles are grouped into regions, grown so no cached word straddles an edge, and only those regions are re-OCRed (Vision `regionOfInterest`); the rest of the text is reused. A full OCR runs when over half the screen changed, and every 30 incremental frames (`--full-every`).
+- **No language correction by default.** On UI text it barely changes the output and costs ~2x the CPU (`--correction` turns it back on). `--fast` is cheaper still but much worse on small UI text.
+- **In-process, in memory.** Capture, line detection and rendering run in one process on the captured buffer: no `screencapture`/`osascript`/node per frame, and no PNG encode/decode. Line detection takes ~5ms natively vs ~150ms in JS.
+- **Low priority.** The process runs as a Darwin background process (efficiency cores, throttled I/O), and capture stops while the screen is locked or asleep.
+- **Cheap cursor.** The pointer is left out of captured frames so moving it doesn't trigger a capture; its position is polled once per interval and only re-renders text (no OCR).
+
+Measured on an M4 VM (1600x1200), CPU time per refresh:
+
+| | CPU per refresh |
+| --- | --- |
+| `screencapture` + `node index.js` | ~2.0s (whole pipeline, every second) |
+| Live mode, nothing changed | ~0 (no frame delivered) |
+| Live mode, small change (clock, typing) | ~0.1–0.3s |
+| Live mode, whole screen changed | ~0.75s |
+
+```bash
+cd macos && swift build -c release
+.build/release/ascii-screen                      # live view in the terminal
+.build/release/ascii-screen --out /tmp/screen.txt  # atomically rewrite a file on each change
+.build/release/ascii-screen --once               # one capture
+.build/release/ascii-screen --image shot.png     # convert a file
+.build/release/ascii-screen --stats              # per-frame timing/CPU on stderr
+```
+
+Your terminal needs Screen Recording permission (System Settings > Privacy & Security). When stdout isn't a terminal, frames are separated by a form feed line. The Swift detector and renderer are ports of `detect_lines.js` and `ascii.js`; the test suite checks they produce identical output whenever the binary has been built.
+
 ## Python port (cross-platform)
 `index.py` mirrors the CLI using RapidOCR by default, so it runs off macOS too. Requires Python 3.9+.
 
