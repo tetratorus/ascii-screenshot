@@ -10,7 +10,7 @@ struct Options {
   var scale = 1.0
   var fast = false
   var languageCorrection = false
-  var languages = ["en-US"]
+  var autoLanguage = false
   var cursor = true
   var out: String?
   var stats = false
@@ -37,7 +37,7 @@ final class Pipeline {
   init(_ opts: Options, recognize: ((CVPixelBuffer, [CGRect]) -> [[Obs]])? = nil) {
     self.opts = opts
     ocr = TextRecognizer(fast: opts.fast, languageCorrection: opts.languageCorrection,
-                         languages: opts.languages, stats: opts.stats)
+                         autoLanguage: opts.autoLanguage, stats: opts.stats)
     self.recognize = recognize ?? ocr.recognize
   }
 

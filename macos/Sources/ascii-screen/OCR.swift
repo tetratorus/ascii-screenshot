@@ -6,27 +6,19 @@ import Vision
 final class TextRecognizer {
   let level: VNRequestTextRecognitionLevel
   let languageCorrection: Bool
-  let languages: [String]
+  let autoLanguage: Bool
   /// Vision's previous model reads UI text as well in our tests and keeps ~90MB less working memory resident.
   private let revision: Int?
   private let stats: Bool
   private var loggedDevices = false
   private(set) var device = "default"
 
-  init(fast: Bool, languageCorrection: Bool, languages: [String] = ["en-US"], stats: Bool = false) {
+  init(fast: Bool, languageCorrection: Bool, autoLanguage: Bool = false, stats: Bool = false) {
     level = fast ? .fast : .accurate
     self.languageCorrection = languageCorrection
-    self.languages = languages
+    self.autoLanguage = autoLanguage
     self.stats = stats
-    let old = TextRecognizer.supportedLanguages(fast: fast, revision: VNRecognizeTextRequestRevision2)
-    revision = languages != ["auto"] && languages.allSatisfy(old.contains) ? VNRecognizeTextRequestRevision2 : nil
-  }
-
-  static func supportedLanguages(fast: Bool = false, revision: Int? = nil) -> [String] {
-    let r = VNRecognizeTextRequest()
-    r.recognitionLevel = fast ? .fast : .accurate
-    if let revision { r.revision = revision }
-    return (try? r.supportedRecognitionLanguages()) ?? []
+    revision = autoLanguage ? nil : VNRecognizeTextRequestRevision2 // language detection needs the newer model
   }
 
   private func request(_ roi: CGRect) -> VNRecognizeTextRequest {
@@ -34,7 +26,7 @@ final class TextRecognizer {
     r.recognitionLevel = level
     r.usesLanguageCorrection = languageCorrection
     if let revision { r.revision = revision }
-    if languages == ["auto"] { r.automaticallyDetectsLanguage = true } else { r.recognitionLanguages = languages }
+    if autoLanguage { r.automaticallyDetectsLanguage = true } else { r.recognitionLanguages = ["en-US"] }
     r.regionOfInterest = roi
     // The Neural Engine is the most power-efficient place to run the model.
     if let devices = try? r.supportedComputeStageDevices {
