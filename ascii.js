@@ -181,9 +181,11 @@ function addLinesToAsciiText(asciiLines, lineData, canvasWidth, canvasHeight) {
     .split("\n")
     .slice(1, -1)
     .map((row, rowIndex) => {
+      let colIndex = 0;
       return Array.from(row)
-        .map((char, colIndex) => {
+        .map((char) => {
           const line = linesCanvas[rowIndex]?.[colIndex] ?? " ";
+          colIndex += char === "👆" ? 2 : 1;
           if (char === "👆") { // Cursor icon takes priority
             return "👆";
           } else if (char === " " || line === "|") {
@@ -254,8 +256,10 @@ function ascii(ocrData, lineData, normX, normY, canvasWidth, canvasHeight) {
     const canvasY = Math.min(canvas.length - 1, Math.round((normY) * canvas.length));
 
     if (canvasY >= 0 && canvasY < canvas.length) {
-      if (canvasX >= 0 && canvasX < canvas[canvasY].length) {
-        canvas[canvasY][canvasX] = "👆"; // overwrite any char
+      const row = canvas[canvasY];
+      if (canvasX >= 0 && canvasX < row.length) {
+        // Terminals draw the emoji two columns wide, so it replaces two cells.
+        row.splice(Math.max(0, Math.min(canvasX, row.length - 2)), 2, "👆");
       }
     }
   }

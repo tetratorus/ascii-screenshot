@@ -555,8 +555,10 @@ def add_lines_to_ascii(
         if row_idx < len(lines_canvas) and len(lines_canvas[row_idx]) < max_col:
             lines_canvas[row_idx].extend([" "] * (max_col - len(lines_canvas[row_idx])))
         new_row_chars: list[str] = []
-        for col_idx, ch in enumerate(row):
+        col_idx = 0
+        for ch in row:
             lc = lines_canvas[row_idx][col_idx] if row_idx < len(lines_canvas) and col_idx < len(lines_canvas[row_idx]) else " "
+            col_idx += 2 if ch == "\U0001F446" else 1
             if ch == "\U0001F446":
                 new_row_chars.append(ch)
             elif ch == " " or lc == "|":
@@ -661,8 +663,11 @@ def ascii(
     if norm_x is not None and norm_y is not None:
         canvas_x = min(len(canvas_rows[0]) - 1, round(norm_x * len(canvas_rows[0])))
         canvas_y = min(len(canvas_rows) - 1, round(norm_y * len(canvas_rows)))
-        if 0 <= canvas_y < len(canvas_rows) and 0 <= canvas_x < len(canvas_rows[canvas_y]):
-            canvas_rows[canvas_y][canvas_x] = "\U0001F446"  # 👆
+        row = canvas_rows[canvas_y] if 0 <= canvas_y < len(canvas_rows) else []
+        if 0 <= canvas_x < len(row):
+            # Terminals draw the emoji two columns wide, so it replaces two cells.
+            x = max(0, min(canvas_x, len(row) - 2))
+            row[x:x + 2] = ["\U0001F446"]  # 👆
 
     # Step 4. Re-bracket
     page_text = "\n".join("".join(row) for row in canvas_rows)
