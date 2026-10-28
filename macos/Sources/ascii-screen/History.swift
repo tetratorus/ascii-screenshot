@@ -1,4 +1,5 @@
 import Foundation
+import zlib
 
 /// Keeps every distinct frame, compressed, in one gzip file per day (`YYYY-MM-DD.txt.gz`).
 /// Frames are buffered in memory and appended as one gzip member per flush, so the disk is touched
@@ -112,13 +113,28 @@ func parseTime(_ s: String, now: Date = Date()) -> Date? {
   return Calendar.current.date(bySettingHour: parts[0]!, minute: parts[1]!, second: parts.count == 3 ? parts[2]! : 0, of: now)
 }
 
+/// One complete gzip member (zlib, windowBits 31 = gzip header and CRC32 included).
 func gzip(_ data: Data) throws -> Data {
-  let deflated = try (data as NSData).compressed(using: .zlib) as Data // raw deflate (RFC 1951)
-  var out = Data([0x1f, 0x8b, 8, 0, 0, 0, 0, 0, 0, 3])
-  out += deflated
-  for v in [crc32(data), UInt32(truncatingIfNeeded: data.count)] {
-    withUnsafeBytes(of: v.littleEndian) { out += $0 }
+  var z = z_stream()
+  guard deflateInit2_(&z, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 31, 8, Z_DEFAULT_STRATEGY,
+                      ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size)) == Z_OK else {
+    throw NSError(domain: "ascii-screen", code: 4, userInfo: [NSLocalizedDescriptionKey: "deflateInit failed"])
   }
+  defer { deflateEnd(&z) }
+  var out = Data(count: Int(deflateBound(&z, uLong(data.count))) + 32)
+  let status = data.withUnsafeBytes { (src: UnsafeRawBufferPointer) -> Int32 in
+    out.withUnsafeMutableBytes { (dst: UnsafeMutableRawBufferPointer) -> Int32 in
+      z.next_in = UnsafeMutablePointer(mutating: src.bindMemory(to: Bytef.self).baseAddress)
+      z.avail_in = uInt(src.count)
+      z.next_out = dst.bindMemory(to: Bytef.self).baseAddress
+      z.avail_out = uInt(dst.count)
+      return deflate(&z, Z_FINISH)
+    }
+  }
+  guard status == Z_STREAM_END else {
+    throw NSError(domain: "ascii-screen", code: 4, userInfo: [NSLocalizedDescriptionKey: "deflate failed"])
+  }
+  out.count = Int(z.total_out)
   return out
 }
 
@@ -136,11 +152,4 @@ func gunzip(_ url: URL) throws -> String {
     throw NSError(domain: "ascii-screen", code: 3, userInfo: [NSLocalizedDescriptionKey: "cannot decompress \(url.path)"])
   }
   return String(decoding: data, as: UTF8.self)
-}
-
-private let crcTable: [UInt32] = (0..<256).map { n in
-  (0..<8).reduce(UInt32(n)) { c, _ in c & 1 != 0 ? 0xEDB88320 ^ (c >> 1) : c >> 1 }
-}
-func crc32(_ data: Data) -> UInt32 {
-  ~data.reduce(~UInt32(0)) { c, b in crcTable[Int((c ^ UInt32(b)) & 0xff)] ^ (c >> 8) }
 }

@@ -8,7 +8,8 @@ let package = Package(
     .executableTarget(
       name: "ascii-screen",
       path: "Sources/ascii-screen",
-      swiftSettings: [.unsafeFlags(["-Ounchecked", "-wmo"])]
+      swiftSettings: [.unsafeFlags(["-Ounchecked", "-wmo"])],
+      linkerSettings: [.linkedLibrary("z")]
     ),
     .testTarget(name: "ascii-screenTests", dependencies: ["ascii-screen"]),
   ]

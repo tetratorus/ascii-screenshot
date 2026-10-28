@@ -8,8 +8,11 @@ final class HistoryTests: XCTestCase {
   }
   override func tearDownWithError() throws { try? FileManager.default.removeItem(at: dir) }
 
-  func testCRC32() {
-    XCTAssertEqual(crc32(Data("123456789".utf8)), 0xCBF43926)
+  func testGzipRoundTrip() throws {
+    let file = dir.appendingPathComponent("x.gz")
+    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    try (try gzip(Data("hello\n".utf8)) + gzip(Data("world\n".utf8))).write(to: file)
+    XCTAssertEqual(try gunzip(file), "hello\nworld\n")
   }
 
   func testBuffersUntilFlushThenAppendsReadableGzipMembers() throws {
