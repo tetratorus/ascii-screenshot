@@ -58,7 +58,7 @@ cd macos && swift build -c release
 .build/release/ascii-screen --at 14:05           # print what was on screen at 14:05 today
 ```
 
-With `--history <dir>`, every frame that differs from the previous one is kept in `<dir>/YYYY-MM-DD.txt.gz`. Each record is a `@@ <ISO 8601 time>` line followed by the frame. Consecutive frames are nearly identical, so gzip shrinks them about 30x (roughly 300 bytes per frame). Frames are held in memory and written every 5 minutes, and when the screen sleeps or locks or the process stops, so the disk isn't touched on every change. Files older than `--keep-days` (default 14) are deleted. Read history with `gzcat <dir>/2026-10-27.txt.gz | less`, search it with `gzcat ... | grep`, or print the frame shown at a given time with `--at HH:MM[:SS]` or a full ISO 8601 time.
+With `--history <dir>`, every frame that differs from the previous one is kept in `<dir>/YYYY-MM-DD.txt.gz`. Each record is a `@@ <ISO 8601 time>` line followed by the frame. Consecutive frames are nearly identical, so gzip shrinks them about 25x (roughly 400 bytes per frame). Frames are held in memory for at most 10 seconds and then written as one batch, and also when the screen sleeps or locks or the process stops. A crash loses at most the last 10 seconds, and the disk isn't touched on every change. Files older than `--keep-days` (default 14) are deleted. Read history with `gzcat <dir>/2026-10-27.txt.gz | less`, search it with `gzcat ... | grep`, or print the frame shown at a given time with `--at HH:MM[:SS]` or a full ISO 8601 time.
 
 ### Run it in the background (login agent)
 

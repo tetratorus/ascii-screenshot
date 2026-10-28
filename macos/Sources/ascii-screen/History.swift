@@ -2,8 +2,8 @@ import Foundation
 import zlib
 
 /// Keeps every distinct frame, compressed, in one gzip file per day (`YYYY-MM-DD.txt.gz`).
-/// Frames are buffered in memory and appended as one gzip member per flush, so the disk is touched
-/// once every few minutes rather than on every change. Each record is a `@@ <ISO-8601 time>` line
+/// Frames are buffered in memory and appended as one gzip member per flush: at most `flushEvery`
+/// seconds after the first buffered frame (one timer per batch, none while the screen is static). Each record is a `@@ <ISO-8601 time>` line
 /// followed by the frame; consecutive frames are nearly identical, so deflate stores mostly back-references.
 /// Read with `gzcat <file>` or `ascii-screen --at <time>`.
 final class History {
@@ -16,8 +16,9 @@ final class History {
   private var bufferDay = ""
   private var firstBuffered: Date?
   private let lock = NSLock()
+  private var timer: DispatchSourceTimer?
 
-  init(dir: URL, flushEvery: TimeInterval = 300, keepDays: Int = 14, now: @escaping () -> Date = Date.init) {
+  init(dir: URL, flushEvery: TimeInterval = 10, keepDays: Int = 14, now: @escaping () -> Date = Date.init) {
     self.dir = dir
     self.flushEvery = flushEvery
     self.keepDays = keepDays
@@ -30,17 +31,30 @@ final class History {
     let day = History.day(t)
     var due = false
     if !buffer.isEmpty && day != bufferDay { lock.unlock(); try flush(); lock.lock() }
-    if buffer.isEmpty { bufferDay = day; firstBuffered = t }
+    if buffer.isEmpty { bufferDay = day; firstBuffered = t; scheduleFlush() }
     buffer += History.marker + History.stamp(t) + "\n" + text + "\n"
     due = t.timeIntervalSince(firstBuffered ?? t) >= flushEvery || buffer.utf8.count >= 4 << 20
     lock.unlock()
     if due { try flush() }
   }
 
+  private func scheduleFlush() {
+    timer?.cancel()
+    let t = DispatchSource.makeTimerSource(queue: .global(qos: .utility))
+    t.schedule(deadline: .now() + flushEvery, leeway: .milliseconds(Int(flushEvery * 200)))
+    t.setEventHandler { [weak self] in
+      do { try self?.flush() } catch { log("cannot write history: \(error.localizedDescription)") }
+    }
+    t.resume()
+    timer = t
+  }
+
   func flush() throws {
     lock.lock()
     defer { lock.unlock() }
     guard !buffer.isEmpty else { return }
+    timer?.cancel()
+    timer = nil
     try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     let url = dir.appendingPathComponent("\(bufferDay).txt.gz")
     let member = try gzip(Data(buffer.utf8))

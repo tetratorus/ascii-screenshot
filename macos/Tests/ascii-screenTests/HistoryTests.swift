@@ -42,6 +42,14 @@ final class HistoryTests: XCTestCase {
     XCTAssertEqual(records.map(\.1), ["a", "b"])
   }
 
+  func testTimerFlushesWhenScreenGoesQuiet() throws {
+    let h = History(dir: dir, flushEvery: 0.2)
+    try h.record("only change")
+    Thread.sleep(forTimeInterval: 0.6)
+    let file = dir.appendingPathComponent("\(History.day(Date())).txt.gz")
+    XCTAssertEqual(History.records(try gunzip(file)).map(\.1), ["only change"])
+  }
+
   func testFrameAtReturnsLastFrameAtOrBeforeTimeAcrossMidnight() throws {
     let midnight = Calendar.current.startOfDay(for: Date(timeIntervalSince1970: 1_800_000_000))
     var t = midnight - 10

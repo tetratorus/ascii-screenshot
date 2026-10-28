@@ -23,7 +23,7 @@ Options:
   --display <i>        Display index (default 0)
   --stats              Log per-frame timing and CPU to stderr
   --history <dir>      Also keep every changed frame, gzip-compressed, in <dir>/YYYY-MM-DD.txt.gz
-                       (read with gzcat or --at; written every 5 minutes and on sleep/lock/exit)
+                       (read with gzcat or --at; saved within 10s of a change and on sleep/lock/exit)
   --keep-days <n>      Delete history files older than n days (default 14; 0 keeps everything)
 """
 
