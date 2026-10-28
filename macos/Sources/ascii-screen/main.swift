@@ -25,6 +25,8 @@ Options:
   --scale <f>          Capture scale relative to display points (default 1; 2 = Retina pixels)
   --fast               Faster, less accurate OCR
   --correction         OCR language correction (about 2x the CPU, little gain on UI text)
+  --auto-language      Detect the language of each read instead of English only (Chinese, Japanese,
+                       Korean, Thai, Russian, Arabic, ...; ~15% more CPU, ~90MB more memory)
   --no-cursor          Don't draw the pointer
   --full-every <n>     Full-screen OCR after n incremental frames (default 30)
   --no-atlas           OCR each changed region with its own Vision call (default: pack them into one)
@@ -55,6 +57,7 @@ while let a = args.next() {
   case "--scale": opts.scale = Double(value(a)) ?? opts.scale
   case "--fast": opts.fast = true
   case "--correction": opts.languageCorrection = true
+  case "--auto-language": opts.autoLanguage = true
   case "--no-cursor": opts.cursor = false
   case "--full-every": opts.fullEvery = Int(value(a)) ?? opts.fullEvery
   case "--no-atlas": opts.atlas = false

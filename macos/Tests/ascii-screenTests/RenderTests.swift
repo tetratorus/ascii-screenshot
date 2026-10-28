@@ -96,4 +96,24 @@ final class RenderTests: XCTestCase {
     let r = renderAscii([Obs(text: "long overflowing text", x: 0.8, y: 0.8, w: 0.2, h: 0.1)], [], nil, nil, 10, 5)
     XCTAssertTrue(rows(r.finalText).allSatisfy { cols($0).count == 10 })
   }
+
+  func testTextRunningIntoAVerticalLineKeepsItsEndAroundAnEllipsis() {
+    let text = Obs(text: "here-is-a-very-long-text-doesnt-fit-inside", x: 0, y: 0.5, w: 0.9, h: 0.1)
+    let r = renderAscii([text], [line("|", 25.0 / 40, 0, h: 1)], nil, nil, 40, 3)
+    XCTAssertTrue(rows(r.finalText)[1].hasPrefix("here-is-a-very-long\u{2026}nside|"), rows(r.finalText)[1])
+  }
+
+  func testFitKeepsStartAndLastCharacters() {
+    XCTAssertEqual(String(fit(Array("abcdefghij"), 7)), "abc\u{2026}hij")
+    XCTAssertEqual(String(fit(Array("short"), 7)), "short")
+    XCTAssertEqual(String(fit(Array("abcdef"), 2)), "ab")
+  }
+
+  func testWideCharactersTakeTwoColumnsSoLinesStayAligned() {
+    let r = renderAscii([Obs(text: "\u{6771}\u{4EAC}\u{99C5}", x: 0, y: 0.5, w: 0.2, h: 0.1)],
+                        [line("|", 10.0 / 20, 0, h: 1)], nil, nil, 20, 3)
+    let rs = rows(r.finalText)
+    XCTAssertEqual(rs[1], "\u{6771}\u{4EAC}\u{99C5}    |         ")
+    XCTAssertEqual(rs[0], "          |         ")
+  }
 }

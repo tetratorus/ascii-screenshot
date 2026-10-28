@@ -8,22 +8,57 @@ struct RenderResult { var originalText: String; var linesText: String; var final
 @inline(__always) func jsRound(_ v: Double) -> Int { jsFloor(v + 0.5) }
 
 private let separators: Set<String> = [".", ",", "\"", "'", ":", ";", "!", "?", "{", "}", "\u{2019}", "\u{201D}"]
-private let pointer: Unicode.Scalar = "\u{1F446}"
+private let pointer: Character = "\u{1F446}"
 
-func formatText(_ ocr: [Obs], _ W: Int, _ H: Int) -> [[UInt16]] {
+/// Terminal columns a character takes: emoji and East Asian wide characters take two.
+func columns(_ c: Character) -> Int {
+  guard let s = c.unicodeScalars.first else { return 0 }
+  if s.properties.isEmojiPresentation { return 2 }
+  switch s.value {
+  case 0x1100...0x115F, 0x2E80...0x303E, 0x3041...0x33FF, 0x3400...0x4DBF, 0x4E00...0x9FFF, 0xA000...0xA4CF,
+       0xAC00...0xD7A3, 0xF900...0xFAFF, 0xFE30...0xFE4F, 0xFF00...0xFF60, 0xFFE0...0xFFE6, 0x20000...0x3FFFD:
+    return 2
+  default: return 1
+  }
+}
+
+/// Shortens text to `room` columns by keeping its start and its last few characters around a "…".
+func fit(_ t: [Character], _ room: Int) -> [Character] {
+  func take(_ cs: some Sequence<Character>, _ n: Int) -> [Character] {
+    var out: [Character] = [], w = 0
+    for c in cs { w += columns(c); if w > n { break }; out.append(c) }
+    return out
+  }
+  guard t.reduce(0, { $0 + columns($1) }) > room else { return t }
+  guard room > 2 else { return take(t, room) }
+  let tail = Array(take(t.reversed(), min(5, (room - 1) / 2)).reversed())
+  return take(t, room - 1 - tail.reduce(0) { $0 + columns($1) }) + ["…"] + tail
+}
+
+/// Text laid out on a W x H grid of terminal cells; "" marks the second cell of a wide character.
+/// `walls[row]` holds the columns of vertical lines on that row: text that would run into one is shortened.
+func formatText(_ ocr: [Obs], _ W: Int, _ H: Int, walls: [[Int]] = []) -> [[String]] {
   var clusters = [[(Int, Obs)]](repeating: [], count: H)
   for (n, a) in ocr.enumerated() {
     clusters[min(H - 1, max(0, jsFloor((1 - a.y) * Double(H))))].append((n, a))
   }
-  var canvas = [[UInt16]](repeating: [UInt16](repeating: 32, count: W), count: H)
+  var canvas = [[String]](repeating: [String](repeating: " ", count: W), count: H)
   for i in 0..<H {
     let line = clusters[i].sorted { $0.1.x != $1.1.x ? $0.1.x < $1.1.x : $0.0 < $1.0 }.map { $0.1 }
     var lastX = 0
     for g in groupWords(line) {
-      let t = Array(g.text.utf16)
       let startX = max(jsFloor(g.x * Double(W)), lastX)
-      for (j, u) in t.enumerated() where startX + j >= 0 && startX + j < W { canvas[i][startX + j] = u }
-      lastX = startX + t.count + 1
+      let end = (i < walls.count ? walls[i] : []).first { $0 > startX } ?? W
+      var x = startX
+      for c in fit(Array(g.text), end - startX) {
+        let w = columns(c)
+        if x >= 0 && x + w <= W {
+          canvas[i][x] = String(c)
+          if w == 2 { canvas[i][x + 1] = "" }
+        }
+        x += w
+      }
+      lastX = x + 1
     }
   }
   return canvas
@@ -49,24 +84,32 @@ private func grouped(_ g: [Obs]) -> Obs {
 }
 
 func renderAscii(_ ocr: [Obs], _ lines: [DLine], _ nx: Double?, _ ny: Double?, _ W: Int, _ H: Int) -> RenderResult {
-  var canvas = formatText(ocr, W, H).map { Array(String(decoding: $0, as: UTF16.self).unicodeScalars) }
-  if let nx, let ny, !canvas.isEmpty {
-    let len = canvas[0].count
-    let cx = min(len - 1, jsRound(nx * Double(len))), cy = min(canvas.count - 1, jsRound(ny * Double(canvas.count)))
-    if cy >= 0 && cx >= 0 && cx < canvas[cy].count { // the emoji is two columns wide
-      let x = max(0, min(cx, canvas[cy].count - 2))
-      canvas[cy].replaceSubrange(x..<min(x + 2, canvas[cy].count), with: [pointer])
+  let grid = gridLines(lines.filter { !isTextEdge($0, ocr) }, W, H)
+  var walls = [[Int]](repeating: [], count: H)
+  for v in grid.vs { for y in v.y0...v.y1 { walls[y].append(v.x) } }
+  var canvas = formatText(ocr, W, H, walls: walls.map { $0.sorted() })
+  if let nx, let ny, !canvas.isEmpty, W >= 2 {
+    let cx = min(W - 1, jsRound(nx * Double(W))), cy = min(H - 1, jsRound(ny * Double(H)))
+    if cy >= 0 && cx >= 0 { // the emoji is two columns wide
+      let x = min(cx, W - 2)
+      if canvas[cy][x] == "" { canvas[cy][x - 1] = " " }
+      if x + 2 < W && canvas[cy][x + 2] == "" { canvas[cy][x + 2] = " " }
+      canvas[cy][x] = String(pointer); canvas[cy][x + 1] = ""
     }
   }
   let border = String(repeating: "_", count: W)
-  let bordered = ([border] + canvas.map { String(String.UnicodeScalarView($0)) } + [border]).joined(separator: "\n")
-  return addLines(bordered, lines.filter { !isTextEdge($0, ocr) }, W, H)
+  let bordered = ([border] + canvas.map { $0.joined() } + [border]).joined(separator: "\n")
+  return addLines(bordered, grid, W, H)
 }
 
 private struct HLine { var y, x0, x1: Int }
 private struct VLine { var x, y0, y1: Int }
 
 func addLines(_ asciiLines: String, _ lineData: [DLine], _ W: Int, _ H: Int) -> RenderResult {
+  addLines(asciiLines, gridLines(lineData, W, H), W, H)
+}
+
+private func gridLines(_ lineData: [DLine], _ W: Int, _ H: Int) -> (hs: [HLine], vs: [VLine]) {
   let Wd = Double(W), Hd = Double(H)
   func cx(_ v: Int) -> Int { max(0, min(v, W - 1)) }
   func cy(_ v: Int) -> Int { max(0, min(v, H - 1)) }
@@ -80,7 +123,11 @@ func addLines(_ asciiLines: String, _ lineData: [DLine], _ W: Int, _ H: Int) -> 
     }
   }
   snapCorners(&hs, &vs)
+  return (hs, vs)
+}
 
+private func addLines(_ asciiLines: String, _ grid: (hs: [HLine], vs: [VLine]), _ W: Int, _ H: Int) -> RenderResult {
+  let (hs, vs) = grid
   var lc = [[UInt8]](repeating: [UInt8](repeating: 32, count: W), count: H)
   for h in hs where h.x0 <= h.x1 { for x in h.x0...h.x1 { lc[h.y][x] = 95 } }
   for v in vs { for y in v.y0...v.y1 { lc[y][v.x] = 124 } }
@@ -91,21 +138,26 @@ func addLines(_ asciiLines: String, _ lineData: [DLine], _ W: Int, _ H: Int) -> 
   for v in blanks { lc[v.y0 - 1][v.x] = 32 }
   let linesText = lc.map { String(decoding: $0, as: UTF8.self) }.joined(separator: "\n")
 
-  let rows = asciiLines.unicodeScalars.split(separator: "\n", omittingEmptySubsequences: false)
+  let rows = asciiLines.split(separator: "\n", omittingEmptySubsequences: false)
   var out: [String] = []
   if rows.count > 2 {
     for (ri, row) in rows[1..<(rows.count - 1)].enumerated() {
-      var s = String.UnicodeScalarView()
+      func l(_ c: Int) -> UInt8 { ri < H && c < W ? lc[ri][c] : 32 }
+      var s = ""
       var ci = 0
       for ch in row {
-        let l: UInt8 = ri < H && ci < W ? lc[ri][ci] : 32
-        ci += ch == pointer ? 2 : 1
+        let w = columns(ch), c = ci
+        ci += w
         if ch == pointer { s.append(ch) }
-        else if ch == " " || l == 124 { s.append(Unicode.Scalar(l)) }
-        else if l == 95 { s.append(ch); s.append("\u{0332}") }
+        else if w == 2 && (l(c) == 124 || l(c + 1) == 124) { // a wide character under a vertical line gives way to it
+          s.append(Character(Unicode.Scalar(l(c) == 95 ? 32 : l(c))))
+          s.append(Character(Unicode.Scalar(l(c + 1) == 95 ? 32 : l(c + 1))))
+        }
+        else if ch == " " || l(c) == 124 { s.append(Character(Unicode.Scalar(l(c)))) }
+        else if l(c) == 95 { s.append(ch); s.append("\u{0332}") }
         else { s.append(ch) }
       }
-      out.append(String(s))
+      out.append(s)
     }
   }
   return RenderResult(originalText: asciiLines, linesText: linesText, finalText: out.joined(separator: "\n"))
