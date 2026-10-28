@@ -9,6 +9,7 @@ import cv2
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
+SWIFT = ROOT / "macos" / ".build" / "release" / "ascii-screen"
 sys.path.insert(0, str(ROOT))
 from ascii_screenshot import detect_lines
 
@@ -29,6 +30,9 @@ class BoundaryTests(unittest.TestCase):
             cwd=ROOT, text=True, capture_output=True, check=True,
         )
         self.assertEqual(python, json.loads(node.stdout))
+        if SWIFT.exists():
+            swift = subprocess.run([str(SWIFT), "--detect-json", self.path], text=True, capture_output=True, check=True)
+            self.assertEqual(python, json.loads(swift.stdout))
         self.assertEqual(python[-4:], [
             {"text": "|", "origin": {"x": 0, "y": 0}, "size": {"width": 0, "height": 1}},
             {"text": "|", "origin": {"x": 1, "y": 0}, "size": {"width": 0, "height": 1}},

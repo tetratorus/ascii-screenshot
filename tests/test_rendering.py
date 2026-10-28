@@ -5,6 +5,7 @@ import sys
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+SWIFT = ROOT / "macos" / ".build" / "release" / "ascii-screen"
 sys.path.insert(0, str(ROOT))
 from ascii_screenshot import add_lines_to_ascii, ascii
 
@@ -24,6 +25,10 @@ class RenderingTests(unittest.TestCase):
              json.dumps([function, args])], cwd=ROOT, text=True, capture_output=True, check=True,
         )
         self.assertEqual(result, json.loads(node.stdout))
+        if SWIFT.exists():
+            swift = subprocess.run([str(SWIFT), "--render-json"], input=json.dumps({"fn": function, "args": args}),
+                                   text=True, capture_output=True, check=True)
+            self.assertEqual(result, json.loads(swift.stdout))
         return result
 
     def test_intersections_preserve_both_orientations_in_either_order(self):
