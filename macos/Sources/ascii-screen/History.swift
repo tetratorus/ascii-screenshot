@@ -55,17 +55,28 @@ final class History {
     guard !buffer.isEmpty else { return }
     timer?.cancel()
     timer = nil
-    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-    let url = dir.appendingPathComponent("\(bufferDay).txt.gz")
-    let member = try gzip(Data(buffer.utf8))
-    if !FileManager.default.fileExists(atPath: url.path) {
-      FileManager.default.createFile(atPath: url.path, contents: nil)
-      prune()
+    do {
+      try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true,
+                                              attributes: [.posixPermissions: 0o700])
+      let url = dir.appendingPathComponent("\(bufferDay).txt.gz")
+      let member = try gzip(Data(buffer.utf8))
+      if !FileManager.default.fileExists(atPath: url.path) {
+        FileManager.default.createFile(atPath: url.path, contents: nil, attributes: [.posixPermissions: 0o600])
+        prune()
+      }
+      let fh = try FileHandle(forWritingTo: url)
+      defer { try? fh.close() }
+      try fh.seekToEnd()
+      try fh.write(contentsOf: member)
+    } catch {
+      // Disk full or unwritable: retry with later frames, but don't let memory grow without bound.
+      if buffer.utf8.count > 16 << 20 {
+        buffer = ""
+        firstBuffered = nil
+        log("history: dropped unsaved frames after repeated write failures")
+      }
+      throw error
     }
-    let fh = try FileHandle(forWritingTo: url)
-    defer { try? fh.close() }
-    try fh.seekToEnd()
-    try fh.write(contentsOf: member)
     buffer = ""
     firstBuffered = nil
   }
@@ -167,18 +178,38 @@ func gzip(_ data: Data) throws -> Data {
   return out
 }
 
-/// Decompress a (possibly multi-member) gzip file; macOS ships gzip, so let it do the parsing.
+/// Decompress a multi-member gzip file.
 func gunzip(_ url: URL) throws -> String {
-  let p = Process()
-  p.executableURL = URL(fileURLWithPath: "/usr/bin/gzip")
-  p.arguments = ["-dc", url.path]
-  let pipe = Pipe()
-  p.standardOutput = pipe
-  try p.run()
-  let data = pipe.fileHandleForReading.readDataToEndOfFile()
-  p.waitUntilExit()
-  guard p.terminationStatus == 0 else {
-    throw NSError(domain: "ascii-screen", code: 3, userInfo: [NSLocalizedDescriptionKey: "cannot decompress \(url.path)"])
+  String(decoding: inflateMembers(try Data(contentsOf: url)), as: UTF8.self)
+}
+
+/// Decode each gzip member in turn. A damaged or truncated member (e.g. a crash mid-write) is dropped
+/// and decoding resumes at the next gzip header, so one bad write can't hide the rest of the day.
+func inflateMembers(_ data: Data) -> Data {
+  let bytes = [UInt8](data)
+  var out = Data(), pos = 0
+  let isHeader = { (i: Int) in i + 2 < bytes.count && bytes[i] == 0x1f && bytes[i + 1] == 0x8b && bytes[i + 2] == 8 }
+  var chunk = [UInt8](repeating: 0, count: 1 << 16)
+  while pos < bytes.count {
+    guard isHeader(pos) else { pos += 1; continue }
+    var z = z_stream()
+    guard inflateInit2_(&z, 31, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size)) == Z_OK else { break }
+    var member = Data(), status = Z_OK
+    bytes.withUnsafeBufferPointer { src in
+      z.next_in = UnsafeMutablePointer(mutating: src.baseAddress! + pos)
+      z.avail_in = uInt(src.count - pos)
+      repeat {
+        chunk.withUnsafeMutableBufferPointer { dst in
+          z.next_out = dst.baseAddress
+          z.avail_out = uInt(dst.count)
+          status = inflate(&z, Z_NO_FLUSH)
+          member.append(dst.baseAddress!, count: dst.count - Int(z.avail_out))
+        }
+      } while status == Z_OK
+    }
+    let used = Int(z.total_in)
+    inflateEnd(&z)
+    if status == Z_STREAM_END { out += member; pos += max(used, 1) } else { pos += 1 }
   }
-  return String(decoding: data, as: UTF8.self)
+  return out
 }

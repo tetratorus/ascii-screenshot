@@ -67,6 +67,7 @@ final class TextRecognizer {
                       using recognize: ((CVPixelBuffer, [CGRect]) -> [[Obs]])? = nil) -> [Obs] {
     let gap = 12
     let src = rects.map { r in (x: Int(r.minX), y: Int(r.minY), w: Int(r.width), h: Int(r.height)) }.filter { $0.w > 0 && $0.h > 0 }
+    guard !src.isEmpty else { return [] }
     let area = src.reduce(0) { $0 + ($1.w + gap) * ($1.h + gap) }
     let AW = max(src.map(\.w).max()! + 2 * gap, Int(Double(area).squareRoot() * 1.3))
     var x = gap, y = gap, rowH = 0
@@ -83,14 +84,16 @@ final class TextRecognizer {
     guard let atlas else { return [] }
     CVPixelBufferLockBaseAddress(atlas, [])
     CVPixelBufferLockBaseAddress(pb, .readOnly)
-    let dst = CVPixelBufferGetBaseAddress(atlas)!, dRow = CVPixelBufferGetBytesPerRow(atlas)
-    let sp = CVPixelBufferGetBaseAddress(pb)!, sRow = CVPixelBufferGetBytesPerRow(pb)
+    defer {
+      CVPixelBufferUnlockBaseAddress(pb, .readOnly)
+      CVPixelBufferUnlockBaseAddress(atlas, [])
+    }
+    guard let dst = CVPixelBufferGetBaseAddress(atlas), let sp = CVPixelBufferGetBaseAddress(pb) else { return [] }
+    let dRow = CVPixelBufferGetBytesPerRow(atlas), sRow = CVPixelBufferGetBytesPerRow(pb)
     memset(dst, 0xFF, dRow * AH)
     for (r, p) in zip(src, places) {
       for row in 0..<r.h { memcpy(dst + (p.y + row) * dRow + p.x * 4, sp + (r.y + row) * sRow + r.x * 4, r.w * 4) }
     }
-    CVPixelBufferUnlockBaseAddress(pb, .readOnly)
-    CVPixelBufferUnlockBaseAddress(atlas, [])
     let W = Double(CVPixelBufferGetWidth(pb)), H = Double(CVPixelBufferGetHeight(pb))
     let found = (recognize ?? self.recognize)(atlas, [CGRect(x: 0, y: 0, width: 1, height: 1)])[0]
     return found.compactMap { o in
