@@ -14,3 +14,4 @@
 - Use `--only after-default-1x --workload static` for a single native case. `--output` must name a new directory; omitting it creates a private temporary directory.
 - The runner waits for the first native output before warmup. Cold initialization must not be reported as steady-state OCR latency.
 - Summarize completed runs with `python3 macos/benchmarks/summarize.py <events.jsonl> <power-log>`. System rail power is not app-attributed power, and process Energy Impact is not an Activity Monitor UI reading.
+- `macos/install.sh` installs a LaunchAgent and starts capturing the display; run it only with explicit approval. Screen Recording for the agent is granted per bundle id in System Settings and cannot be scripted (the TCC database is SIP-protected).

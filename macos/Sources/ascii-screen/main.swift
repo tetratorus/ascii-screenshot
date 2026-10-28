@@ -105,7 +105,7 @@ default:
 func checkPermission() throws {
   if !CGPreflightScreenCaptureAccess() {
     CGRequestScreenCaptureAccess()
-    log("Grant Screen Recording to your terminal in System Settings > Privacy & Security, then rerun.")
+    log("Screen Recording permission missing: allow this app (or your terminal) in System Settings > Privacy & Security > Screen Recording.")
     exit(1)
   }
 }
