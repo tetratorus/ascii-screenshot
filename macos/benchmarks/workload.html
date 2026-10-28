@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>ASCII screen energy test</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #eef1f4; color: #202830; font: 16px Arial, sans-serif; overflow: hidden; }
+  header { height: 100px; padding: 20px 32px; background: #fff; border-bottom: 1px solid #9ca8b4; }
+  h1 { margin: 0 0 8px; font-size: 24px; }
+  #counter { position: absolute; top: 26px; right: 36px; padding: 8px; width: 220px; font: 24px monospace; background: white; }
+  main { position: absolute; inset: 100px 0 0; overflow: hidden; padding: 24px 32px; }
+  #content { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  article { height: 240px; padding: 18px; background: white; border: 1px solid #8795a3; }
+  h2 { margin: 0 0 12px; font-size: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td { border: 1px solid #bcc5ce; padding: 6px; }
+  .small { font-size: 12px; }
+  .scroll #content { animation: scroll 24s linear infinite; }
+  @keyframes scroll { from { transform: translateY(0); } to { transform: translateY(-3120px); } }
+</style>
+<header><h1>Screenshot recognition benchmark</h1><span id="mode">Static screen</span><span id="counter">Count 000000</span></header>
+<main><div id="content"></div></main>
+<script>
+  const content = document.querySelector('#content');
+  for (let i = 0; i < 60; i++) {
+    const article = document.createElement('article');
+    article.innerHTML = `<h2>Panel ${String(i + 1).padStart(2, '0')}</h2>
+      <table><tr><td>Download size</td><td>4.35KB</td></tr>
+      <tr><td>Status</td><td>Ready</td></tr><tr><td>Records</td><td>${1000 + i * 37}</td></tr></table>
+      <p>This is a test of text and field borders.</p><p class="small">Small UI text: 0O 1Il 0123456789</p>`;
+    content.append(article);
+  }
+  let timer;
+  window.setWorkload = name => {
+    clearInterval(timer);
+    document.body.className = name;
+    document.querySelector('#mode').textContent = name;
+    document.querySelector('#counter').textContent = 'Count 000000';
+    let n = 0;
+    if (name === 'small') timer = setInterval(() => {
+      document.querySelector('#counter').textContent = `Count ${String(++n).padStart(6, '0')}`;
+    }, 1000);
+    return { name, width: innerWidth, height: innerHeight, scale: devicePixelRatio };
+  };
+  window.setWorkload('static');
+</script>
+</html>

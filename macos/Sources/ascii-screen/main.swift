@@ -16,6 +16,7 @@ Options:
   --correction         OCR language correction (about 2x the CPU, little gain on UI text)
   --no-cursor          Don't draw the pointer
   --full-every <n>     Full-screen OCR after n incremental frames (default 30)
+  --no-atlas           OCR each changed region with its own Vision call (default: pack them into one)
   --out <file>         Write each frame atomically to <file> instead of stdout
   --display <i>        Display index (default 0)
   --stats              Log per-frame timing and CPU to stderr
@@ -38,6 +39,7 @@ while let a = args.next() {
   case "--correction": opts.languageCorrection = true
   case "--no-cursor": opts.cursor = false
   case "--full-every": opts.fullEvery = Int(value(a)) ?? opts.fullEvery
+  case "--no-atlas": opts.atlas = false
   case "--out": opts.out = value(a)
   case "--display": opts.display = Int(value(a)) ?? 0
   case "--stats": opts.stats = true
@@ -103,7 +105,7 @@ default:
 func checkPermission() throws {
   if !CGPreflightScreenCaptureAccess() {
     CGRequestScreenCaptureAccess()
-    log("Grant Screen Recording to your terminal in System Settings > Privacy & Security, then rerun.")
+    log("Screen Recording permission missing: allow this app (or your terminal) in System Settings > Privacy & Security > Screen Recording.")
     exit(1)
   }
 }

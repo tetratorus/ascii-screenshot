@@ -32,6 +32,7 @@ ascii-screenshot path/to/img
 
 - **Change-driven.** ScreenCaptureKit only hands over a frame when something on screen changed, so a static screen costs ~0 CPU. Frames that are pixel-identical to the last one are dropped after a `memcmp`.
 - **Incremental OCR.** Changed 32px tiles are grouped into regions, grown so no cached word straddles an edge, and only those regions are re-OCRed (Vision `regionOfInterest`); the rest of the text is reused. A full OCR runs when over half the screen changed, and every 30 incremental frames (`--full-every`).
+- **One Vision call per frame.** Each Vision call has a large fixed cost (~50–70ms CPU even on a tiny crop), so when several separate regions change they are copied into one packed image and read in a single call (`--no-atlas` to disable). Benchmarks: `macos/benchmarks/OCR.md`.
 - **No language correction by default.** On UI text it barely changes the output and costs ~2x the CPU (`--correction` turns it back on). `--fast` is cheaper still but much worse on small UI text.
 - **In-process, in memory.** Capture, line detection and rendering run in one process on the captured buffer: no `screencapture`/`osascript`/node per frame, and no PNG encode/decode. Line detection takes ~5ms natively vs ~150ms in JS.
 - **Low priority.** The process runs as a Darwin background process (efficiency cores, throttled I/O), and capture stops while the screen is locked or asleep.
@@ -55,7 +56,17 @@ cd macos && swift build -c release
 .build/release/ascii-screen --stats              # per-frame timing/CPU on stderr
 ```
 
-Your terminal needs Screen Recording permission (System Settings > Privacy & Security). When stdout isn't a terminal, frames are separated by a form feed line. The Swift detector and renderer are ports of `detect_lines.js` and `ascii.js`; the test suite checks they produce identical output whenever the binary has been built.
+### Run it in the background (login agent)
+
+```bash
+macos/install.sh                     # build, install, start now and at every login
+macos/install.sh --interval 2 --out ~/screen.txt   # same, with your own flags
+macos/install.sh --uninstall
+```
+
+This copies the binary into `~/Applications/ASCII Screen.app`, signs it with a fixed identity (`com.tetratorus.ascii-screen`) so the Screen Recording permission survives rebuilds, and registers a LaunchAgent. By default it writes `~/.ascii-screen/screen.txt` and logs to `~/Library/Logs/ascii-screen.log`. The first time, macOS lists "ASCII Screen" under System Settings > Privacy & Security > Screen Recording. Turn it on and the agent restarts itself within 30s. launchd also restarts it if capture stops (for example when a display is unplugged). Check it with `launchctl print gui/$(id -u)/com.tetratorus.ascii-screen`.
+
+When run from a terminal, the terminal needs Screen Recording permission (System Settings > Privacy & Security). When stdout isn't a terminal, frames are separated by a form feed line. The Swift detector and renderer are ports of `detect_lines.js` and `ascii.js`; the test suite checks they produce identical output whenever the binary has been built.
 
 ## Python port (cross-platform)
 `index.py` mirrors the CLI using RapidOCR by default, so it runs off macOS too. Requires Python 3.9+.
