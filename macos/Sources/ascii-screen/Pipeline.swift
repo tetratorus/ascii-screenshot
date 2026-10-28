@@ -49,7 +49,8 @@ final class Pipeline {
     CVPixelBufferLockBaseAddress(pb, .readOnly)
     defer { CVPixelBufferUnlockBaseAddress(pb, .readOnly) }
     let w = CVPixelBufferGetWidth(pb), h = CVPixelBufferGetHeight(pb)
-    let bm = Bitmap(base: CVPixelBufferGetBaseAddress(pb)!.assumingMemoryBound(to: UInt8.self),
+    guard w > 0, h > 0, let base = CVPixelBufferGetBaseAddress(pb) else { return false }
+    let bm = Bitmap(base: base.assumingMemoryBound(to: UInt8.self),
                     width: w, height: h, rowBytes: CVPixelBufferGetBytesPerRow(pb))
 
     var regions: [CGRect]? = nil // pixel rects, top-left origin; nil = everything
@@ -73,9 +74,9 @@ final class Pipeline {
     let tLines = Date()
 
     let W = Double(w), H = Double(h)
-    if var rects = regions {
-      rects = expandOverText(rects, W, H)
-      if rects.reduce(0, { $0 + $1.width * $1.height }) > 0.5 * W * H { regions = nil } else { regions = rects }
+    if let rects = regions {
+      let grown = expandOverText(rects, W, H)
+      regions = grown.flatMap { $0.reduce(0, { $0 + $1.width * $1.height }) > 0.5 * W * H ? nil : $0 }
     }
     if let rects = regions {
       let rois = rects.map { CGRect(x: $0.minX / W, y: 1 - $0.maxY / H, width: $0.width / W, height: $0.height / H) }
@@ -133,11 +134,20 @@ final class Pipeline {
   }
 
   /// Grow regions until no cached text box straddles a region edge, then merge overlaps.
-  private func expandOverText(_ input: [CGRect], _ W: Double, _ H: Double) -> [CGRect] {
-    let boxes = obs.map { CGRect(x: $0.x * W, y: (1 - $0.y - $0.h) * H, width: $0.w * W, height: $0.h * H).insetBy(dx: -2, dy: -2).integral }
-    var rects = input, changed = true
+  /// Returns nil (read the whole screen) if that doesn't settle, so a bad box can never spin the CPU.
+  private func expandOverText(_ input: [CGRect], _ W: Double, _ H: Double) -> [CGRect]? {
+    let bounds = CGRect(x: 0, y: 0, width: W, height: H)
+    let boxes = obs.compactMap { o -> CGRect? in
+      let r = CGRect(x: o.x * W, y: (1 - o.y - o.h) * H, width: o.w * W, height: o.h * H).insetBy(dx: -2, dy: -2)
+      guard [r.minX, r.minY, r.width, r.height].allSatisfy(\.isFinite) else { return nil }
+      let c = r.intersection(bounds)
+      return c.isNull || c.isEmpty ? nil : c.integral
+    }
+    var rects = input.filter { !$0.isNull && !$0.isEmpty }, changed = true, passes = 0
     while changed {
       changed = false
+      passes += 1
+      if passes > 64 { return nil }
       for i in rects.indices {
         for b in boxes where rects[i].intersects(b) && !rects[i].contains(b) { rects[i] = rects[i].union(b); changed = true }
       }
@@ -147,8 +157,7 @@ final class Pipeline {
       }
       rects = merged
     }
-    let bounds = CGRect(x: 0, y: 0, width: W, height: H)
-    return rects.map { $0.intersection(bounds).integral }
+    return rects.map { $0.intersection(bounds).integral }.filter { !$0.isNull && !$0.isEmpty }
   }
 }
 

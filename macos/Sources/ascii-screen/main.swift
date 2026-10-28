@@ -73,6 +73,18 @@ while let a = args.next() {
   }
 }
 
+func invalid(_ m: String) -> Never { log(m); exit(2) }
+if !(1...1000).contains(opts.width) { invalid("--width must be 1-1000") }
+if let h = opts.height, !(1...1000).contains(h) { invalid("--height must be 1-1000") }
+if !(opts.interval >= 0.1 && opts.interval <= 3600) { invalid("--interval must be 0.1-3600 seconds") }
+if !(opts.scale > 0 && opts.scale <= 4) { invalid("--scale must be above 0 and at most 4") }
+if opts.display < 0 { invalid("--display must be 0 or more") }
+if opts.fullEvery < 0 { invalid("--full-every must be 0 or more") }
+if opts.keepDays < 0 { invalid("--keep-days must be 0 or more") }
+if !(maxGap >= 0) { invalid("--max-gap must be 0 or more") }
+// Frames and history hold whatever was on screen; keep everything we create private to this user.
+umask(0o077)
+
 switch mode {
 case "image", "detect":
   guard let pb = loadImage(imagePath) else { log("cannot read \(imagePath)"); exit(1) }
@@ -140,7 +152,7 @@ default:
   setpriority(PRIO_DARWIN_PROCESS, 0, PRIO_DARWIN_BG) // efficiency cores, throttled I/O
   let live = Live(opts)
   var signalSources: [DispatchSourceSignal] = []
-  for sig in [SIGTERM, SIGINT] {
+  for sig in [SIGTERM, SIGINT, SIGHUP] {
     signal(sig, SIG_IGN)
     let src = DispatchSource.makeSignalSource(signal: sig, queue: .main)
     src.setEventHandler { live.flushHistory(); exit(0) }

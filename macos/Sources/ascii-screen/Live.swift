@@ -77,7 +77,8 @@ final class Live: NSObject, SCStreamOutput, SCStreamDelegate {
           let info = (CMSampleBufferGetSampleAttachmentsArray(sb, createIfNecessary: false) as? [[SCStreamFrameInfo: Any]])?.first,
           let raw = info[.status] as? Int, SCFrameStatus(rawValue: raw) == .complete,
           let pb = sb.imageBuffer else { return }
-    if pipeline.process(pb) { emit() }
+    // Vision autoreleases per call; drain every frame so a long-running service doesn't creep.
+    autoreleasepool { if pipeline.process(pb) { emit() } }
   }
 
   func stream(_ stream: SCStream, didStopWithError error: Error) {
@@ -135,6 +136,7 @@ final class Live: NSObject, SCStreamOutput, SCStreamDelegate {
 
 func captureOnce(_ opts: Options) async throws -> CVPixelBuffer {
   let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+  guard opts.display < content.displays.count else { throw NSError(domain: "ascii-screen", code: 1, userInfo: [NSLocalizedDescriptionKey: "no display \(opts.display)"]) }
   let display = content.displays[opts.display]
   let cfg = SCStreamConfiguration()
   cfg.width = Int(Double(display.width) * opts.scale)

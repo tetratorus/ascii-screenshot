@@ -10,7 +10,7 @@ struct Playback {
   /// Real seconds to keep frame `i` on screen before showing frame `i + 1`.
   func delay(after i: Int) -> Double {
     guard i + 1 < frames.count else { return 0 }
-    return min(frames[i + 1].0.timeIntervalSince(frames[i].0) / speed, maxGap)
+    return max(0, min(frames[i + 1].0.timeIntervalSince(frames[i].0) / speed, maxGap))
   }
 
   enum Key: Equatable { case quit, pause, faster, slower, next, previous, other }

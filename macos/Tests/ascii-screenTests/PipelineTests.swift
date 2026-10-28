@@ -124,4 +124,19 @@ final class PipelineTests: XCTestCase {
       XCTAssertEqual(requests.last?.count, atlas ? 1 : 2)
     }
   }
+
+  func testNonFiniteCachedBoxesNeitherCrashNorHang() {
+    let bad = [Obs(text: "nan", x: .nan, y: 0.5, w: 0.1, h: 0.1), Obs(text: "inf", x: 0.2, y: 0.5, w: .infinity, h: 0.1),
+               Obs(text: "ok", x: 0.2, y: 0.5, w: 0.1, h: 0.05)]
+    var calls = 0
+    let p = Pipeline(Options()) { _, rois in calls += 1; return calls == 1 ? [bad] : rois.map { _ in [] } }
+    p.process(frame())
+    XCTAssertTrue(p.process(frame([(170, 290)])))
+    XCTAssertEqual(calls, 2)
+  }
+
+  func testAtlasWithOnlyEmptyRegionsReturnsNothing() {
+    let p = Pipeline(Options()) { _, rois in rois.map { _ in [] } }
+    XCTAssertEqual(p.ocr.recognizeAtlas(frame(), [.zero, CGRect(x: 5, y: 5, width: 0, height: 9)]).count, 0)
+  }
 }

@@ -37,6 +37,10 @@ PL
 # rebuild; requiring only the identifier keeps it.
 codesign --force --sign - --identifier "$LABEL" -r="designated => identifier \"$LABEL\"" "$APP"
 
+xml() { local s=${1//&/&amp;}; s=${s//</&lt;}; printf '%s' "${s//>/&gt;}"; }
+# Frames and history contain whatever was on screen: owner-only.
+chmod 700 "$DATA" && chmod -R go-rwx "$DATA"
+
 ARGS=("$@"); [[ ${#ARGS[@]} -eq 0 ]] && ARGS=(--out "$DATA/screen.txt" --history "$DATA/history")
 {
   cat <<PL
@@ -45,9 +49,9 @@ ARGS=("$@"); [[ ${#ARGS[@]} -eq 0 ]] && ARGS=(--out "$DATA/screen.txt" --history
 <plist version="1.0"><dict>
   <key>Label</key><string>$LABEL</string>
   <key>ProgramArguments</key><array>
-    <string>$BIN</string>
+    <string>$(xml "$BIN")</string>
 PL
-  for a in "${ARGS[@]}"; do printf '    <string>%s</string>\n' "$a"; done
+  for a in "${ARGS[@]}"; do printf '    <string>%s</string>\n' "$(xml "$a")"; done
   cat <<PL
   </array>
   <key>RunAtLoad</key><true/>
@@ -56,7 +60,7 @@ PL
   <key>ProcessType</key><string>Background</string>
   <key>LowPriorityIO</key><true/>
   <key>Nice</key><integer>10</integer>
-  <key>StandardErrorPath</key><string>$LOG</string>
+  <key>StandardErrorPath</key><string>$(xml "$LOG")</string>
   <key>LimitLoadToSessionType</key><string>Aqua</string>
 </dict></plist>
 PL

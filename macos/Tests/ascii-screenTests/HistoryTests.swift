@@ -118,4 +118,31 @@ final class HistoryTests: XCTestCase {
     XCTAssertEqual(Playback.key([0x78]), .other)
     XCTAssertEqual(Playback.keys([0x1b, 0x5b, 0x44, 0x1b, 0x5b, 0x44, 0x71]), [.previous, .previous, .quit])
   }
+
+  func testDamagedMemberDoesNotHideTheRestOfTheDay() throws {
+    func member(_ s: String) throws -> Data { try gzip(Data(s.utf8)) }
+    let a = try member("@@ 2026-10-27T10:00:00Z\nA\n"), b = try member("@@ 2026-10-27T10:00:10Z\nB\n")
+    let c = try member("@@ 2026-10-27T10:00:20Z\nC\n"), d = try member("@@ 2026-10-27T10:00:30Z\nD\n")
+    var corrupt = c
+    corrupt[corrupt.count / 2] ^= 0xFF
+    let text = String(decoding: inflateMembers(a + b + corrupt + d + c.prefix(c.count - 4)), as: UTF8.self)
+    XCTAssertEqual(History.records(text).map(\.1), ["A", "B", "D"])
+  }
+
+  func testHistoryFilesArePrivate() throws {
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathComponent("h")
+    defer { try? FileManager.default.removeItem(at: dir.deletingLastPathComponent()) }
+    let h = History(dir: dir)
+    try h.record("secret")
+    try h.flush()
+    let file = try FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)[0]
+    XCTAssertEqual(try FileManager.default.attributesOfItem(atPath: dir.path)[.posixPermissions] as? Int, 0o700)
+    XCTAssertEqual(try FileManager.default.attributesOfItem(atPath: file.path)[.posixPermissions] as? Int, 0o600)
+  }
+
+  func testPlaybackDelayNeverNegativeWhenClockMovesBack() {
+    let t = Date()
+    let p = Playback(frames: [(t, "a"), (t.addingTimeInterval(-60), "b")], speed: 1, maxGap: 2)
+    XCTAssertEqual(p.delay(after: 0), 0)
+  }
 }
