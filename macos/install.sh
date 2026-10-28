@@ -33,8 +33,9 @@ cat > "$APP/Contents/Info.plist" <<PL
   <key>LSUIElement</key><true/>
 </dict></plist>
 PL
-# A stable signing identity keeps the Screen Recording grant across rebuilds.
-codesign --force --sign - --identifier "$LABEL" "$APP"
+# Ad-hoc signatures default to a cdhash requirement, which breaks the Screen Recording grant on every
+# rebuild; requiring only the identifier keeps it.
+codesign --force --sign - --identifier "$LABEL" -r="designated => identifier \"$LABEL\"" "$APP"
 
 ARGS=("$@"); [[ ${#ARGS[@]} -eq 0 ]] && ARGS=(--out "$DATA/screen.txt")
 {
