@@ -31,7 +31,7 @@ func fit(_ t: [Character], _ room: Int) -> [Character] {
   }
   guard t.reduce(0, { $0 + columns($1) }) > room else { return t }
   guard room > 2 else { return take(t, room) }
-  let tail = Array(take(t.reversed(), min(5, (room - 1) / 2)).reversed())
+  let tail = Array(take(t.reversed(), max(min(5, (room - 1) / 2), min(columns(t[t.count - 1]), room - 1))).reversed())
   return take(t, room - 1 - tail.reduce(0) { $0 + columns($1) }) + ["…"] + tail
 }
 
@@ -45,10 +45,14 @@ func formatText(_ ocr: [Obs], _ W: Int, _ H: Int, walls: [[Int]] = []) -> [[Stri
   var canvas = [[String]](repeating: [String](repeating: " ", count: W), count: H)
   for i in 0..<H {
     let line = clusters[i].sorted { $0.1.x != $1.1.x ? $0.1.x < $1.1.x : $0.0 < $1.0 }.map { $0.1 }
+    let rowWalls = i < walls.count ? walls[i] : []
     var lastX = 0
-    for g in groupWords(line) {
+    for g in groupWords(line, apart: { a, b in
+      let from = jsFloor(a.x * Double(W)), to = jsFloor(b.x * Double(W))
+      return rowWalls.contains { $0 > from && $0 <= to }
+    }) {
       let startX = max(jsFloor(g.x * Double(W)), lastX)
-      let end = (i < walls.count ? walls[i] : []).first { $0 > startX } ?? W
+      let end = rowWalls.first { $0 > startX } ?? W
       var x = startX
       for c in fit(Array(g.text), end - startX) {
         let w = columns(c)
@@ -64,12 +68,13 @@ func formatText(_ ocr: [Obs], _ W: Int, _ H: Int, walls: [[Int]] = []) -> [[Stri
   return canvas
 }
 
-func groupWords(_ anns: [Obs]) -> [Obs] {
+/// `apart(a, b)` keeps neighbouring words in separate groups, e.g. when a box line runs between them.
+func groupWords(_ anns: [Obs], apart: (Obs, Obs) -> Bool = { _, _ in false }) -> [Obs] {
   var out: [Obs] = [], cur: [Obs] = []
   for a in anns {
     guard let prev = cur.last else { cur.append(a); continue }
     let charWidth = prev.w / Double(prev.text.utf16.count) * 2
-    if a.x <= prev.x + prev.w + charWidth { cur.append(a) } else { out.append(grouped(cur)); cur = [a] }
+    if a.x <= prev.x + prev.w + charWidth && !apart(prev, a) { cur.append(a) } else { out.append(grouped(cur)); cur = [a] }
   }
   if !cur.isEmpty { out.append(grouped(cur)) }
   return out

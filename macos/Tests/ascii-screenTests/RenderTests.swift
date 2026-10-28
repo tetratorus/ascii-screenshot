@@ -116,4 +116,14 @@ final class RenderTests: XCTestCase {
     XCTAssertEqual(rs[1], "\u{6771}\u{4EAC}\u{99C5}    |         ")
     XCTAssertEqual(rs[0], "          |         ")
   }
+
+  func testWordsOnEitherSideOfAVerticalLineStayOnTheirSide() {
+    let r = renderAscii([Obs(text: "Name", x: 0, y: 0.5, w: 0.2, h: 0.1), Obs(text: "Value", x: 0.28, y: 0.5, w: 0.2, h: 0.1)],
+                        [line("|", 10.0 / 40, 0, h: 1)], nil, nil, 40, 3)
+    XCTAssertTrue(rows(r.finalText)[1].hasPrefix("Name      |Value"), rows(r.finalText)[1])
+  }
+
+  func testFitKeepsAWideLastCharacterWhenItFits() {
+    XCTAssertEqual(String(fit(Array("\u{6771}\u{4EAC}\u{99C5}"), 4)), "\u{2026}\u{99C5}")
+  }
 }
