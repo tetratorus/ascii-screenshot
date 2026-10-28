@@ -6,11 +6,14 @@ import Vision
 final class TextRecognizer {
   let level: VNRequestTextRecognitionLevel
   let languageCorrection: Bool
+  private let stats: Bool
+  private var loggedDevices = false
   private(set) var device = "default"
 
-  init(fast: Bool, languageCorrection: Bool) {
+  init(fast: Bool, languageCorrection: Bool, stats: Bool = false) {
     level = fast ? .fast : .accurate
     self.languageCorrection = languageCorrection
+    self.stats = stats
   }
 
   private func request(_ roi: CGRect) -> VNRecognizeTextRequest {
@@ -26,8 +29,16 @@ final class TextRecognizer {
           r.setComputeDevice(ane, for: stage)
           device = "neuralEngine"
         }
+        if stats && !loggedDevices {
+          let supported = list.map(deviceName).joined(separator: ",")
+          let selected = r.computeDevice(for: stage).map(deviceName) ?? "automatic"
+          log("OCR stage=\(stage.rawValue) supported=[\(supported)] selected=\(selected) (selection, not measured utilization)")
+        }
       }
+    } else if stats && !loggedDevices {
+      log("OCR compute devices unavailable; using automatic selection")
     }
+    loggedDevices = true
     return r
   }
 
@@ -47,6 +58,15 @@ final class TextRecognizer {
         return Obs(text: s, x: roi.minX + b.minX * roi.width, y: roi.minY + b.minY * roi.height,
                    w: b.width * roi.width, h: b.height * roi.height)
       }
+    }
+  }
+
+  private func deviceName(_ device: MLComputeDevice) -> String {
+    switch device {
+    case .cpu: return "cpu"
+    case .gpu: return "gpu"
+    case .neuralEngine: return "neuralEngine"
+    @unknown default: return "unknown"
     }
   }
 }

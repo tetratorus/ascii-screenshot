@@ -10,5 +10,6 @@ let package = Package(
       path: "Sources/ascii-screen",
       swiftSettings: [.unsafeFlags(["-Ounchecked", "-wmo"])]
     ),
+    .testTarget(name: "ascii-screenTests", dependencies: ["ascii-screen"]),
   ]
 )
