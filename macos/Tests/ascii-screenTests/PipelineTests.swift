@@ -139,4 +139,57 @@ final class PipelineTests: XCTestCase {
     let p = Pipeline(Options()) { _, rois in rois.map { _ in [] } }
     XCTAssertEqual(p.ocr.recognizeAtlas(frame(), [.zero, CGRect(x: 5, y: 5, width: 0, height: 9)]).count, 0)
   }
+
+  /// A page of "text": rows of pseudo-random pixels from document row `top + y`, with a fixed header on top.
+  private func page(scrolledBy top: Int, width: Int = 800, height: Int = 600, header: Int = 60) -> CVPixelBuffer {
+    var pb: CVPixelBuffer?
+    XCTAssertEqual(CVPixelBufferCreate(nil, width, height, kCVPixelFormatType_32BGRA, nil, &pb), kCVReturnSuccess)
+    let buffer = pb!
+    CVPixelBufferLockBaseAddress(buffer, [])
+    let base = CVPixelBufferGetBaseAddress(buffer)!.assumingMemoryBound(to: UInt8.self)
+    let stride = CVPixelBufferGetBytesPerRow(buffer)
+    for y in 0..<height {
+      let doc = y < header ? -1 - y : top + y
+      for x in 0..<width {
+        var v = UInt32(truncatingIfNeeded: doc &* 73_856_093 ^ x &* 19_349_663)
+        v ^= v >> 13; v = v &* 0x5bd1e995; v ^= v >> 15
+        memset(base + y * stride + x * 4, Int32(v & 0xFF), 4)
+      }
+    }
+    CVPixelBufferUnlockBaseAddress(buffer, [])
+    return buffer
+  }
+
+  func testScrollMovesCachedTextAndOnlyReadsTheRevealedStrip() {
+    let H = 600.0
+    let line = Obs(text: "kept", x: 0.1, y: 0.5, w: 0.3, h: 0.04) // pixel rows 276-300
+    var opts = Options()
+    opts.atlas = false
+    var requests: [[CGRect]] = []
+    let p = Pipeline(opts) { _, rois in
+      requests.append(rois)
+      return requests.count == 1 ? [[line]] : rois.map { _ in [] }
+    }
+    p.process(page(scrolledBy: 0))
+    XCTAssertTrue(p.process(page(scrolledBy: 40)))
+    XCTAssertEqual(requests.count, 2)
+    let read = requests[1].reduce(0.0) { $0 + $1.width * $1.height }
+    XCTAssertLessThan(read, 0.2, "only the newly revealed rows should be read, not the whole screen")
+    XCTAssertTrue(requests[1].allSatisfy { $0.minY < 0.2 }, "the revealed strip is at the bottom")
+    XCTAssertEqual(p.obs.map(\.text), ["kept"])
+    XCTAssertEqual(p.obs[0].y, line.y + 40 / H, accuracy: 1e-9)
+  }
+
+  func testInPlaceChangeIsNotMistakenForScroll() {
+    let p = Pipeline(Options()) { _, rois in rois.map { _ in [] } }
+    let frames = [page(scrolledBy: 0), page(scrolledBy: 0, header: 100), page(scrolledBy: -25)]
+    frames.forEach { CVPixelBufferLockBaseAddress($0, .readOnly) }
+    defer { frames.forEach { CVPixelBufferUnlockBaseAddress($0, .readOnly) } }
+    let bm = frames.map {
+      Bitmap(base: CVPixelBufferGetBaseAddress($0)!.assumingMemoryBound(to: UInt8.self), width: 800, height: 600,
+             rowBytes: CVPixelBufferGetBytesPerRow($0))
+    }
+    XCTAssertNil(p.scrollShift(bm[0], bm[1]))
+    XCTAssertEqual(p.scrollShift(bm[0], bm[2]), -25)
+  }
 }

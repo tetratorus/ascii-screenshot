@@ -30,6 +30,7 @@ final class Pipeline {
   private(set) var lines: [DLine] = []
   private var sinceFull = 0
   private(set) var imageSize = (0, 0)
+  private var reference: [UInt8] = []
   static let tile = 32
 
   init(_ opts: Options, recognize: ((CVPixelBuffer, [CGRect]) -> [[Obs]])? = nil) {
@@ -54,11 +55,18 @@ final class Pipeline {
                     width: w, height: h, rowBytes: CVPixelBufferGetBytesPerRow(pb))
 
     var regions: [CGRect]? = nil // pixel rects, top-left origin; nil = everything
+    var scrolled: Int?
     if let prev, CVPixelBufferGetWidth(prev) == w, CVPixelBufferGetHeight(prev) == h {
       CVPixelBufferLockBaseAddress(prev, .readOnly)
       let old = Bitmap(base: CVPixelBufferGetBaseAddress(prev)!.assumingMemoryBound(to: UInt8.self),
                        width: w, height: h, rowBytes: CVPixelBufferGetBytesPerRow(prev))
-      let dirty = dirtyRegions(old, bm)
+      var dirty: [CGRect]
+      if let dy = scrollShift(old, bm) {
+        dirty = followScroll(dy, old, bm)
+        scrolled = dy
+      } else {
+        dirty = dirtyRegions(old, bm)
+      }
       CVPixelBufferUnlockBaseAddress(prev, .readOnly)
       if dirty.isEmpty {
         if opts.stats { log(String(format: "frame %dx%d unchanged; OCR skipped cpu=%.2fms", w, h, (cpuTime() - t0) * 1000)) }
@@ -91,8 +99,8 @@ final class Pipeline {
     if opts.stats {
       let ms = { (a: Date, b: Date) in String(format: "%.0f", b.timeIntervalSince(a) * 1000) }
       let area = (regions?.reduce(0.0) { $0 + Double($1.width * $1.height) }).map { $0 / (W * H) * 100 } ?? 100
-      log(String(format: "frame %dx%d ocr=%.1f%% of screen (%d regions) diff=%@ms lines=%@ms ocr=%@ms cpu=%.0fms [%@]",
-                 w, h, area, regions?.count ?? 1, ms(w0, tDiff), ms(tDiff, tLines), ms(tLines, Date()),
+      log(String(format: "frame %dx%d ocr=%.1f%% of screen (%d regions) scroll=%d diff=%@ms lines=%@ms ocr=%@ms cpu=%.0fms [%@]",
+                 w, h, area, regions?.count ?? 1, scrolled ?? 0, ms(w0, tDiff), ms(tDiff, tLines), ms(tLines, Date()),
                  (cpuTime() - t0) * 1000, ocr.device))
     }
     return true
@@ -131,6 +139,101 @@ final class Pipeline {
     }
     let bounds = CGRect(x: 0, y: 0, width: a.width, height: a.height)
     return rects.map { $0.intersection(bounds) }
+  }
+
+  /// Vertical scroll between frames: the shift dy such that new row y shows old row y+dy, found by matching
+  /// row slices of what changed. Nil when the change doesn't look like a scroll.
+  func scrollShift(_ a: Bitmap, _ b: Bitmap) -> Int? {
+    let S = 128, w = a.width, h = a.height
+    var y0 = h, y1 = 0
+    for y in 0..<h where memcmp(a.base + y * a.rowBytes, b.base + y * b.rowBytes, w * 4) != 0 { y0 = min(y0, y); y1 = y + 1 }
+    guard y1 - y0 >= 16 else { return nil }
+    var votes: [Int: Int] = [:], changed = 0
+    for x0 in stride(from: 0, to: w, by: S) {
+      let n = min(S, w - x0)
+      guard n > 1 else { continue }
+      // Plain-colour slices match anywhere, so they don't vote.
+      func key(_ p: UnsafePointer<UInt8>) -> Int? {
+        if memcmp(p, p + 4, (n - 1) * 4) == 0 { return nil }
+        var hs = Hasher()
+        hs.combine(bytes: UnsafeRawBufferPointer(start: p, count: n * 4))
+        return hs.finalize()
+      }
+      var rowOf: [Int: Int] = [:] // slice hash -> old row, -1 if it repeats
+      for y in y0..<y1 { if let k = key(a.base + y * a.rowBytes + x0 * 4) { rowOf[k] = rowOf[k] == nil ? y : -1 } }
+      for y in y0..<y1 {
+        let pa = a.base + y * a.rowBytes + x0 * 4, pb = b.base + y * b.rowBytes + x0 * 4
+        guard memcmp(pa, pb, n * 4) != 0, let k = key(pb) else { continue }
+        changed += 1
+        if let oy = rowOf[k], oy >= 0 { votes[oy - y, default: 0] += 1 }
+      }
+    }
+    guard let best = votes.max(by: { $0.value < $1.value }), best.value >= 16, best.value * 4 >= changed else { return nil }
+    return best.key
+  }
+
+  /// After a scroll by dy, move cached text along with the page and return only the regions that really need
+  /// reading: newly revealed rows and anything that changed on top of the scroll.
+  private func followScroll(_ dy: Int, _ a: Bitmap, _ b: Bitmap) -> [CGRect] {
+    let w = a.width, h = a.height, rb = w * 4, T = Pipeline.tile
+    if reference.count != rb * h { reference = [UInt8](repeating: 0, count: rb * h) }
+    // The old frame, with every tile row that matches its scrolled source swapped for that source.
+    var dirty = reference.withUnsafeMutableBytes { buf -> [CGRect] in
+      let d = buf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+      for y in 0..<h {
+        let pa = a.base + y * a.rowBytes, pb = b.base + y * b.rowBytes, row = d + y * rb, sy = y + dy
+        memcpy(row, pa, rb)
+        guard sy >= 0, sy < h, memcmp(pa, pb, rb) != 0 else { continue }
+        let src = a.base + sy * a.rowBytes
+        for x0 in stride(from: 0, to: w, by: T) {
+          let n = min(T, w - x0) * 4
+          if memcmp(src + x0 * 4, pb + x0 * 4, n) == 0 { memcpy(row + x0 * 4, src + x0 * 4, n) }
+        }
+      }
+      return dirtyRegions(Bitmap(base: UnsafePointer(d), width: w, height: h, rowBytes: rb), b)
+    }
+    let bounds = CGRect(x: 0, y: 0, width: w, height: h), W = Double(w), H = Double(h)
+    func same(_ r: CGRect, _ shift: Int) -> Bool {
+      let r = r.integral.intersection(bounds)
+      guard !r.isNull, !r.isEmpty else { return false }
+      let x0 = Int(r.minX), n = Int(r.width) * 4
+      for y in Int(r.minY)..<Int(r.maxY) {
+        let sy = y + shift
+        guard sy >= 0, sy < h, memcmp(b.base + y * b.rowBytes + x0 * 4, a.base + sy * a.rowBytes + x0 * 4, n) == 0 else { return false }
+      }
+      return true
+    }
+    func changedRows(_ r: CGRect) -> CGRect? {
+      let r = r.integral.intersection(bounds)
+      guard !r.isNull, !r.isEmpty else { return nil }
+      let x0 = Int(r.minX), n = Int(r.width) * 4
+      let rows = (Int(r.minY)..<Int(r.maxY)).filter {
+        memcmp(b.base + $0 * b.rowBytes + x0 * 4, a.base + $0 * a.rowBytes + x0 * 4, n) != 0
+      }
+      guard let lo = rows.first, let hi = rows.last else { return nil }
+      return CGRect(x: r.minX, y: CGFloat(lo), width: r.width, height: CGFloat(hi - lo + 1))
+    }
+    let residual = dirty.reduce(0.0) { $0 + Double($1.width * $1.height) } / (W * H)
+    var kept = 0, movedN = 0, dropped = 0
+    defer { if opts.stats { log(String(format: "scroll dy=%d residual=%.1f%% kept=%d moved=%d dropped=%d", dy, residual * 100, kept, movedN, dropped)) } }
+    obs = obs.compactMap { o in
+      let box = CGRect(x: o.x * W, y: (1 - o.y - o.h) * H, width: o.w * W, height: o.h * H)
+      guard [box.minX, box.minY, box.width, box.height].allSatisfy(\.isFinite) else { return nil }
+      if same(box, 0) { kept += 1; return o }
+      let moved = box.offsetBy(dx: 0, dy: CGFloat(-dy))
+      if bounds.contains(moved.integral), same(moved, dy) {
+        var m = o
+        m.y += Double(dy) / H
+        movedN += 1
+        return m
+      }
+      // Text that only partly survived the scroll (cut by the window edge, or half revealed) is read again
+      // where it now sits, skipping rows that didn't change, like a toolbar it slid under.
+      dropped += 1
+      if let r = changedRows(moved) { dirty.append(r) }
+      return nil
+    }
+    return dirty
   }
 
   /// Grow regions until no cached text box straddles a region edge, then merge overlaps.
