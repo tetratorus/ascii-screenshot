@@ -1,65 +1,29 @@
-# ASCII Screenshot
+# ASCII Screen
 
-A simple tool to generate an ASCII-like version of images, optimized for screenshots. It also includes basic line detection to enhance the ASCII output.
+A macOS background app that keeps a text (ASCII) copy of your screen, about once a second, with a compressed, searchable history you can replay in the terminal. Text is read with Apple Vision; UI boxes, rules and table cells are drawn as `_` and `|`. It is built to use as little CPU and battery as possible. macOS 14 or later.
 
-## Features
-- Converts images to ASCII-like art.
-- Optimized for screenshots.
-- Detects straight UI boundaries: rules, table cells, filled panels and cards.
-- Works best with images sized around **1600x1000 pixels**.
-
-## Installation
-Install the package via npm:
+## Install
 
 ```bash
-npm install -g ascii-screenshot
+git clone https://github.com/tetratorus/ascii-screenshot && cd ascii-screenshot
+macos/install.sh                     # build, install, start now and at every login, put `ascii-screen` on PATH
+macos/install.sh --interval 2 --out ~/screen.txt   # same, with your own flags
+macos/install.sh --uninstall         # stop and remove (history is kept)
 ```
 
-## Usage
-Run the tool from the command line, specifying the path to your image:
+Needs the Xcode command line tools (`xcode-select --install`) for `swift`. The first time, macOS lists "ASCII Screen" under System Settings > Privacy & Security > Screen Recording. Turn it on and the agent restarts itself within 30s.
+
+This copies the binary into `~/Applications/ASCII Screen.app`, signs it so macOS matches it by its identifier (`com.tetratorus.ascii-screen`) rather than by the exact binary, so the Screen Recording permission survives rebuilds, and registers a LaunchAgent. It links `ascii-screen` into the first writable directory on your PATH (`~/.local/bin`, `~/bin`, `/opt/homebrew/bin` or `/usr/local/bin`), or else creates `~/.local/bin` and adds it to PATH in `~/.zshrc`, so `ascii-screen --search …`, `--play` and `--at` work from any terminal. By default it writes `~/.ascii-screen/screen.txt`, keeps history in `~/.ascii-screen/history/` and logs to `~/Library/Logs/ascii-screen.log`. launchd also restarts it if capture stops (for example when a display is unplugged). Check it with `launchctl print gui/$(id -u)/com.tetratorus.ascii-screen`. If the log keeps saying the permission is missing even though the switch is on (for example after an install from an older version of this script), run `tccutil reset ScreenCapture com.tetratorus.ascii-screen` and turn it on again.
+
+## Use
 
 ```bash
-ascii-screenshot path/to/img
-```
-
-## Requirements
-- **macOS only**: This tool uses `osascript` for some functionalities.
-- Ensure your image resolution is close to **1600x1000** for best results.
-
-## Live screen mode (macOS, battery-friendly)
-
-`macos/` is a native Swift binary that keeps an ASCII view of your screen up to date, refreshing at most once per `--interval` (default 1s). It is built to keep CPU, and so battery drain, as low as possible:
-
-- **Change-driven.** ScreenCaptureKit only hands over a frame when something on screen changed, so a static screen costs ~0 CPU. Frames that are pixel-identical to the last one are dropped after a `memcmp`.
-- **Incremental OCR.** Changed 32px tiles are grouped into regions, grown so no cached word straddles an edge, and only those regions are re-OCRed (Vision `regionOfInterest`); the rest of the text is reused. A full OCR runs when over half the screen changed, and every 30 incremental frames (`--full-every`).
-- **Scrolling reuses text.** When a change looks like a vertical scroll (rows of the old frame reappear shifted), the cached text moves with the page and only newly revealed rows, plus anything that changed on top of the scroll, are read. Every frame is still read; on the VM, reading-speed scrolling of a Wikipedia article went from ~1.5s to ~0.9s CPU per frame. Page-sized jumps reveal mostly new text, so they cost about the same as before.
-- **One Vision call per frame.** Each Vision call has a large fixed cost (~50–70ms CPU even on a tiny crop), so when several separate regions change they are copied into one packed image and read in a single call (`--no-atlas` to disable). Benchmarks: `macos/benchmarks/OCR.md`.
-- **No language correction by default.** On UI text it barely changes the output and costs ~2x the CPU (`--correction` turns it back on). `--fast` is cheaper still but much worse on small UI text.
-- **In-process, in memory.** Capture, line detection and rendering run in one process on the captured buffer: no `screencapture`/`osascript`/node per frame, and no PNG encode/decode. Line detection takes ~5ms natively vs ~150ms in JS.
-- **Low priority.** The process runs as a Darwin background process (efficiency cores, throttled I/O), and capture stops while the screen is locked or asleep.
-- **Cheap cursor.** The pointer is left out of captured frames so moving it doesn't trigger a capture; its position is polled once per interval and only re-renders text (no OCR).
-
-Measured on an M4 VM (1600x1200), CPU time per refresh:
-
-| | CPU per refresh |
-| --- | --- |
-| `screencapture` + `node index.js` | ~2.0s (whole pipeline, every second) |
-| Live mode, nothing changed | ~0 (no frame delivered) |
-| Live mode, small change (clock, typing) | ~0.1–0.3s |
-| Live mode, whole screen changed | ~0.75s |
-
-```bash
-cd macos && swift build -c release
-.build/release/ascii-screen                      # live view in the terminal
-.build/release/ascii-screen --out /tmp/screen.txt  # atomically rewrite a file on each change
-.build/release/ascii-screen --once               # one capture
-.build/release/ascii-screen --image shot.png     # convert a file
-.build/release/ascii-screen --stats              # per-frame timing/CPU on stderr
-.build/release/ascii-screen --history ~/screen-history   # also keep every changed frame, compressed
-.build/release/ascii-screen --at 14:05           # print what was on screen at 14:05 today
-.build/release/ascii-screen --play --from 14:00   # replay history from 14:00 like a screen recording
-.build/release/ascii-screen --play --from 1m --speed 1   # replay the last minute in real time
-.build/release/ascii-screen --search "invoice"     # when "invoice" was on screen, newest first
+cat ~/.ascii-screen/screen.txt                 # the screen right now
+ascii-screen --search "invoice"                # when "invoice" was on screen, newest first
+ascii-screen --search 'invoice OR receipt' --from 7d --json
+ascii-screen --at 14:05                        # what was on screen at 14:05 today
+ascii-screen --play --from 1m --speed 1        # replay the last minute in real time
+ascii-screen --play --from 14:00               # replay from 14:00 at 10x
 ```
 
 With `--history <dir>`, every frame that differs from the previous one is kept in `<dir>/YYYY-MM-DD.txt.gz`. Each record is a `@@ <ISO 8601 time>` line followed by the frame. Consecutive frames are nearly identical, so gzip shrinks them about 25x (roughly 400 bytes per frame). Frames are held in memory for at most 10 seconds and then written as one batch, and also when the screen sleeps or locks or the process stops. A crash loses at most the last 10 seconds, and the disk isn't touched on every change. Files older than `--keep-days` (default 14) are deleted. Read history with `gzcat <dir>/2026-10-27.txt.gz | less`, or print the frame shown at a given time with `--at`. Times can be how long ago (`30s`, `5m`, `1h30m`, `2d`), `HH:MM[:SS]` today, `now`, or a full ISO 8601 time.
@@ -68,31 +32,42 @@ With `--history <dir>`, every frame that differs from the previous one is kept i
 
 `--search <query>` lists when matching text was on screen, newest first, as runs of consecutive frames with the best-matching line (`--from`/`--to` narrow the range, `--limit` sets how many runs, default 20, `--json` prints one JSON object per run). Plain words match in any order anywhere on the screen, and each also matches longer words it starts (`invoice` finds `invoices`). The query is also [SQLite FTS5 syntax](https://sqlite.org/fts5.html#full_text_query_syntax): `invo*`, `invoice OR receipt`, `invoice NOT paid`, `"exact phrase"`. Case, spacing and box lines don't matter. It uses `<dir>/index.sqlite`, an SQLite full-text index of every saved frame: words only, no word positions and no copy of the text, about a third of the history's size on real screens. So `NEAR` isn't available, and a quoted phrase is found by its words and then checked against the frame text (inside an `OR` query only the words are required). The index is updated with each history write and rebuilt from the day files if missing, behind, or from an older version, so it's safe to delete. `--at` and `--play` also use it to jump straight to the right place in a day file. See [AGENTS.md](AGENTS.md#screen-history-index) for querying it directly.
 
-### Run it in the background (login agent)
+## Run it by hand
 
 ```bash
-macos/install.sh                     # build, install, start now and at every login, put `ascii-screen` on PATH
-macos/install.sh --interval 2 --out ~/screen.txt   # same, with your own flags
-macos/install.sh --uninstall
+ascii-screen                         # live view in the terminal
+ascii-screen --out /tmp/screen.txt   # atomically rewrite a file on each change
+ascii-screen --once                  # one capture
+ascii-screen --image shot.png        # convert an image file
+ascii-screen --stats                 # per-frame timing/CPU on stderr
+ascii-screen --history ~/screen-history   # also keep every changed frame, compressed
+ascii-screen --help                  # all options
 ```
 
-This copies the binary into `~/Applications/ASCII Screen.app`, signs it so macOS matches it by its identifier (`com.tetratorus.ascii-screen`) rather than by the exact binary, so the Screen Recording permission survives rebuilds, and registers a LaunchAgent. It links `ascii-screen` into the first writable directory on your PATH (`~/.local/bin`, `~/bin`, `/opt/homebrew/bin` or `/usr/local/bin`), or else creates `~/.local/bin` and adds it to PATH in `~/.zshrc`, so `ascii-screen --search …`, `--play` and `--at` work from any terminal. By default it writes `~/.ascii-screen/screen.txt`, keeps history in `~/.ascii-screen/history/` and logs to `~/Library/Logs/ascii-screen.log`. The first time, macOS lists "ASCII Screen" under System Settings > Privacy & Security > Screen Recording. Turn it on and the agent restarts itself within 30s. launchd also restarts it if capture stops (for example when a display is unplugged). Check it with `launchctl print gui/$(id -u)/com.tetratorus.ascii-screen`. If the log keeps saying the permission is missing even though the switch is on (for example after an install from an older version of this script), run `tccutil reset ScreenCapture com.tetratorus.ascii-screen` and turn it on again.
+When run from a terminal, the terminal needs Screen Recording permission, and the energy is charged to the terminal instead of "ASCII Screen". When stdout isn't a terminal, frames are separated by a form feed line. To build without installing: `cd macos && swift build -c release` (binary at `macos/.build/release/ascii-screen`).
 
-When run from a terminal, the terminal needs Screen Recording permission (System Settings > Privacy & Security). When stdout isn't a terminal, frames are separated by a form feed line. The Swift detector and renderer are ports of `detect_lines.js` and `ascii.js`; the test suite checks they produce identical output whenever the binary has been built.
+## How it keeps CPU low
 
-## Python port (cross-platform)
-`index.py` mirrors the CLI using RapidOCR by default, so it runs off macOS too. Requires Python 3.9+.
+- **Change-driven.** ScreenCaptureKit only hands over a frame when something on screen changed, so a static screen costs ~0 CPU. Frames that are pixel-identical to the last one are dropped after a `memcmp`.
+- **Incremental OCR.** Changed 32px tiles are grouped into regions, grown so no cached word straddles an edge, and only those regions are re-OCRed (Vision `regionOfInterest`); the rest of the text is reused. A full OCR runs when over half the screen changed, and every 30 incremental frames (`--full-every`).
+- **Scrolling reuses text.** When a change looks like a vertical scroll (rows of the old frame reappear shifted), the cached text moves with the page and only newly revealed rows, plus anything that changed on top of the scroll, are read. Every frame is still read; on the VM, reading-speed scrolling of a Wikipedia article went from ~1.5s to ~0.9s CPU per frame. Page-sized jumps reveal mostly new text, so they cost about the same as before.
+- **One Vision call per frame.** Each Vision call has a large fixed cost (~50–70ms CPU even on a tiny crop), so when several separate regions change they are copied into one packed image and read in a single call (`--no-atlas` to disable). Benchmarks: `macos/benchmarks/OCR.md`.
+- **No language correction by default.** On UI text it barely changes the output and costs ~2x the CPU (`--correction` turns it back on). `--fast` is cheaper still but much worse on small UI text.
+- **In-process, in memory.** Capture, line detection and rendering run in one process on the captured buffer: no `screencapture`/`osascript`/node per frame, and no PNG encode/decode.
+- **Low priority.** The process runs as a Darwin background process (efficiency cores, throttled I/O), and capture stops while the screen is locked or asleep.
+- **Cheap cursor.** The pointer is left out of captured frames so moving it doesn't trigger a capture; its position is polled once per interval and only re-renders text (no OCR).
 
-```bash
-python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python index.py path/to/img [--width 160] [--height 60] [--px 0.5 --py 0.5] [--ocr rapidocr|apple]
-```
+Measured on an M4 VM (1600x1200), CPU time per refresh:
 
-`./compare.sh path/to/img` runs the JS, Python + RapidOCR and Python + Apple Vision pipelines side by side (uses `python3` on `PATH`).
+| | CPU per refresh |
+| --- | --- |
+| Nothing changed | ~0 (no frame delivered) |
+| Small change (clock, typing) | ~0.1–0.3s |
+| Whole screen changed | ~0.75s |
 
 ## Boundary detection
 
-The JS and Python detectors find long horizontal/vertical colour transitions,
+The detector finds long horizontal/vertical colour transitions,
 including boundaries between filled regions with no explicit border stroke.
 Nearby edges are merged, and locally solid colours distinguish UI regions from
 photo texture. The detector retains the four image borders.
@@ -114,27 +89,14 @@ horizontal rules underline text. Use a wider canvas for dense tables to reduce
 text collisions. The renderer's `originalText` field retains text before the
 boundary overlay.
 
-Run the generated-image regressions (including JS/Python output parity):
+## Development
 
 ```bash
-npm ci
-.venv/bin/python -m unittest discover -s tests -v
+swift build -c release --package-path macos
+swift test -c release --package-path macos
 ```
 
-## Shell script to convert latest screenshot
-```
-tt () {
-	local screenshots_dir=~/Desktop
-	local sorted_files=$(ls -t $screenshots_dir)
-	local selected_file=$(echo "$sorted_files" | sed "${1}q;d")
-	if [ -n "$selected_file" ]
-	then
-		ascii-screenshot "$screenshots_dir/$selected_file" "${@:2}"
-	else
-		echo "No such file found at position $1." >&2
-	fi
-}
-```
+See [AGENTS.md](AGENTS.md) for the full checks, benchmark rules and the history index schema.
 
 ## Acknowledgments
 Inspired by the work on the [Tarsier](https://github.com/tarsier-project) and [Textra](https://github.com/textra) GitHub projects.

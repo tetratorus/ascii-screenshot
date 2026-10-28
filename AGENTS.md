@@ -1,10 +1,12 @@
 # Verification
 
-- Build the native executable before parity tests: `swift build -c release --package-path macos`.
-- Run native pipeline/output tests: `swift test -c release --package-path macos`.
-- Run Python, JavaScript, and native parity tests: `.venv/bin/python -m unittest discover -s tests -v`.
-- The Python suite skips native parity when `macos/.build/release/ascii-screen` is absent, so a passing Python-only run does not establish three-way parity.
+macOS only: the Swift app in `macos/` is the whole product. There are no other platform ports; don't add any.
+
+- Build: `swift build -c release --package-path macos`.
+- Test the renderer, line detector, pipeline and history/search: `swift test -c release --package-path macos`.
+- Test the benchmark summarizer: `python3 -m unittest discover -s tests -v` (standard library only).
 - Check benchmark-runner syntax with `node --check macos/benchmarks/energy.mjs`. The runner requires a Node version with built-in `fetch` and `WebSocket` support, such as Node 22+.
+- Check the installer: `bash -n macos/install.sh`.
 
 # Benchmark safety
 

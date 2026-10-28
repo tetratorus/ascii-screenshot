@@ -1,7 +1,6 @@
 import Foundation
 
-// Port of detect_lines.js over a BGRA buffer. Keep constants and logic in sync;
-// tests/test_boundaries.py checks parity.
+// Finds long horizontal/vertical colour transitions in a BGRA buffer.
 private let edgeThreshold: Int32 = 4
 private let strongEdgeThreshold: Int32 = 10
 private let minLineFrac = 0.025

@@ -74,8 +74,6 @@ while let a = args.next() {
   case "--max-gap": maxGap = Double(value(a)) ?? maxGap
   case "--once": mode = "once"
   case "--image": mode = "image"; images.append(value(a)); imagePath = images[0]
-  case "--detect-json": mode = "detect"; imagePath = value(a)
-  case "--render-json": mode = "render"
   case "-h", "--help": print(usage); exit(0)
   default: log("unknown option \(a)\n\n\(usage)"); exit(2)
   }
@@ -100,16 +98,8 @@ func time(_ s: String?, _ fallback: Date) -> Date {
 }
 
 switch mode {
-case "image", "detect":
+case "image":
   guard let pb = loadImage(imagePath) else { log("cannot read \(imagePath)"); exit(1) }
-  if mode == "detect" {
-    CVPixelBufferLockBaseAddress(pb, .readOnly)
-    let lines = detectLines(Bitmap(base: CVPixelBufferGetBaseAddress(pb)!.assumingMemoryBound(to: UInt8.self),
-                                   width: CVPixelBufferGetWidth(pb), height: CVPixelBufferGetHeight(pb),
-                                   rowBytes: CVPixelBufferGetBytesPerRow(pb)))
-    print(String(data: try JSONSerialization.data(withJSONObject: lines.map(lineJSON)), encoding: .utf8)!)
-    exit(0)
-  }
   // Several --image flags are processed as consecutive frames (exercises incremental OCR).
   let p = Pipeline(opts)
   p.process(pb)
@@ -118,16 +108,6 @@ case "image", "detect":
     p.process(next)
   }
   print(p.render(cursor: nil))
-case "render":
-  // Test hook: {"fn": "ascii" | "addLinesToAsciiText", "args": [...]} on stdin, same as ascii.js.
-  let req = try JSONSerialization.jsonObject(with: FileHandle.standardInput.readDataToEndOfFile()) as! [String: Any]
-  let a = req["args"] as! [Any]
-  let r = req["fn"] as! String == "ascii"
-    ? renderAscii((a[0] as! [[String: Any]]).map(obsFrom), (a[1] as! [[String: Any]]).map(lineFrom),
-                  a[2] as? Double, a[3] as? Double, a[4] as! Int, a[5] as! Int)
-    : addLines(a[0] as! String, (a[1] as! [[String: Any]]).map(lineFrom), a[2] as! Int, a[3] as! Int)
-  let out = ["originalText": r.originalText, "linesText": r.linesText, "finalText": r.finalText]
-  print(String(data: try JSONSerialization.data(withJSONObject: out), encoding: .utf8)!)
 case "at":
   guard let t = parseTime(atTime) else { log("cannot parse time \(atTime)"); exit(2) }
   let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
@@ -196,17 +176,4 @@ func checkPermission() throws {
     log("Screen Recording permission missing: allow this app (or your terminal) in System Settings > Privacy & Security > Screen Recording.")
     exit(1)
   }
-}
-
-func num(_ v: Any?) -> Double { (v as? NSNumber)?.doubleValue ?? 0 }
-func obsFrom(_ d: [String: Any]) -> Obs {
-  let o = d["origin"] as! [String: Any], s = d["size"] as! [String: Any]
-  return Obs(text: d["text"] as! String, x: num(o["x"]), y: num(o["y"]), w: num(s["width"]), h: num(s["height"]))
-}
-func lineFrom(_ d: [String: Any]) -> DLine {
-  let o = obsFrom(d)
-  return DLine(vertical: o.text == "|", x: o.x, y: o.y, w: o.w, h: o.h)
-}
-func lineJSON(_ l: DLine) -> [String: Any] {
-  ["text": l.vertical ? "|" : "_", "origin": ["x": l.x, "y": l.y], "size": ["width": l.w, "height": l.h]]
 }
