@@ -21,7 +21,7 @@ final class History {
     do { return try HistoryIndex(dir: dir) } catch { log("history search index unavailable: \(error.localizedDescription)"); return nil }
   }()
 
-  init(dir: URL, flushEvery: TimeInterval = 10, keepDays: Int = 14, now: @escaping () -> Date = Date.init) {
+  init(dir: URL, flushEvery: TimeInterval = 10, keepDays: Int = 365, now: @escaping () -> Date = Date.init) {
     self.dir = dir
     self.flushEvery = flushEvery
     self.keepDays = keepDays
