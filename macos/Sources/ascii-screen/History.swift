@@ -18,7 +18,7 @@ final class History {
   private let lock = NSLock()
   private var timer: DispatchSourceTimer?
 
-  init(dir: URL, flushEvery: TimeInterval = 10, keepDays: Int = 14, now: @escaping () -> Date = Date.init) {
+  init(dir: URL, flushEvery: TimeInterval = 10, keepDays: Int = 365, now: @escaping () -> Date = Date.init) {
     self.dir = dir
     self.flushEvery = flushEvery
     self.keepDays = keepDays
