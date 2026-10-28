@@ -2,15 +2,40 @@ import Foundation
 
 /// Plays saved history in the terminal like a screen recording: frames are shown at their recorded
 /// spacing divided by `speed`, with long idle gaps capped at `maxGap` real seconds.
+/// Frames are pulled from `source` as playback reaches them; only the last `keepBack` are kept for stepping
+/// back, so memory stays flat however long the range is.
 struct Playback {
-  let frames: [(Date, String)]
+  private var source: AnyIterator<(Date, String)>
+  private var window: [(Date, String)] = []
+  private(set) var first = 0
+  private var ended = false
+  static let keepBack = 1000
   var speed: Double
   let maxGap: Double
 
+  init<S: Sequence>(frames: S, speed: Double, maxGap: Double) where S.Element == (Date, String) {
+    var it = frames.makeIterator()
+    source = AnyIterator { it.next() }
+    self.speed = speed
+    self.maxGap = maxGap
+  }
+
+  /// Frame `i`, reading ahead as needed; nil past the end or before the kept window.
+  mutating func frame(_ i: Int) -> (Date, String)? {
+    while i >= first + window.count && !ended {
+      guard let f = source.next() else { ended = true; break }
+      window.append(f)
+      if window.count > Playback.keepBack { window.removeFirst(); first += 1 }
+    }
+    return i >= first && i < first + window.count ? window[i - first] : nil
+  }
+
+  mutating func isLast(_ i: Int) -> Bool { frame(i + 1) == nil }
+
   /// Real seconds to keep frame `i` on screen before showing frame `i + 1`.
-  func delay(after i: Int) -> Double {
-    guard i + 1 < frames.count else { return 0 }
-    return max(0, min(frames[i + 1].0.timeIntervalSince(frames[i].0) / speed, maxGap))
+  mutating func delay(after i: Int) -> Double {
+    guard let a = frame(i), let b = frame(i + 1) else { return 0 }
+    return max(0, min(b.0.timeIntervalSince(a.0) / speed, maxGap))
   }
 
   enum Key: Equatable { case quit, pause, faster, slower, next, previous, other }
@@ -44,10 +69,11 @@ struct Playback {
     return f
   }()
 
-  func status(_ i: Int, paused: Bool) -> String {
-    let state = paused ? (i == frames.count - 1 ? "end" : "paused") : "playing"
+  mutating func status(_ i: Int, paused: Bool) -> String {
+    let state = paused ? (isLast(i) ? "end" : "paused") : "playing"
+    let total = ended ? "/\(first + window.count)" : ""
     let x = speed >= 1 ? String(format: "%gx", speed) : String(format: "%.3gx", speed)
-    return "\(Playback.clock.string(from: frames[i].0))  frame \(i + 1)/\(frames.count)  \(x)  \(state)"
+    return "\(Playback.clock.string(from: frame(i)!.0))  frame \(i + 1)\(total)  \(x)  \(state)"
       + "   space pause  left/right step  up/down speed  q quit"
   }
 
@@ -71,10 +97,10 @@ struct Playback {
     var i = 0, paused = false
     var deadline = Date().addingTimeInterval(delay(after: i))
     while true {
-      if i == frames.count - 1 { paused = true }
+      if isLast(i) { paused = true }
       draw(i, paused: paused, interactive: interactive)
       if !interactive {
-        if i == frames.count - 1 { return }
+        if isLast(i) { return }
         Thread.sleep(forTimeInterval: delay(after: i))
         i += 1
         continue
@@ -87,8 +113,8 @@ struct Playback {
           case .pause: paused.toggle()
           case .faster: speed = min(speed * 2, 4096)
           case .slower: speed = max(speed / 2, 1.0 / 64)
-          case .next: i = min(i + 1, frames.count - 1)
-          case .previous: i = max(i - 1, 0); paused = true
+          case .next: if !isLast(i) { i += 1 }
+          case .previous: i = max(i - 1, first); paused = true
           case .other: break
           }
         }
@@ -102,16 +128,17 @@ struct Playback {
     }
   }
 
-  private func draw(_ i: Int, paused: Bool, interactive: Bool) {
+  private mutating func draw(_ i: Int, paused: Bool, interactive: Bool) {
+    let f = frame(i)!
     if interactive {
       var ws = winsize()
       let size = ioctl(1, TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0 ? (Int(ws.ws_col), Int(ws.ws_row)) : (Int.max, Int.max)
-      let body = frames[i].1.split(separator: "\n", omittingEmptySubsequences: false)
+      let body = f.1.split(separator: "\n", omittingEmptySubsequences: false)
         .prefix(max(size.1 - 1, 1)).map { $0.prefix(size.0) }.joined(separator: "\u{1b}[K\n")
       write("\u{1b}[H" + body + "\u{1b}[K\n\u{1b}[7m" + String(status(i, paused: paused).prefix(size.0))
             + "\u{1b}[0m\u{1b}[K\u{1b}[J")
     } else {
-      write("@@ " + History.stamp(frames[i].0) + "\n" + frames[i].1 + "\n")
+      write("@@ " + History.stamp(f.0) + "\n" + f.1 + "\n")
     }
   }
 

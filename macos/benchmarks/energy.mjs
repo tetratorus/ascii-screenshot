@@ -122,7 +122,6 @@ try {
     const before = option('--before', null);
     const modes = [
       { name: 'control', kind: 'control' },
-      { name: 'legacy', kind: 'legacy' },
       ...(before ? [{ name: 'before-default-1x', kind: 'native', binary: path.resolve(before), flags: ['--scale', '1'] }] : []),
       ...['default', 'fast', 'correction'].flatMap(mode => [1, 2].map(scale => ({
         name: `after-${mode}-${scale}x`, kind: 'native', binary: native,
@@ -135,7 +134,7 @@ try {
       created: new Date().toISOString(), seconds, warmup, powerLog, chrome: version.Browser,
       afterSHA256: createHash('sha256').update(await readFile(native)).digest('hex'),
       beforeSHA256: before ? createHash('sha256').update(await readFile(before)).digest('hex') : null,
-      note: 'Native warmup starts after the first output file exists, excluding cold model initialization. Rail power is system-wide. Legacy sleeps 1s after conversion; it cannot sustain 1 FPS if processing exceeds 1s. No Activity Monitor UI readings.',
+      note: 'Native warmup starts after the first output file exists, excluding cold model initialization. Rail power is system-wide. No Activity Monitor UI readings.',
       modes,
     };
     await writeFile(path.join(output, 'manifest.json'), JSON.stringify(manifest, null, 2));
@@ -149,9 +148,6 @@ try {
         if (mode.kind === 'native') {
           command = mode.binary;
           argv = ['--stats', '--out', path.join(output, `${name}.txt`), ...mode.flags];
-        } else if (mode.kind === 'legacy') {
-          command = 'python3';
-          argv = [path.join(here, 'legacy.py'), path.join(output, 'legacy-frame.png')];
         }
         if (command) {
           childLog = createWriteStream(path.join(output, `${name}.log`), { flags: 'wx' });

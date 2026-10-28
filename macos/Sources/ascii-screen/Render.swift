@@ -1,7 +1,5 @@
 import Foundation
 
-// Port of ascii.js. Keep in sync; tests/test_rendering.py checks parity.
-
 struct Obs { var text: String; var x, y, w, h: Double } // Vision box: normalized, bottom-left origin
 struct DLine { var vertical: Bool; var x, y, w, h: Double } // normalized, top-left origin
 struct RenderResult { var originalText: String; var linesText: String; var finalText: String }
