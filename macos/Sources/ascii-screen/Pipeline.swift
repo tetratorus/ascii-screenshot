@@ -134,7 +134,7 @@ final class Pipeline {
 
   /// Grow regions until no cached text box straddles a region edge, then merge overlaps.
   private func expandOverText(_ input: [CGRect], _ W: Double, _ H: Double) -> [CGRect] {
-    let boxes = obs.map { CGRect(x: $0.x * W, y: (1 - $0.y - $0.h) * H, width: $0.w * W, height: $0.h * H).insetBy(dx: -2, dy: -2) }
+    let boxes = obs.map { CGRect(x: $0.x * W, y: (1 - $0.y - $0.h) * H, width: $0.w * W, height: $0.h * H).insetBy(dx: -2, dy: -2).integral }
     var rects = input, changed = true
     while changed {
       changed = false

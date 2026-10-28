@@ -81,6 +81,37 @@ final class PipelineTests: XCTestCase {
     XCTAssertEqual(requests.last, [CGRect(x: 0, y: 0, width: 1, height: 1)])
   }
 
+  func testFractionalTextBoundsDoNotStallRegionExpansion() {
+    let words = [
+      Obs(text: "first", x: 0.17221066628595877, y: 0.6548700442538966,
+          w: 0.34429685337881527, h: 0.05844486402975076),
+      Obs(text: "second", x: 0.119741165141257, y: 0.5580873193633952,
+          w: 0.33150544346634325, h: 0.04135090662535894),
+    ]
+    var opts = Options()
+    opts.atlas = false
+    var requests: [[CGRect]] = []
+    let p = Pipeline(opts) { _, rois in
+      requests.append(rois)
+      return requests.count == 1 ? [words] : rois.map { _ in [] }
+    }
+    p.process(frame())
+    let changed = frame([(220, 220)])
+    let finished = expectation(description: "Region expansion terminates")
+    DispatchQueue.global().async {
+      p.process(changed)
+      finished.fulfill()
+    }
+    let result = XCTWaiter.wait(for: [finished], timeout: 1)
+    XCTAssertEqual(result, .completed)
+    guard result == .completed else { return }
+    XCTAssertEqual(requests.count, 2)
+    XCTAssertEqual(requests.last?.count, 1)
+    for o in words {
+      XCTAssertTrue(requests.last![0].contains(CGRect(x: o.x, y: o.y, width: o.w, height: o.h)))
+    }
+  }
+
   func testSeparateChangedRegionsShareOneOCRCall() {
     for atlas in [true, false] {
       var opts = Options()
