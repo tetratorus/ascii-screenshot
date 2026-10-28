@@ -90,6 +90,14 @@ final class HistoryTests: XCTestCase {
     XCTAssertNil(parseTime("nonsense"))
   }
 
+  func testRelativeTimes() {
+    let now = Date(timeIntervalSince1970: 1_800_000_000)
+    for (s, ago) in [("1m", 60.0), ("90s", 90), ("-5m", 300), ("1h30m", 5400), ("2d", 172_800), ("now", 0)] {
+      XCTAssertEqual(parseTime(s, now: now)?.timeIntervalSince1970, 1_800_000_000 - ago, s)
+    }
+    for s in ["", "-", "5", "m", "5x", "1h30", "5 m", "1.5m"] { XCTAssertNil(parseTime(s, now: now), s) }
+  }
+
   func testFramesBetweenStartWithFrameAlreadyOnScreen() throws {
     var t = Date(timeIntervalSince1970: 1_800_000_000)
     let h = History(dir: dir, flushEvery: 300, now: { t })
