@@ -6,11 +6,14 @@ import Vision
 final class TextRecognizer {
   let level: VNRequestTextRecognitionLevel
   let languageCorrection: Bool
+  private let stats: Bool
+  private var loggedDevices = false
   private(set) var device = "default"
 
-  init(fast: Bool, languageCorrection: Bool) {
+  init(fast: Bool, languageCorrection: Bool, stats: Bool = false) {
     level = fast ? .fast : .accurate
     self.languageCorrection = languageCorrection
+    self.stats = stats
   }
 
   private func request(_ roi: CGRect) -> VNRecognizeTextRequest {
@@ -26,8 +29,16 @@ final class TextRecognizer {
           r.setComputeDevice(ane, for: stage)
           device = "neuralEngine"
         }
+        if stats && !loggedDevices {
+          let supported = list.map(deviceName).joined(separator: ",")
+          let selected = r.computeDevice(for: stage).map(deviceName) ?? "automatic"
+          log("OCR stage=\(stage.rawValue) supported=[\(supported)] selected=\(selected) (selection, not measured utilization)")
+        }
       }
+    } else if stats && !loggedDevices {
+      log("OCR compute devices unavailable; using automatic selection")
     }
+    loggedDevices = true
     return r
   }
 
@@ -52,7 +63,8 @@ final class TextRecognizer {
 
   /// OCR several pixel regions (top-left origin) in a single Vision call by packing them into one image.
   /// Vision has a large fixed cost per call, so this is much cheaper than one request per region.
-  func recognizeAtlas(_ pb: CVPixelBuffer, _ rects: [CGRect]) -> [Obs] {
+  func recognizeAtlas(_ pb: CVPixelBuffer, _ rects: [CGRect],
+                      using recognize: ((CVPixelBuffer, [CGRect]) -> [[Obs]])? = nil) -> [Obs] {
     let gap = 12
     let src = rects.map { r in (x: Int(r.minX), y: Int(r.minY), w: Int(r.width), h: Int(r.height)) }.filter { $0.w > 0 && $0.h > 0 }
     let area = src.reduce(0) { $0 + ($1.w + gap) * ($1.h + gap) }
@@ -80,7 +92,7 @@ final class TextRecognizer {
     CVPixelBufferUnlockBaseAddress(pb, .readOnly)
     CVPixelBufferUnlockBaseAddress(atlas, [])
     let W = Double(CVPixelBufferGetWidth(pb)), H = Double(CVPixelBufferGetHeight(pb))
-    let found = recognize(atlas, [CGRect(x: 0, y: 0, width: 1, height: 1)])[0]
+    let found = (recognize ?? self.recognize)(atlas, [CGRect(x: 0, y: 0, width: 1, height: 1)])[0]
     return found.compactMap { o in
       let ax = o.x * Double(AW), ay = (1 - o.y - o.h) * Double(AH), aw = o.w * Double(AW), ah = o.h * Double(AH)
       let cx = ax + aw / 2, cy = ay + ah / 2
@@ -88,6 +100,15 @@ final class TextRecognizer {
                                                   && cy >= Double(places[$0].y) && cy < Double(places[$0].y + src[$0].h) }) else { return nil }
       let ox = Double(src[i].x) + ax - Double(places[i].x), oy = Double(src[i].y) + ay - Double(places[i].y)
       return Obs(text: o.text, x: ox / W, y: 1 - (oy + ah) / H, w: aw / W, h: ah / H)
+    }
+  }
+
+  private func deviceName(_ device: MLComputeDevice) -> String {
+    switch device {
+    case .cpu: return "cpu"
+    case .gpu: return "gpu"
+    case .neuralEngine: return "neuralEngine"
+    @unknown default: return "unknown"
     }
   }
 }

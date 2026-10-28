@@ -22,6 +22,7 @@ struct Options {
 final class Pipeline {
   let opts: Options
   let ocr: TextRecognizer
+  private let recognize: (CVPixelBuffer, [CGRect]) -> [[Obs]]
   private var prev: CVPixelBuffer?
   private(set) var obs: [Obs] = []
   private(set) var lines: [DLine] = []
@@ -29,9 +30,10 @@ final class Pipeline {
   private(set) var imageSize = (0, 0)
   static let tile = 32
 
-  init(_ opts: Options) {
+  init(_ opts: Options, recognize: ((CVPixelBuffer, [CGRect]) -> [[Obs]])? = nil) {
     self.opts = opts
-    ocr = TextRecognizer(fast: opts.fast, languageCorrection: opts.languageCorrection)
+    ocr = TextRecognizer(fast: opts.fast, languageCorrection: opts.languageCorrection, stats: opts.stats)
+    self.recognize = recognize ?? ocr.recognize
   }
 
   var canvasHeight: Int {
@@ -49,14 +51,17 @@ final class Pipeline {
                     width: w, height: h, rowBytes: CVPixelBufferGetBytesPerRow(pb))
 
     var regions: [CGRect]? = nil // pixel rects, top-left origin; nil = everything
-    if let prev, CVPixelBufferGetWidth(prev) == w, CVPixelBufferGetHeight(prev) == h, sinceFull < opts.fullEvery {
+    if let prev, CVPixelBufferGetWidth(prev) == w, CVPixelBufferGetHeight(prev) == h {
       CVPixelBufferLockBaseAddress(prev, .readOnly)
       let old = Bitmap(base: CVPixelBufferGetBaseAddress(prev)!.assumingMemoryBound(to: UInt8.self),
                        width: w, height: h, rowBytes: CVPixelBufferGetBytesPerRow(prev))
       let dirty = dirtyRegions(old, bm)
       CVPixelBufferUnlockBaseAddress(prev, .readOnly)
-      if dirty.isEmpty { return false }
-      regions = dirty
+      if dirty.isEmpty {
+        if opts.stats { log(String(format: "frame %dx%d unchanged; OCR skipped cpu=%.2fms", w, h, (cpuTime() - t0) * 1000)) }
+        return false
+      }
+      if sinceFull < opts.fullEvery { regions = dirty }
     }
     prev = pb
     imageSize = (w, h)
@@ -72,12 +77,12 @@ final class Pipeline {
     }
     if let rects = regions {
       let rois = rects.map { CGRect(x: $0.minX / W, y: 1 - $0.maxY / H, width: $0.width / W, height: $0.height / H) }
-      let fresh = opts.atlas && rects.count > 1 ? ocr.recognizeAtlas(pb, rects) : Array(ocr.recognize(pb, rois).joined())
+      let fresh = opts.atlas && rects.count > 1 ? ocr.recognizeAtlas(pb, rects, using: recognize) : Array(recognize(pb, rois).joined())
       obs.removeAll { o in rois.contains { $0.intersects(CGRect(x: o.x, y: o.y, width: o.w, height: o.h)) } }
       obs += fresh
       sinceFull += 1
     } else {
-      obs = ocr.recognize(pb, [CGRect(x: 0, y: 0, width: 1, height: 1)])[0]
+      obs = recognize(pb, [CGRect(x: 0, y: 0, width: 1, height: 1)])[0]
       sinceFull = 0
     }
     if opts.stats {
