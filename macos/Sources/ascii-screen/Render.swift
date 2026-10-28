@@ -55,7 +55,10 @@ func renderAscii(_ ocr: [Obs], _ lines: [DLine], _ nx: Double?, _ ny: Double?, _
   if let nx, let ny, !canvas.isEmpty {
     let len = canvas[0].count
     let cx = min(len - 1, jsRound(nx * Double(len))), cy = min(canvas.count - 1, jsRound(ny * Double(canvas.count)))
-    if cy >= 0 && cx >= 0 && cx < canvas[cy].count { canvas[cy][cx] = pointer }
+    if cy >= 0 && cx >= 0 && cx < canvas[cy].count { // the emoji is two columns wide
+      let x = max(0, min(cx, canvas[cy].count - 2))
+      canvas[cy].replaceSubrange(x..<min(x + 2, canvas[cy].count), with: [pointer])
+    }
   }
   let border = String(repeating: "_", count: W)
   let bordered = ([border] + canvas.map { String(String.UnicodeScalarView($0)) } + [border]).joined(separator: "\n")
@@ -95,8 +98,10 @@ func addLines(_ asciiLines: String, _ lineData: [DLine], _ W: Int, _ H: Int) -> 
   if rows.count > 2 {
     for (ri, row) in rows[1..<(rows.count - 1)].enumerated() {
       var s = String.UnicodeScalarView()
-      for (ci, ch) in row.enumerated() {
+      var ci = 0
+      for ch in row {
         let l: UInt8 = ri < H && ci < W ? lc[ri][ci] : 32
+        ci += ch == pointer ? 2 : 1
         if ch == pointer { s.append(ch) }
         else if ch == " " || l == 124 { s.append(Unicode.Scalar(l)) }
         else if l == 95 { s.append(ch); s.append("\u{0332}") }

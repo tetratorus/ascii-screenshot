@@ -114,8 +114,14 @@ class RenderingTests(unittest.TestCase):
                                            line("_", 0, .4, width=1)], .4, .4, 20, 10])
         rows = result["finalText"].splitlines()
         self.assertEqual(rows[4][8], "\U0001F446")
-        self.assertEqual(len(rows[4]), 20)
+        self.assertEqual(len(rows[4]), 19)  # the emoji fills two of the 20 columns
         self.assertEqual(result["finalText"].count("\U0001F446"), 1)
+
+    def test_cursor_emoji_does_not_shift_later_columns(self):
+        result = self.compare("ascii", [[], [line("|", .5, 0, height=1)], .25, .5, 20, 10])
+        row = result["finalText"].splitlines()[5]
+        self.assertEqual(row.index("\U0001F446"), 5)
+        self.assertEqual(row.index("|") + 1, 10)  # +1: the emoji is two columns wide
 
     def test_overflowing_text_does_not_extend_the_canvas(self):
         result = self.compare("ascii", [[line("long overflowing text", .8, .8, width=.2, height=.1)],
