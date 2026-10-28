@@ -15,6 +15,7 @@ struct Options {
   var stats = false
   var display = 0
   var fullEvery = 30
+  var atlas = true
 }
 
 /// Keeps OCR/line state between frames and only redoes work for the parts of the screen that changed.
@@ -71,9 +72,9 @@ final class Pipeline {
     }
     if let rects = regions {
       let rois = rects.map { CGRect(x: $0.minX / W, y: 1 - $0.maxY / H, width: $0.width / W, height: $0.height / H) }
-      let fresh = ocr.recognize(pb, rois)
+      let fresh = opts.atlas && rects.count > 1 ? ocr.recognizeAtlas(pb, rects) : Array(ocr.recognize(pb, rois).joined())
       obs.removeAll { o in rois.contains { $0.intersects(CGRect(x: o.x, y: o.y, width: o.w, height: o.h)) } }
-      obs += fresh.joined()
+      obs += fresh
       sinceFull += 1
     } else {
       obs = ocr.recognize(pb, [CGRect(x: 0, y: 0, width: 1, height: 1)])[0]
