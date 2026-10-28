@@ -89,4 +89,33 @@ final class HistoryTests: XCTestCase {
     XCTAssertEqual(parseTime(History.stamp(now))?.timeIntervalSince1970, 1_800_000_000)
     XCTAssertNil(parseTime("nonsense"))
   }
+
+  func testFramesBetweenStartWithFrameAlreadyOnScreen() throws {
+    var t = Date(timeIntervalSince1970: 1_800_000_000)
+    let h = History(dir: dir, flushEvery: 300, now: { t })
+    for name in ["a", "b", "c", "d"] { try h.record(name); t += 60 }
+    try h.flush()
+    let start = Date(timeIntervalSince1970: 1_800_000_000)
+    let got = try h.frames(from: start + 90, to: start + 180)
+    XCTAssertEqual(got.map(\.1), ["b", "c", "d"])
+  }
+
+  func testPlaybackDelayScalesAndCapsGaps() {
+    let t = Date(timeIntervalSince1970: 0)
+    let p = Playback(frames: [(t, "a"), (t + 5, "b"), (t + 605, "c")], speed: 10, maxGap: 2)
+    XCTAssertEqual(p.delay(after: 0), 0.5, accuracy: 1e-9)
+    XCTAssertEqual(p.delay(after: 1), 2)
+    XCTAssertEqual(p.delay(after: 2), 0)
+  }
+
+  func testPlaybackKeys() {
+    XCTAssertEqual(Playback.key([0x20]), .pause)
+    XCTAssertEqual(Playback.key([0x1b, 0x5b, 0x43]), .next)
+    XCTAssertEqual(Playback.key([0x1b, 0x5b, 0x44]), .previous)
+    XCTAssertEqual(Playback.key([0x1b, 0x5b, 0x41]), .faster)
+    XCTAssertEqual(Playback.key([0x2d]), .slower)
+    XCTAssertEqual(Playback.key([0x03]), .quit)
+    XCTAssertEqual(Playback.key([0x78]), .other)
+    XCTAssertEqual(Playback.keys([0x1b, 0x5b, 0x44, 0x1b, 0x5b, 0x44, 0x71]), [.previous, .previous, .quit])
+  }
 }

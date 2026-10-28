@@ -90,6 +90,21 @@ final class History {
     return nil
   }
 
+  /// Every frame recorded between `from` and `to`, starting with the one already on screen at `from`.
+  func frames(from: Date, to: Date) throws -> [(Date, String)] {
+    var out: [(Date, String)] = []
+    if let first = try frame(at: from), first.0 < from { out.append(first) }
+    var d = Calendar.current.startOfDay(for: from)
+    while d <= to {
+      let url = dir.appendingPathComponent("\(History.day(d)).txt.gz")
+      if FileManager.default.fileExists(atPath: url.path) {
+        out += History.records(try gunzip(url)).filter { $0.0 >= from && $0.0 <= to }
+      }
+      d = Calendar.current.date(byAdding: .day, value: 1, to: d)!
+    }
+    return out
+  }
+
   /// A `@@ ` line only starts a record when the rest is a valid timestamp, so frame text survives.
   static func records(_ text: String) -> [(Date, String)] {
     var out: [(Date, [Substring])] = []

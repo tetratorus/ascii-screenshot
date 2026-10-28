@@ -8,6 +8,10 @@ Usage: ascii-screen [options]            live ASCII view of the screen, updated 
        ascii-screen --image <file>...    convert an image file (more files = successive frames)
        ascii-screen --at <time>          print the saved frame that was on screen at <time>
                                          (HH:MM[:SS] today, or ISO 8601 like 2026-10-27T14:05:00+07:00)
+       ascii-screen --play [--from <time>] [--to <time>] [--speed <x>]
+                                         replay saved history in the terminal like a screen recording
+                                         (default: today so far at 10x; keys: space pause, left/right step,
+                                         up/down or +/- speed, q quit)
 
 Options:
   --width <n>          Canvas width (default 160)
@@ -25,10 +29,14 @@ Options:
   --history <dir>      Also keep every changed frame, gzip-compressed, in <dir>/YYYY-MM-DD.txt.gz
                        (read with gzcat or --at; saved within 10s of a change and on sleep/lock/exit)
   --keep-days <n>      Delete history files older than n days (default 14; 0 keeps everything)
+  --from/--to <time>   Playback range (default: midnight today to now)
+  --speed <x>          Playback speed (default 10)
+  --max-gap <s>        Longest real-time pause between played frames (default 2)
 """
 
 var opts = Options()
 var mode = "live", imagePath = "", images: [String] = [], atTime = ""
+var fromTime: String?, toTime: String?, speed = 10.0, maxGap = 2.0
 var args = CommandLine.arguments.dropFirst().makeIterator()
 func value(_ flag: String) -> String {
   guard let v = args.next() else { log("\(flag) needs a value"); exit(2) }
@@ -51,6 +59,11 @@ while let a = args.next() {
   case "--history": opts.history = value(a)
   case "--keep-days": opts.keepDays = Int(value(a)) ?? opts.keepDays
   case "--at": mode = "at"; atTime = value(a)
+  case "--play": mode = "play"
+  case "--from": fromTime = value(a)
+  case "--to": toTime = value(a)
+  case "--speed": speed = Double(value(a)).flatMap { $0 > 0 ? $0 : nil } ?? speed
+  case "--max-gap": maxGap = Double(value(a)) ?? maxGap
   case "--once": mode = "once"
   case "--image": mode = "image"; images.append(value(a)); imagePath = images[0]
   case "--detect-json": mode = "detect"; imagePath = value(a)
@@ -97,6 +110,20 @@ case "at":
   }
   log("frame saved at \(History.stamp(when))")
   print(frame)
+case "play":
+  func time(_ s: String?, _ fallback: Date) -> Date {
+    guard let s else { return fallback }
+    guard let t = parseTime(s) else { log("cannot parse time \(s)"); exit(2) }
+    return t
+  }
+  let from = time(fromTime, Calendar.current.startOfDay(for: Date())), to = time(toTime, Date())
+  let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
+  let frames = try History(dir: URL(fileURLWithPath: dir)).frames(from: from, to: to)
+  guard !frames.isEmpty else {
+    log("no saved frames between \(History.stamp(from)) and \(History.stamp(to)) in \(dir)"); exit(1)
+  }
+  var player = Playback(frames: frames, speed: speed, maxGap: maxGap)
+  player.run()
 case "once":
   try checkPermission()
   Task {
