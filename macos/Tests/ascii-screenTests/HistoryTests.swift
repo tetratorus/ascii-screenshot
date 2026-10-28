@@ -169,19 +169,46 @@ final class HistoryTests: XCTestCase {
     }
   }
 
-  func testSearchFindsTextAndMergesConsecutiveFrames() throws {
+  func testSearchMatchesWordsPrefixesAndFTSSyntaxAndMergesRuns() throws {
     var t = Date(timeIntervalSince1970: 1_800_000_000)
     let h = History(dir: dir, flushEvery: 300, now: { t })
-    for frame in ["|  Invoice   #42  |", "Invoice  #42 due", "nothing here", "an invoice for 42 cats"] {
+    for frame in ["|  Invoice   #42  |", "Invoices  #42 due", "nothing here", "42 cats and an invoice"] {
       try h.record(frame); try h.flush(); t += 10
     }
     t += 600
     try h.record("I̲n̲v̲o̲i̲c̲e̲ #42 again"); try h.flush()
-    let hits = try History(dir: dir).search("invoice #42", from: .distantPast, to: .distantFuture, limit: 10)
-    XCTAssertEqual(hits.map(\.frames), [1, 2])
-    XCTAssertEqual(hits.map(\.line), ["invoice #42 again", "invoice #42 due"])
-    XCTAssertEqual(try History(dir: dir).search("invoice #42", from: .distantPast, to: .distantFuture, limit: 1).count, 1)
-    XCTAssertTrue(try History(dir: dir).search("zebra", from: .distantPast, to: .distantFuture, limit: 10).isEmpty)
+    func find(_ q: String) throws -> [History.Match] { try History(dir: dir).search(q, from: .distantPast, to: .distantFuture, limit: 10) }
+    XCTAssertEqual(try find("invoice 42").map(\.frames), [2, 2])
+    XCTAssertEqual(try find("invoice 42").map(\.line), ["invoice #42 again", "invoices #42 due"])
+    XCTAssertEqual(try find("\"invoice 42\"").map(\.frames), [1, 1])
+    XCTAssertEqual(try find("\"42 cats\" invoice").map(\.frames), [1])
+    XCTAssertEqual(try find("\"cats 42\"").count, 0)
+    XCTAssertEqual(try find("invoice NOT \"42 cats\"").map(\.frames), [1, 2])
+    XCTAssertEqual(History.prefixWords("inv OR (due NOT x*) text:cat ^a 42.5"), "\"inv\"* OR (\"due\"* NOT x*) text:\"cat\"* ^a \"42\"* \"5\"*")
+    XCTAssertEqual(try find("cats OR due").map(\.frames), [1, 1])
+    XCTAssertEqual(try find("invo* NOT again").map(\.frames), [1, 2])
+    XCTAssertEqual(try History(dir: dir).search("invoice", from: .distantPast, to: .distantFuture, limit: 1).count, 1)
+    XCTAssertTrue(try find("zebra").isEmpty)
+    XCTAssertThrowsError(try find("\"unbalanced"))
+  }
+
+  func testSearchMergesRunsAcrossDaysIndexedOutOfOrder() throws {
+    let midnight = Calendar.current.startOfDay(for: Date(timeIntervalSince1970: 1_800_000_000))
+    var t = midnight - 30
+    let h = History(dir: dir, flushEvery: 300, now: { t })
+    try h.record("alpha one"); try h.flush()
+    t = midnight + 30
+    try h.record("alpha two"); try h.flush()
+    for f in ["index.sqlite", "index.sqlite-wal", "index.sqlite-shm"] { try? FileManager.default.removeItem(at: dir.appendingPathComponent(f)) }
+    let fresh = try HistoryIndex(dir: dir)
+    try fresh.catchUp(day: History.day(t))
+    try fresh.catchUp()
+    t += 30
+    let h2 = History(dir: dir, flushEvery: 300, now: { t })
+    try h2.record("alpha three"); try h2.flush()
+    let runs = try History(dir: dir).search("alpha", from: .distantPast, to: .distantFuture, limit: 10)
+    XCTAssertEqual(runs.map(\.frames), [3])
+    XCTAssertEqual(runs.first?.line, "alpha three")
   }
 
   func testIndexForgetsPrunedDaysAndCatchesUpOnAppends() throws {

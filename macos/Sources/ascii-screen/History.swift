@@ -139,39 +139,94 @@ final class History {
 
   struct Match { var start: Date; var end: Date; var frames: Int; var line: String }
 
-  /// Times the text was on screen between `from` and `to`, newest first. Frames that contain every word
-  /// are found with the index, then checked for the exact text; runs of consecutive matching frames are merged.
-  func search(_ text: String, from: Date, to: Date, limit: Int) throws -> [Match] {
+  /// Times matching frames were on screen between `from` and `to`, newest first; runs of consecutive matching
+  /// frames are merged. `query` is FTS5 syntax (`invo*`, `a OR b`, `NOT`, `"exact phrase"`); plain words match
+  /// in any order, each also matching longer words it starts. The index has no word positions, so a quoted
+  /// phrase is looked up as its words and then checked against the frame text (unless the query uses OR).
+  func search(_ query: String, from: Date, to: Date, limit: Int) throws -> [Match] {
     guard let index else { throw NSError(domain: "ascii-screen", code: 5, userInfo: [NSLocalizedDescriptionKey: "no search index"]) }
     try index.catchUp()
-    let needle = History.normalize(text)
-    let words = needle.split { !$0.isLetter && !$0.isNumber }.map(String.init)
-    guard !words.isEmpty else { return [] }
-    var out: [Match] = [], skip = 0, lastID = -1, cached: (day: String, offset: Int, records: [(Date, String)])?
+    let words = query.lowercased().split { !$0.isLetter && !$0.isNumber }.map(String.init)
+      .filter { !["and", "or", "not", "near"].contains($0) }
+    let raw = query.contains { "\"*():^+".contains($0) } || query.split(separator: " ").contains { ["AND", "OR", "NOT"].contains($0) }
+    let parts = query.split(separator: "\"", omittingEmptySubsequences: false).map(String.init)
+    let quoted = parts.count > 1 && parts.count % 2 == 1
+    let phrases = !quoted ? [] : stride(from: 1, to: parts.count, by: 2)
+      .filter { parts[$0 - 1].split(separator: " ").last != "NOT" }.map { History.words(parts[$0]) }.filter { $0 != "  " }
+    let match = !raw ? words.map { "\"\($0)\"*" }.joined(separator: " ")
+      : !quoted && parts.count > 1 ? query
+      : parts.indices.map { i in
+        guard i % 2 == 1 else { return History.prefixWords(parts[i]) }
+        let group = "(" + History.words(parts[i]).split(separator: " ").map { "\"\($0)\"" }.joined(separator: " AND ") + ")"
+        let ops = ["AND", "OR", "NOT"], before = parts[i - 1].split(separator: " ").last, after = parts[i + 1].split(separator: " ").first
+        return (before.map { !ops.contains(String($0)) && !$0.hasSuffix("(") } == true ? " AND " : "") + group
+          + (after.map { !ops.contains(String($0)) && !$0.hasPrefix(")") && $0 != "*" } == true ? " AND " : "")
+      }.joined()
+    guard !match.isEmpty else { return [] }
+    let verify = !phrases.isEmpty && !query.split(separator: " ").contains("OR")
+    var out: [Match] = [], skip = 0, next = -1, cached: (day: String, offset: Int, records: [(Date, String)])?
+    var runs: [HistoryIndex.Location] = []
     while out.count <= limit {
-      let page = try index.candidates(words, from: from, to: to, limit: 500, skip: skip)
+      let page = try index.candidates(match, from: from, to: to, limit: 1000, skip: skip)
       if page.isEmpty { break }
       skip += page.count
       for c in page {
-        if cached?.day != c.day || cached?.offset != c.offset {
-          var m = GzipRecords(url: dir.appendingPathComponent("\(c.day).txt.gz"), from: c.offset)
-          var recs: [(Date, String)] = []
-          while let r = m?.next(), m?.memberOffset == c.offset { recs.append(r) }
-          cached = (c.day, c.offset, recs)
+        if verify {
+          if cached?.day != c.day || cached?.offset != c.offset { cached = (c.day, c.offset, member(c)) }
+          guard let recs = cached?.records, c.seq < recs.count,
+                case let lines = recs[c.seq].1.split(separator: "\n").map({ History.words(String($0)) }),
+                phrases.allSatisfy({ p in lines.contains { $0.contains(p) } }) else { next = -1; continue }
         }
-        guard let recs = cached?.records, c.seq < recs.count else { continue }
-        guard let line = recs[c.seq].1.split(separator: "\n").map({ History.normalize(String($0)) })
-          .first(where: { $0.contains(needle) }) else { continue }
-        if let prev = out.last, lastID == c.id + 1 || prev.start == c.time {
+        if !out.isEmpty, next == c.id {
           out[out.count - 1].start = c.time
           out[out.count - 1].frames += 1
         } else {
-          out.append(Match(start: c.time, end: c.time, frames: 1, line: line))
+          out.append(Match(start: c.time, end: c.time, frames: 1, line: ""))
+          runs.append(c)
         }
-        lastID = c.id
+        next = c.older
       }
     }
-    return Array(out.prefix(limit))
+    out = Array(out.prefix(limit))
+    for i in out.indices { out[i].line = bestLine(runs[i], words) }
+    return out
+  }
+
+  /// The line of the frame at `loc` containing the most query words.
+  private func bestLine(_ loc: HistoryIndex.Location, _ words: [String]) -> String {
+    let recs = member(loc)
+    guard loc.seq < recs.count else { return "" }
+    let lines = recs[loc.seq].1.split(separator: "\n").map { History.normalize(String($0)) }
+    return lines.max { a, b in words.filter(a.contains).count < words.filter(b.contains).count } ?? ""
+  }
+
+  /// All records of the gzip member holding `loc`.
+  private func member(_ loc: HistoryIndex.Location) -> [(Date, String)] {
+    var m = GzipRecords(url: dir.appendingPathComponent("\(loc.day).txt.gz"), from: loc.offset)
+    var recs: [(Date, String)] = []
+    while let r = m?.next(), m?.memberOffset == loc.offset { recs.append(r) }
+    return recs
+  }
+
+  /// Bare words of an FTS5 query (not operators or column names) as quoted prefix terms; other punctuation
+  /// that isn't query syntax becomes a space, as the tokenizer would treat it.
+  static func prefixWords(_ s: String) -> String {
+    let cleaned = String(s.map { $0.isLetter || $0.isNumber || "()*^: ".contains($0) ? $0 : " " })
+    let re = try! NSRegularExpression(pattern: #"(?<![\p{L}\p{N}*^])[\p{L}\p{N}]+(?![\p{L}\p{N}*(:])"#)
+    var out = "", last = cleaned.startIndex
+    for m in re.matches(in: cleaned, range: NSRange(cleaned.startIndex..., in: cleaned)) {
+      guard let r = Range(m.range, in: cleaned) else { continue }
+      let w = String(cleaned[r])
+      out += cleaned[last..<r.lowerBound] + (["AND", "OR", "NOT", "NEAR"].contains(w) ? w : "\"\(w.lowercased())\"*")
+      last = r.upperBound
+    }
+    return out + cleaned[last...]
+  }
+
+  /// Lowercased letters and digits only, as space-separated words with a space at each end, for phrase checks.
+  static func words(_ s: String) -> String {
+    " " + s.replacingOccurrences(of: "\u{0332}", with: "").lowercased()
+      .split { !$0.isLetter && !$0.isNumber }.joined(separator: " ") + " "
   }
 
   /// Lowercased, underline marks and box lines dropped, runs of spaces collapsed.

@@ -2,6 +2,7 @@
 # Install ascii-screen as a per-user background service (LaunchAgent).
 #   ./install.sh [ascii-screen flags...]   build, install, start (default flags: --out ~/.ascii-screen/screen.txt --history ~/.ascii-screen/history)
 #   ./install.sh --uninstall               stop and remove
+# Also links `ascii-screen` into a directory on PATH so --search/--play/--at work from any terminal.
 set -euo pipefail
 LABEL=com.tetratorus.ascii-screen
 APP="$HOME/Applications/ASCII Screen.app"
@@ -11,8 +12,11 @@ DATA="$HOME/.ascii-screen"
 LOG="$HOME/Library/Logs/ascii-screen.log"
 DOMAIN="gui/$(id -u)"
 
+CLI_DIRS=("$HOME/.local/bin" "$HOME/bin" /opt/homebrew/bin /usr/local/bin)
+
 launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
 if [[ "${1:-}" == "--uninstall" ]]; then
+  for d in "${CLI_DIRS[@]}"; do [[ "$(readlink "$d/ascii-screen" 2>/dev/null)" == "$BIN" ]] && rm -f "$d/ascii-screen"; done
   rm -rf "$APP" "$PLIST"
   echo "Removed. Output in $DATA and log $LOG were kept."
   exit 0
@@ -67,5 +71,17 @@ PL
 } > "$PLIST"
 plutil -lint "$PLIST" >/dev/null
 launchctl bootstrap "$DOMAIN" "$PLIST"
-echo "Running as $LABEL. Output: ${ARGS[*]}  Log: $LOG"
+# Put the CLI on PATH: the first writable directory already on PATH, else ~/.local/bin added to ~/.zshrc.
+CLI=""
+for d in "${CLI_DIRS[@]}"; do
+  [[ ":$PATH:" == *":$d:"* && -d "$d" && -w "$d" ]] && { CLI="$d"; break; }
+done
+if [[ -z "$CLI" ]]; then
+  CLI="$HOME/.local/bin"; mkdir -p "$CLI"
+  grep -qs 'ascii-screen PATH' "$HOME/.zshrc" || printf '\nexport PATH="$HOME/.local/bin:$PATH"  # ascii-screen PATH\n' >> "$HOME/.zshrc"
+  echo "Added ~/.local/bin to PATH in ~/.zshrc; open a new terminal to use 'ascii-screen'."
+fi
+ln -sf "$BIN" "$CLI/ascii-screen"
+
+echo "Running as $LABEL. Output: ${ARGS[*]}  Log: $LOG  CLI: $CLI/ascii-screen"
 echo "First run: allow 'ASCII Screen' in System Settings > Privacy & Security > Screen Recording; it restarts itself within 30s."

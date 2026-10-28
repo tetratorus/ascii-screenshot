@@ -15,3 +15,11 @@
 - The runner waits for the first native output before warmup. Cold initialization must not be reported as steady-state OCR latency.
 - Summarize completed runs with `python3 macos/benchmarks/summarize.py <events.jsonl> <power-log>`. System rail power is not app-attributed power, and process Energy Impact is not an Activity Monitor UI reading.
 - `macos/install.sh` installs a LaunchAgent and starts capturing the display; run it only with explicit approval. Screen Recording for the agent is granted per bundle id in System Settings and cannot be scripted (the TCC database is SIP-protected).
+
+# Screen history index
+
+- `~/.ascii-screen/history/YYYY-MM-DD.txt.gz` (gzip members of `@@ <ISO-8601 time>` + frame text records) is the source of truth. `index.sqlite` beside it is rebuilt from them, so it can be deleted.
+- `ascii-screen --search <query> --json` prints one `{"start","end","frames","line"}` object per run of consecutive matching frames, newest first; exit 1 means no match, exit 2 a bad query. Feed `start` to `--at` or `--play --from` to see the screen.
+- Query it directly with `sqlite3 -readonly`: `frames(id, time, day, offset, seq)` places each frame in a day file (`time` is Unix seconds, `offset` the gzip member's byte offset, `seq` the record within that member); `words` is a contentless FTS5 table (`detail=none`) with rowid = `frames.id`; `vocab` (fts5vocab, `term`/`doc`) lists every indexed word with the number of frames containing it.
+- Search has no fuzzy matching built in. OCR misreads words, so for near-misses look up spellings first, e.g. `SELECT term, doc FROM vocab WHERE term LIKE 'inv%ice%'`, then search `invoice OR lnvoice`.
+- Example: frames containing a word in a time range, newest first: `SELECT f.time, f.day, f.offset, f.seq FROM words JOIN frames f ON f.id = words.rowid WHERE words MATCH 'invoice' AND f.time > strftime('%s','now','-7 days') ORDER BY f.id DESC LIMIT 20`.

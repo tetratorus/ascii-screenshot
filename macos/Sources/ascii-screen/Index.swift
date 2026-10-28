@@ -2,8 +2,8 @@ import Foundation
 import SQLite3
 
 /// Search index over the history files, in `<dir>/index.sqlite`: one row per saved frame (its time and which
-/// gzip member of which day file holds it) plus an FTS5 word index of the frame text. Text isn't stored
-/// again (contentless, no word positions), so the index is about a quarter of the size of the history.
+/// gzip member of which day file holds it) plus an FTS5 word index of the frame text (`vocab` lists every
+/// indexed word). Text and word positions aren't stored, so the index is about a third of the history's size.
 /// It is rebuilt from the day files whenever it falls behind, so the gzip files stay the source of truth.
 final class HistoryIndex {
   private var db: OpaquePointer?
@@ -15,6 +15,9 @@ final class HistoryIndex {
                                             attributes: [.posixPermissions: 0o700])
     guard sqlite3_open(dir.appendingPathComponent("index.sqlite").path, &db) == SQLITE_OK else { throw error() }
     sqlite3_busy_timeout(db, 5000)
+    if try query("PRAGMA user_version", []) { $0.int(0) }.first ?? 0 < 4 { // older layout: rebuild from the day files
+      try exec("DROP TABLE IF EXISTS vocab; DROP TABLE IF EXISTS words; DROP TABLE IF EXISTS frames; DROP TABLE IF EXISTS files; VACUUM;")
+    }
     try exec("""
       PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;
       CREATE TABLE IF NOT EXISTS frames(id INTEGER PRIMARY KEY, time REAL NOT NULL, day TEXT NOT NULL,
@@ -22,6 +25,8 @@ final class HistoryIndex {
       CREATE INDEX IF NOT EXISTS frames_time ON frames(time);
       CREATE TABLE IF NOT EXISTS files(day TEXT PRIMARY KEY, indexed INTEGER NOT NULL);
       CREATE VIRTUAL TABLE IF NOT EXISTS words USING fts5(text, content='', contentless_delete=1, detail=none);
+      CREATE VIRTUAL TABLE IF NOT EXISTS vocab USING fts5vocab(words, row);
+      PRAGMA user_version = 4;
       """)
   }
 
@@ -64,20 +69,22 @@ final class HistoryIndex {
     try run("DELETE FROM files WHERE day = ?", [day])
   }
 
-  struct Location: Equatable { var time: Date; var day: String; var offset: Int; var seq: Int; var id = 0 }
+  /// `older` is the id of the frame saved just before this one (0 if none or not looked up).
+  struct Location: Equatable { var time: Date; var day: String; var offset: Int; var seq: Int; var id = 0; var older = 0 }
 
   /// The gzip member holding the last frame saved at or before `time`.
   func locate(atOrBefore time: Date) throws -> Location? {
-    try query("SELECT time, day, offset, seq, id FROM frames WHERE time <= ? ORDER BY time DESC LIMIT 1",
+    try query("SELECT time, day, offset, seq, id, 0 FROM frames WHERE time <= ? ORDER BY time DESC, id DESC LIMIT 1",
               [time.timeIntervalSince1970], Location.init).first
   }
 
-  /// Frames between `from` and `to` containing every word of `words`, newest first.
-  func candidates(_ words: [String], from: Date, to: Date, limit: Int, skip: Int) throws -> [Location] {
-    let match = words.map { "\"\($0.replacingOccurrences(of: "\"", with: "\"\""))\"" }.joined(separator: " ")
-    return try query("""
-      SELECT f.time, f.day, f.offset, f.seq, f.id FROM words JOIN frames f ON f.id = words.rowid
-      WHERE words MATCH ? AND f.time BETWEEN ? AND ? ORDER BY f.time DESC LIMIT ? OFFSET ?
+  /// Frames between `from` and `to` matching the FTS5 query `match`, newest first.
+  func candidates(_ match: String, from: Date, to: Date, limit: Int, skip: Int) throws -> [Location] {
+    try query("""
+      SELECT f.time, f.day, f.offset, f.seq, f.id, IFNULL((SELECT o.id FROM frames o WHERE (o.time, o.id) < (f.time, f.id)
+                                                            ORDER BY o.time DESC, o.id DESC LIMIT 1), 0)
+      FROM words JOIN frames f ON f.id = words.rowid
+      WHERE words MATCH ? AND f.time BETWEEN ? AND ? ORDER BY f.time DESC, f.id DESC LIMIT ? OFFSET ?
       """, [match, from.timeIntervalSince1970, to.timeIntervalSince1970, limit, skip], Location.init)
   }
 
@@ -128,6 +135,6 @@ final class HistoryIndex {
 
 extension HistoryIndex.Location {
   init(_ r: HistoryIndex.Row) {
-    self.init(time: Date(timeIntervalSince1970: r.double(0)), day: r.text(1), offset: r.int(2), seq: r.int(3), id: r.int(4))
+    self.init(time: Date(timeIntervalSince1970: r.double(0)), day: r.text(1), offset: r.int(2), seq: r.int(3), id: r.int(4), older: r.int(5))
   }
 }

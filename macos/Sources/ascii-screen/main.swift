@@ -13,8 +13,10 @@ Usage: ascii-screen [options]            live ASCII view of the screen, updated 
                                          replay saved history in the terminal like a screen recording
                                          (default: today so far at 10x; keys: space pause, left/right step,
                                          up/down or +/- speed, q quit)
-       ascii-screen --search <text> [--from <time>] [--to <time>] [--limit <n>]
-                                         when <text> was on screen, newest first (default: all history, 20 results)
+       ascii-screen --search <query> [--from <time>] [--to <time>] [--limit <n>] [--json]
+                                         when matching text was on screen, newest first (default: all history,
+                                         20 results). Plain words match in any order and as word starts; also
+                                         SQLite FTS5 syntax: invo*, a OR b, NOT, "exact phrase"
 
 Options:
   --width <n>          Canvas width (default 160)
@@ -39,7 +41,7 @@ Options:
 
 var opts = Options()
 var mode = "live", imagePath = "", images: [String] = [], atTime = ""
-var fromTime: String?, toTime: String?, speed = 10.0, maxGap = 2.0, query = "", limit = 20
+var fromTime: String?, toTime: String?, speed = 10.0, maxGap = 2.0, query = "", limit = 20, json = false
 var args = CommandLine.arguments.dropFirst().makeIterator()
 func value(_ flag: String) -> String {
   guard let v = args.next() else { log("\(flag) needs a value"); exit(2) }
@@ -64,6 +66,7 @@ while let a = args.next() {
   case "--at": mode = "at"; atTime = value(a)
   case "--play": mode = "play"
   case "--search": mode = "search"; query = value(a)
+  case "--json": json = true
   case "--limit": limit = Int(value(a)).flatMap { $0 > 0 ? $0 : nil } ?? limit
   case "--from": fromTime = value(a)
   case "--to": toTime = value(a)
@@ -136,9 +139,16 @@ case "at":
 case "search":
   let from = time(fromTime, .distantPast), to = time(toTime, Date())
   let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
-  let matches = try History(dir: URL(fileURLWithPath: dir)).search(query, from: from, to: to, limit: limit)
+  let matches: [History.Match]
+  do { matches = try History(dir: URL(fileURLWithPath: dir)).search(query, from: from, to: to, limit: limit) } catch {
+    log("search failed: \(error.localizedDescription)"); exit(2)
+  }
   guard !matches.isEmpty else { log("\"\(query)\" not found in saved history in \(dir)"); exit(1) }
-  for m in matches {
+  for m in matches where json {
+    let o: [String: Any] = ["start": History.stamp(m.start), "end": History.stamp(m.end), "frames": m.frames, "line": m.line]
+    print(String(decoding: try JSONSerialization.data(withJSONObject: o, options: [.sortedKeys, .withoutEscapingSlashes]), as: UTF8.self))
+  }
+  for m in matches where !json {
     let span = (m.end > m.start ? " to \(History.stamp(m.end))" : "") + (m.frames > 1 ? "  (\(m.frames) frames)" : "")
     print("\(History.stamp(m.start))\(span)\n    \(m.line.prefix(160))")
   }
