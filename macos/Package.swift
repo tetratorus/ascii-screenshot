@@ -9,7 +9,7 @@ let package = Package(
       name: "ascii-screen",
       path: "Sources/ascii-screen",
       swiftSettings: [.unsafeFlags(["-Ounchecked", "-wmo"])],
-      linkerSettings: [.linkedLibrary("z")]
+      linkerSettings: [.linkedLibrary("z"), .linkedLibrary("sqlite3")]
     ),
     .testTarget(name: "ascii-screenTests", dependencies: ["ascii-screen"]),
   ]

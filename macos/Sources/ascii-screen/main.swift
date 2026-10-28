@@ -13,6 +13,8 @@ Usage: ascii-screen [options]            live ASCII view of the screen, updated 
                                          replay saved history in the terminal like a screen recording
                                          (default: today so far at 10x; keys: space pause, left/right step,
                                          up/down or +/- speed, q quit)
+       ascii-screen --search <text> [--from <time>] [--to <time>] [--limit <n>]
+                                         when <text> was on screen, newest first (default: all history, 20 results)
 
 Options:
   --width <n>          Canvas width (default 160)
@@ -37,7 +39,7 @@ Options:
 
 var opts = Options()
 var mode = "live", imagePath = "", images: [String] = [], atTime = ""
-var fromTime: String?, toTime: String?, speed = 10.0, maxGap = 2.0
+var fromTime: String?, toTime: String?, speed = 10.0, maxGap = 2.0, query = "", limit = 20
 var args = CommandLine.arguments.dropFirst().makeIterator()
 func value(_ flag: String) -> String {
   guard let v = args.next() else { log("\(flag) needs a value"); exit(2) }
@@ -61,6 +63,8 @@ while let a = args.next() {
   case "--keep-days": opts.keepDays = Int(value(a)) ?? opts.keepDays
   case "--at": mode = "at"; atTime = value(a)
   case "--play": mode = "play"
+  case "--search": mode = "search"; query = value(a)
+  case "--limit": limit = Int(value(a)).flatMap { $0 > 0 ? $0 : nil } ?? limit
   case "--from": fromTime = value(a)
   case "--to": toTime = value(a)
   case "--speed": speed = Double(value(a)).flatMap { $0 > 0 ? $0 : nil } ?? speed
@@ -85,6 +89,12 @@ if opts.keepDays < 0 { invalid("--keep-days must be 0 or more") }
 if !(maxGap >= 0) { invalid("--max-gap must be 0 or more") }
 // Frames and history hold whatever was on screen; keep everything we create private to this user.
 umask(0o077)
+
+func time(_ s: String?, _ fallback: Date) -> Date {
+  guard let s else { return fallback }
+  guard let t = parseTime(s) else { log("cannot parse time \(s)"); exit(2) }
+  return t
+}
 
 switch mode {
 case "image", "detect":
@@ -118,24 +128,28 @@ case "render":
 case "at":
   guard let t = parseTime(atTime) else { log("cannot parse time \(atTime)"); exit(2) }
   let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
-  guard let (when, frame) = try History(dir: URL(fileURLWithPath: dir)).frame(at: t) else {
+  guard let (when, frame) = History(dir: URL(fileURLWithPath: dir)).frame(at: t) else {
     log("no saved frame at or before \(History.stamp(t)) in \(dir)"); exit(1)
   }
   log("frame saved at \(History.stamp(when))")
   print(frame)
-case "play":
-  func time(_ s: String?, _ fallback: Date) -> Date {
-    guard let s else { return fallback }
-    guard let t = parseTime(s) else { log("cannot parse time \(s)"); exit(2) }
-    return t
+case "search":
+  let from = time(fromTime, .distantPast), to = time(toTime, Date())
+  let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
+  let matches = try History(dir: URL(fileURLWithPath: dir)).search(query, from: from, to: to, limit: limit)
+  guard !matches.isEmpty else { log("\"\(query)\" not found in saved history in \(dir)"); exit(1) }
+  for m in matches {
+    let span = (m.end > m.start ? " to \(History.stamp(m.end))" : "") + (m.frames > 1 ? "  (\(m.frames) frames)" : "")
+    print("\(History.stamp(m.start))\(span)\n    \(m.line.prefix(160))")
   }
+case "play":
   let from = time(fromTime, Calendar.current.startOfDay(for: Date())), to = time(toTime, Date())
   let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
-  let frames = try History(dir: URL(fileURLWithPath: dir)).frames(from: from, to: to)
-  guard !frames.isEmpty else {
+  var player = Playback(frames: History(dir: URL(fileURLWithPath: dir)).frames(from: from, to: to),
+                        speed: speed, maxGap: maxGap)
+  guard player.frame(0) != nil else {
     log("no saved frames between \(History.stamp(from)) and \(History.stamp(to)) in \(dir)"); exit(1)
   }
-  var player = Playback(frames: frames, speed: speed, maxGap: maxGap)
   player.run()
 case "once":
   try checkPermission()

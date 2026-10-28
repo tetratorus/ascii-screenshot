@@ -17,6 +17,9 @@ final class History {
   private var firstBuffered: Date?
   private let lock = NSLock()
   private var timer: DispatchSourceTimer?
+  private lazy var index: HistoryIndex? = {
+    do { return try HistoryIndex(dir: dir) } catch { log("history search index unavailable: \(error.localizedDescription)"); return nil }
+  }()
 
   init(dir: URL, flushEvery: TimeInterval = 10, keepDays: Int = 14, now: @escaping () -> Date = Date.init) {
     self.dir = dir
@@ -68,6 +71,8 @@ final class History {
       defer { try? fh.close() }
       try fh.seekToEnd()
       try fh.write(contentsOf: member)
+      try? fh.close()
+      do { try index?.catchUp(day: bufferDay) } catch { log("cannot index history: \(error.localizedDescription)") }
     } catch {
       // Disk full or unwritable: retry with later frames, but don't let memory grow without bound.
       if buffer.utf8.count > 16 << 20 {
@@ -88,32 +93,97 @@ final class History {
     let cutoff = History.day(now().addingTimeInterval(-Double(keepDays) * 86400))
     for f in files where f.hasSuffix(".txt.gz") && String(f.prefix(10)) < cutoff {
       try? FileManager.default.removeItem(at: dir.appendingPathComponent(f))
+      try? index?.drop(String(f.prefix(10)))
     }
   }
 
   /// The frame that was on screen at `time`: the last record at or before it.
-  func frame(at time: Date) throws -> (Date, String)? {
-    for day in [History.day(time), History.day(time.addingTimeInterval(-86400))] {
-      let url = dir.appendingPathComponent("\(day).txt.gz")
-      guard FileManager.default.fileExists(atPath: url.path) else { continue }
-      if let hit = History.records(try gunzip(url)).last(where: { $0.0 <= time }) { return hit }
-    }
-    return nil
-  }
+  func frame(at time: Date) -> (Date, String)? { frames(from: time, to: time).next() }
 
   /// Every frame recorded between `from` and `to`, starting with the one already on screen at `from`.
-  func frames(from: Date, to: Date) throws -> [(Date, String)] {
-    var out: [(Date, String)] = []
-    if let first = try frame(at: from), first.0 < from { out.append(first) }
-    var d = Calendar.current.startOfDay(for: from)
-    while d <= to {
-      let url = dir.appendingPathComponent("\(History.day(d)).txt.gz")
-      if FileManager.default.fileExists(atPath: url.path) {
-        out += History.records(try gunzip(url)).filter { $0.0 >= from && $0.0 <= to }
+  /// Read lazily, one gzip member at a time, so memory stays flat however long the range is. The index
+  /// says which member to start from; without it, reading starts at the beginning of the day before.
+  func frames(from: Date, to: Date) -> AnyIterator<(Date, String)> {
+    let cal = Calendar.current
+    try? index?.catchUp()
+    let start = (try? index?.locate(atOrBefore: from)) ?? nil
+    var day = start.flatMap { History.date(day: $0.day) } ?? cal.date(byAdding: .day, value: -1, to: cal.startOfDay(for: from))!
+    var offset = start?.offset ?? 0
+    var records: GzipRecords?
+    var before: (Date, String)?, pending: (Date, String)?
+    var started = false, done = false
+    let last = max(from, to)
+    return AnyIterator {
+      if let p = pending { pending = nil; return p }
+      while !done {
+        if records == nil {
+          if day > last { done = true; break }
+          records = GzipRecords(url: self.dir.appendingPathComponent("\(History.day(day)).txt.gz"), from: offset)
+          day = cal.date(byAdding: .day, value: 1, to: day)!
+          offset = 0
+          continue
+        }
+        guard let r = records!.next() else { records = nil; if day > last { done = true }; continue }
+        if r.0 < from { before = r; continue }
+        if r.0 > to { done = true; break }
+        if !started {
+          started = true
+          if r.0 > from, let b = before { pending = r; return b }
+        }
+        return r
       }
-      d = Calendar.current.date(byAdding: .day, value: 1, to: d)!
+      if !started { started = true; return before }
+      return nil
     }
-    return out
+  }
+
+  struct Match { var start: Date; var end: Date; var frames: Int; var line: String }
+
+  /// Times the text was on screen between `from` and `to`, newest first. Frames that contain every word
+  /// are found with the index, then checked for the exact text; runs of consecutive matching frames are merged.
+  func search(_ text: String, from: Date, to: Date, limit: Int) throws -> [Match] {
+    guard let index else { throw NSError(domain: "ascii-screen", code: 5, userInfo: [NSLocalizedDescriptionKey: "no search index"]) }
+    try index.catchUp()
+    let needle = History.normalize(text)
+    let words = needle.split { !$0.isLetter && !$0.isNumber }.map(String.init)
+    guard !words.isEmpty else { return [] }
+    var out: [Match] = [], skip = 0, lastID = -1, cached: (day: String, offset: Int, records: [(Date, String)])?
+    while out.count <= limit {
+      let page = try index.candidates(words, from: from, to: to, limit: 500, skip: skip)
+      if page.isEmpty { break }
+      skip += page.count
+      for c in page {
+        if cached?.day != c.day || cached?.offset != c.offset {
+          var m = GzipRecords(url: dir.appendingPathComponent("\(c.day).txt.gz"), from: c.offset)
+          var recs: [(Date, String)] = []
+          while let r = m?.next(), m?.memberOffset == c.offset { recs.append(r) }
+          cached = (c.day, c.offset, recs)
+        }
+        guard let recs = cached?.records, c.seq < recs.count else { continue }
+        guard let line = recs[c.seq].1.split(separator: "\n").map({ History.normalize(String($0)) })
+          .first(where: { $0.contains(needle) }) else { continue }
+        if let prev = out.last, lastID == c.id + 1 || prev.start == c.time {
+          out[out.count - 1].start = c.time
+          out[out.count - 1].frames += 1
+        } else {
+          out.append(Match(start: c.time, end: c.time, frames: 1, line: line))
+        }
+        lastID = c.id
+      }
+    }
+    return Array(out.prefix(limit))
+  }
+
+  /// Lowercased, underline marks and box lines dropped, runs of spaces collapsed.
+  static func normalize(_ s: String) -> String {
+    s.replacingOccurrences(of: "\u{0332}", with: "").lowercased()
+      .split { $0 == " " || $0 == "|" || $0 == "_" }.joined(separator: " ")
+  }
+
+  static func date(day: String) -> Date? {
+    let p = day.split(separator: "-").compactMap { Int($0) }
+    guard p.count == 3 else { return nil }
+    return Calendar.current.date(from: DateComponents(year: p[0], month: p[1], day: p[2]))
   }
 
   /// A `@@ ` line only starts a record when the rest is a valid timestamp, so frame text survives.
@@ -201,33 +271,79 @@ func gunzip(_ url: URL) throws -> String {
   String(decoding: inflateMembers(try Data(contentsOf: url)), as: UTF8.self)
 }
 
-/// Decode each gzip member in turn. A damaged or truncated member (e.g. a crash mid-write) is dropped
-/// and decoding resumes at the next gzip header, so one bad write can't hide the rest of the day.
 func inflateMembers(_ data: Data) -> Data {
-  let bytes = [UInt8](data)
-  var out = Data(), pos = 0
-  let isHeader = { (i: Int) in i + 2 < bytes.count && bytes[i] == 0x1f && bytes[i + 1] == 0x8b && bytes[i + 2] == 8 }
-  var chunk = [UInt8](repeating: 0, count: 1 << 16)
-  while pos < bytes.count {
-    guard isHeader(pos) else { pos += 1; continue }
-    var z = z_stream()
-    guard inflateInit2_(&z, 31, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size)) == Z_OK else { break }
-    var member = Data(), status = Z_OK
-    bytes.withUnsafeBufferPointer { src in
-      z.next_in = UnsafeMutablePointer(mutating: src.baseAddress! + pos)
-      z.avail_in = uInt(src.count - pos)
-      repeat {
-        chunk.withUnsafeMutableBufferPointer { dst in
-          z.next_out = dst.baseAddress
-          z.avail_out = uInt(dst.count)
-          status = inflate(&z, Z_NO_FLUSH)
-          member.append(dst.baseAddress!, count: dst.count - Int(z.avail_out))
-        }
-      } while status == Z_OK
-    }
-    let used = Int(z.total_in)
-    inflateEnd(&z)
-    if status == Z_STREAM_END { out += member; pos += max(used, 1) } else { pos += 1 }
-  }
+  var members = GzipMembers(data: data), out = Data()
+  while let (_, m) = members.next() { out += m }
   return out
+}
+
+/// The gzip members of a file, decoded one at a time with their byte offsets. A damaged or truncated
+/// member (e.g. a crash mid-write) is dropped and decoding resumes at the next gzip header, so one bad
+/// write can't hide the rest of the day. `goodEnd` is the byte after the last member decoded.
+struct GzipMembers: IteratorProtocol {
+  let data: Data
+  private var pos: Int
+  private(set) var goodEnd: Int
+
+  init(data: Data, from: Int = 0) { self.data = data; pos = from; goodEnd = from }
+
+  mutating func next() -> (Int, Data)? {
+    var p = pos, end = goodEnd
+    defer { pos = p; goodEnd = end }
+    return data.withUnsafeBytes { raw -> (Int, Data)? in
+      guard let base = raw.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return nil }
+      let n = raw.count
+      var chunk = [UInt8](repeating: 0, count: 1 << 16)
+      while p < n {
+        guard p + 2 < n, base[p] == 0x1f, base[p + 1] == 0x8b, base[p + 2] == 8 else { p += 1; continue }
+        var z = z_stream()
+        guard inflateInit2_(&z, 31, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size)) == Z_OK else { p = n; return nil }
+        var member = Data(), status = Z_OK
+        z.next_in = UnsafeMutablePointer(mutating: base + p)
+        z.avail_in = uInt(n - p)
+        repeat {
+          chunk.withUnsafeMutableBufferPointer { dst in
+            z.next_out = dst.baseAddress
+            z.avail_out = uInt(dst.count)
+            status = inflate(&z, Z_NO_FLUSH)
+            member.append(dst.baseAddress!, count: dst.count - Int(z.avail_out))
+          }
+        } while status == Z_OK
+        let used = Int(z.total_in)
+        inflateEnd(&z)
+        if status == Z_STREAM_END {
+          let start = p
+          p += max(used, 1)
+          end = p
+          return (start, member)
+        }
+        p += 1
+      }
+      return nil
+    }
+  }
+}
+
+/// The records of one day file from byte `from` on, decoded one gzip member at a time.
+struct GzipRecords: IteratorProtocol {
+  private var members: GzipMembers
+  private var queue: [(Date, String)] = []
+  private var i = 0
+  private(set) var memberOffset = -1
+
+  init?(url: URL, from: Int = 0) {
+    guard let data = try? Data(contentsOf: url, options: .alwaysMapped) else { return nil }
+    members = GzipMembers(data: data, from: from)
+  }
+
+  mutating func next() -> (Date, String)? {
+    while i == queue.count {
+      guard let (offset, m) = members.next() else { return nil }
+      queue = History.records(String(decoding: m, as: UTF8.self))
+      i = 0
+      memberOffset = offset
+    }
+    defer { i += 1 }
+    return queue[i]
+  }
 }
