@@ -25,6 +25,9 @@ Options:
   --scale <f>          Capture scale relative to display points (default 1; 2 = Retina pixels)
   --fast               Faster, less accurate OCR
   --correction         OCR language correction (about 2x the CPU, little gain on UI text)
+  --languages <list>   OCR languages, comma-separated, first is preferred (default en-US), or auto
+                       to detect per frame (~15% more CPU). One script per list works best, e.g.
+                       zh-Hans,en-US or ja-JP,en-US; --languages list prints the supported codes
   --no-cursor          Don't draw the pointer
   --full-every <n>     Full-screen OCR after n incremental frames (default 30)
   --no-atlas           OCR each changed region with its own Vision call (default: pack them into one)
@@ -55,6 +58,8 @@ while let a = args.next() {
   case "--scale": opts.scale = Double(value(a)) ?? opts.scale
   case "--fast": opts.fast = true
   case "--correction": opts.languageCorrection = true
+  case "--languages":
+    opts.languages = value(a).split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
   case "--no-cursor": opts.cursor = false
   case "--full-every": opts.fullEvery = Int(value(a)) ?? opts.fullEvery
   case "--no-atlas": opts.atlas = false
@@ -87,6 +92,13 @@ if !(opts.scale > 0 && opts.scale <= 4) { invalid("--scale must be above 0 and a
 if opts.display < 0 { invalid("--display must be 0 or more") }
 if opts.fullEvery < 0 { invalid("--full-every must be 0 or more") }
 if opts.keepDays < 0 { invalid("--keep-days must be 0 or more") }
+if opts.languages == ["list"] { print(TextRecognizer.supportedLanguages().joined(separator: "\n")); exit(0) }
+if opts.languages != ["auto"] {
+  let known = TextRecognizer.supportedLanguages(fast: opts.fast)
+  if opts.languages.isEmpty || !opts.languages.allSatisfy(known.contains) {
+    invalid("--languages must be auto or codes from: \(known.joined(separator: ", "))")
+  }
+}
 if !(maxGap >= 0) { invalid("--max-gap must be 0 or more") }
 // Frames and history hold whatever was on screen; keep everything we create private to this user.
 umask(0o077)

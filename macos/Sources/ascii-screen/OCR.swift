@@ -6,21 +6,35 @@ import Vision
 final class TextRecognizer {
   let level: VNRequestTextRecognitionLevel
   let languageCorrection: Bool
+  let languages: [String]
+  /// Vision's previous model reads UI text as well in our tests and keeps ~90MB less working memory resident.
+  private let revision: Int?
   private let stats: Bool
   private var loggedDevices = false
   private(set) var device = "default"
 
-  init(fast: Bool, languageCorrection: Bool, stats: Bool = false) {
+  init(fast: Bool, languageCorrection: Bool, languages: [String] = ["en-US"], stats: Bool = false) {
     level = fast ? .fast : .accurate
     self.languageCorrection = languageCorrection
+    self.languages = languages
     self.stats = stats
+    let old = TextRecognizer.supportedLanguages(fast: fast, revision: VNRecognizeTextRequestRevision2)
+    revision = languages != ["auto"] && languages.allSatisfy(old.contains) ? VNRecognizeTextRequestRevision2 : nil
+  }
+
+  static func supportedLanguages(fast: Bool = false, revision: Int? = nil) -> [String] {
+    let r = VNRecognizeTextRequest()
+    r.recognitionLevel = fast ? .fast : .accurate
+    if let revision { r.revision = revision }
+    return (try? r.supportedRecognitionLanguages()) ?? []
   }
 
   private func request(_ roi: CGRect) -> VNRecognizeTextRequest {
     let r = VNRecognizeTextRequest()
     r.recognitionLevel = level
     r.usesLanguageCorrection = languageCorrection
-    r.recognitionLanguages = ["en-US"]
+    if let revision { r.revision = revision }
+    if languages == ["auto"] { r.automaticallyDetectsLanguage = true } else { r.recognitionLanguages = languages }
     r.regionOfInterest = roi
     // The Neural Engine is the most power-efficient place to run the model.
     if let devices = try? r.supportedComputeStageDevices {
