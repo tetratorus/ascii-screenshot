@@ -145,12 +145,30 @@ final class History {
   static func parseStamp(_ s: String) -> Date? { stampFormatter.date(from: s) }
 }
 
-/// `--at` accepts a full ISO-8601 time or a local `HH:MM[:SS]` today.
+/// Times for `--at`/`--from`/`--to`: `now`, how long ago (`90s`, `5m`, `1h30m`, `2d`),
+/// a local `HH:MM[:SS]` today, or a full ISO-8601 time.
 func parseTime(_ s: String, now: Date = Date()) -> Date? {
   if let t = History.parseStamp(s) { return t }
+  if s == "now" { return now }
+  if let ago = parseAgo(s) { return now.addingTimeInterval(-ago) }
   let parts = s.split(separator: ":").map { Int($0) }
   guard (2...3).contains(parts.count), !parts.contains(nil) else { return nil }
   return Calendar.current.date(bySettingHour: parts[0]!, minute: parts[1]!, second: parts.count == 3 ? parts[2]! : 0, of: now)
+}
+
+/// `1h30m`, `90s`, `-5m`, `2d` -> seconds; nil unless the whole string is number+unit pairs.
+func parseAgo(_ s: String) -> TimeInterval? {
+  var rest = Substring(s.hasPrefix("-") ? String(s.dropFirst()) : s), total = 0.0
+  let units: [Character: Double] = ["s": 1, "m": 60, "h": 3600, "d": 86400]
+  guard !rest.isEmpty else { return nil }
+  while !rest.isEmpty {
+    let digits = rest.prefix { $0.isASCII && $0.isNumber }
+    guard !digits.isEmpty, let n = Double(digits), let unit = rest.dropFirst(digits.count).first,
+          let mult = units[unit] else { return nil }
+    total += n * mult
+    rest = rest.dropFirst(digits.count + 1)
+  }
+  return total
 }
 
 /// One complete gzip member (zlib, windowBits 31 = gzip header and CRC32 included).

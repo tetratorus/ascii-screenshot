@@ -7,7 +7,8 @@ Usage: ascii-screen [options]            live ASCII view of the screen, updated 
        ascii-screen --once [options]     capture the screen once and exit
        ascii-screen --image <file>...    convert an image file (more files = successive frames)
        ascii-screen --at <time>          print the saved frame that was on screen at <time>
-                                         (HH:MM[:SS] today, or ISO 8601 like 2026-10-27T14:05:00+07:00)
+                                         (<time>: how long ago like 30s, 5m, 1h30m; HH:MM[:SS] today;
+                                          now; or ISO 8601 like 2026-10-27T14:05:00+07:00)
        ascii-screen --play [--from <time>] [--to <time>] [--speed <x>]
                                          replay saved history in the terminal like a screen recording
                                          (default: today so far at 10x; keys: space pause, left/right step,
