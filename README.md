@@ -58,12 +58,12 @@ cd macos && swift build -c release
 .build/release/ascii-screen --history ~/screen-history   # also keep every changed frame, compressed
 .build/release/ascii-screen --at 14:05           # print what was on screen at 14:05 today
 .build/release/ascii-screen --play --from 14:00   # replay history from 14:00 like a screen recording
-.build/release/ascii-screen --last 1m --speed 1          # replay the last minute in real time
+.build/release/ascii-screen --play --from 1m --speed 1   # replay the last minute in real time
 ```
 
 With `--history <dir>`, every frame that differs from the previous one is kept in `<dir>/YYYY-MM-DD.txt.gz`. Each record is a `@@ <ISO 8601 time>` line followed by the frame. Consecutive frames are nearly identical, so gzip shrinks them about 25x (roughly 400 bytes per frame). Frames are held in memory for at most 10 seconds and then written as one batch, and also when the screen sleeps or locks or the process stops. A crash loses at most the last 10 seconds, and the disk isn't touched on every change. Files older than `--keep-days` (default 14) are deleted. Read history with `gzcat <dir>/2026-10-27.txt.gz | less`, search it with `gzcat ... | grep`, or print the frame shown at a given time with `--at`. Times can be how long ago (`30s`, `5m`, `1h30m`, `2d`), `HH:MM[:SS]` today, `now`, or a full ISO 8601 time.
 
-`--play` replays saved history in the terminal like a screen recording. `--from` and `--to` take the same time formats (default: midnight today to now), and `--last 5m` is short for `--play --from 5m`. Frames are shown at their recorded spacing sped up by `--speed` (default 10x), and idle stretches are capped at `--max-gap` seconds (default 2). While it plays: space pauses, left/right steps one frame, up/down or +/- doubles or halves the speed, and q quits. Frames are cropped to the terminal size, so widen the terminal to see a full 160-column frame. When stdout isn't a terminal it prints the records in `@@ <time>` format at the same pace.
+`--play` replays saved history in the terminal like a screen recording. `--from` and `--to` take the same time formats (default: midnight today to now). Frames are shown at their recorded spacing sped up by `--speed` (default 10x), and idle stretches are capped at `--max-gap` seconds (default 2). While it plays: space pauses, left/right steps one frame, up/down or +/- doubles or halves the speed, and q quits. Frames are cropped to the terminal size, so widen the terminal to see a full 160-column frame. When stdout isn't a terminal it prints the records in `@@ <time>` format at the same pace.
 
 ### Run it in the background (login agent)
 

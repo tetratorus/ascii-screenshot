@@ -31,7 +31,6 @@ Options:
                        (read with gzcat or --at; saved within 10s of a change and on sleep/lock/exit)
   --keep-days <n>      Delete history files older than n days (default 14; 0 keeps everything)
   --from/--to <time>   Playback range (default: midnight today to now)
-  --last <time>        Same as --play --from <time>, e.g. --last 5m replays the last 5 minutes
   --speed <x>          Playback speed (default 10)
   --max-gap <s>        Longest real-time pause between played frames (default 2)
 """
@@ -62,7 +61,6 @@ while let a = args.next() {
   case "--keep-days": opts.keepDays = Int(value(a)) ?? opts.keepDays
   case "--at": mode = "at"; atTime = value(a)
   case "--play": mode = "play"
-  case "--last": mode = "play"; fromTime = value(a)
   case "--from": fromTime = value(a)
   case "--to": toTime = value(a)
   case "--speed": speed = Double(value(a)).flatMap { $0 > 0 ? $0 : nil } ?? speed
