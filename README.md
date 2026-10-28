@@ -54,7 +54,11 @@ cd macos && swift build -c release
 .build/release/ascii-screen --once               # one capture
 .build/release/ascii-screen --image shot.png     # convert a file
 .build/release/ascii-screen --stats              # per-frame timing/CPU on stderr
+.build/release/ascii-screen --history ~/screen-history   # also keep every changed frame, compressed
+.build/release/ascii-screen --at 14:05           # print what was on screen at 14:05 today
 ```
+
+With `--history <dir>`, every frame that differs from the previous one is kept in `<dir>/YYYY-MM-DD.txt.gz`. Each record is a `@@ <ISO 8601 time>` line followed by the frame. Consecutive frames are nearly identical, so gzip shrinks them about 25x (roughly 400 bytes per frame). Frames are held in memory for at most 10 seconds and then written as one batch, and also when the screen sleeps or locks or the process stops. A crash loses at most the last 10 seconds, and the disk isn't touched on every change. Files older than `--keep-days` (default 14) are deleted. Read history with `gzcat <dir>/2026-10-27.txt.gz | less`, search it with `gzcat ... | grep`, or print the frame shown at a given time with `--at HH:MM[:SS]` or a full ISO 8601 time.
 
 ### Run it in the background (login agent)
 
@@ -64,7 +68,7 @@ macos/install.sh --interval 2 --out ~/screen.txt   # same, with your own flags
 macos/install.sh --uninstall
 ```
 
-This copies the binary into `~/Applications/ASCII Screen.app`, signs it so macOS matches it by its identifier (`com.tetratorus.ascii-screen`) rather than by the exact binary, so the Screen Recording permission survives rebuilds, and registers a LaunchAgent. By default it writes `~/.ascii-screen/screen.txt` and logs to `~/Library/Logs/ascii-screen.log`. The first time, macOS lists "ASCII Screen" under System Settings > Privacy & Security > Screen Recording. Turn it on and the agent restarts itself within 30s. launchd also restarts it if capture stops (for example when a display is unplugged). Check it with `launchctl print gui/$(id -u)/com.tetratorus.ascii-screen`. If the log keeps saying the permission is missing even though the switch is on (for example after an install from an older version of this script), run `tccutil reset ScreenCapture com.tetratorus.ascii-screen` and turn it on again.
+This copies the binary into `~/Applications/ASCII Screen.app`, signs it so macOS matches it by its identifier (`com.tetratorus.ascii-screen`) rather than by the exact binary, so the Screen Recording permission survives rebuilds, and registers a LaunchAgent. By default it writes `~/.ascii-screen/screen.txt`, keeps history in `~/.ascii-screen/history/` and logs to `~/Library/Logs/ascii-screen.log`. The first time, macOS lists "ASCII Screen" under System Settings > Privacy & Security > Screen Recording. Turn it on and the agent restarts itself within 30s. launchd also restarts it if capture stops (for example when a display is unplugged). Check it with `launchctl print gui/$(id -u)/com.tetratorus.ascii-screen`. If the log keeps saying the permission is missing even though the switch is on (for example after an install from an older version of this script), run `tccutil reset ScreenCapture com.tetratorus.ascii-screen` and turn it on again.
 
 When run from a terminal, the terminal needs Screen Recording permission (System Settings > Privacy & Security). When stdout isn't a terminal, frames are separated by a form feed line. The Swift detector and renderer are ports of `detect_lines.js` and `ascii.js`; the test suite checks they produce identical output whenever the binary has been built.
 

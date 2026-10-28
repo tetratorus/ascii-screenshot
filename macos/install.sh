@@ -1,6 +1,6 @@
 #!/bin/bash
 # Install ascii-screen as a per-user background service (LaunchAgent).
-#   ./install.sh [ascii-screen flags...]   build, install, start (default flags: --out ~/.ascii-screen/screen.txt)
+#   ./install.sh [ascii-screen flags...]   build, install, start (default flags: --out ~/.ascii-screen/screen.txt --history ~/.ascii-screen/history)
 #   ./install.sh --uninstall               stop and remove
 set -euo pipefail
 LABEL=com.tetratorus.ascii-screen
@@ -37,7 +37,7 @@ PL
 # rebuild; requiring only the identifier keeps it.
 codesign --force --sign - --identifier "$LABEL" -r="designated => identifier \"$LABEL\"" "$APP"
 
-ARGS=("$@"); [[ ${#ARGS[@]} -eq 0 ]] && ARGS=(--out "$DATA/screen.txt")
+ARGS=("$@"); [[ ${#ARGS[@]} -eq 0 ]] && ARGS=(--out "$DATA/screen.txt" --history "$DATA/history")
 {
   cat <<PL
 <?xml version="1.0" encoding="UTF-8"?>

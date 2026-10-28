@@ -16,10 +16,12 @@ final class Live: NSObject, SCStreamOutput, SCStreamDelegate {
   private var timer: DispatchSourceTimer?
   private var running = false
   private var deliveredFrames = 0
+  let history: History?
 
   init(_ opts: Options) {
     self.opts = opts
     pipeline = Pipeline(opts)
+    history = opts.history.map { History(dir: URL(fileURLWithPath: $0), keepDays: opts.keepDays) }
     let tty = isatty(STDOUT_FILENO) != 0
     output = FrameOutput { text in
       if let out = opts.out {
@@ -60,6 +62,7 @@ final class Live: NSObject, SCStreamOutput, SCStreamDelegate {
     guard running, let stream else { return }
     try? await stream.stopCapture()
     running = false
+    flushHistory()
   }
 
   func stream(_ s: SCStream, didOutputSampleBuffer sb: CMSampleBuffer, of type: SCStreamOutputType) {
@@ -103,12 +106,18 @@ final class Live: NSObject, SCStreamOutput, SCStreamDelegate {
   private func emit() {
     let c = cursor()
     lastCursorCell = c.map { (jsRound(Double($0.x) * Double(opts.width)), jsRound(Double($0.y) * Double(pipeline.canvasHeight))) }
+    let text = pipeline.render(cursor: c)
     do {
-      try output.emit(pipeline.render(cursor: c))
+      guard try output.emit(text) else { return }
     } catch {
       log("cannot write ASCII output: \(error.localizedDescription)")
       exit(1)
     }
+    do { try history?.record(text) } catch { log("cannot write history: \(error.localizedDescription)") }
+  }
+
+  func flushHistory() {
+    do { try history?.flush() } catch { log("cannot write history: \(error.localizedDescription)") }
   }
 
   /// Stop capturing entirely while the screen is locked or asleep.
