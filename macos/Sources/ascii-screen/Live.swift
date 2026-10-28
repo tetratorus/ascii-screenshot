@@ -16,11 +16,14 @@ final class Live: NSObject, SCStreamOutput, SCStreamDelegate {
   private var timer: DispatchSourceTimer?
   private var running = false
   private var deliveredFrames = 0
+  private let settle: Settle<CVPixelBuffer>
+  private var settleTimer: DispatchSourceTimer?
   let history: History?
 
   init(_ opts: Options) {
     self.opts = opts
     pipeline = Pipeline(opts)
+    settle = Settle(maxLag: opts.maxLag)
     history = opts.history.map { History(dir: URL(fileURLWithPath: $0), keepDays: opts.keepDays) }
     let tty = isatty(STDOUT_FILENO) != 0
     output = FrameOutput { text in
@@ -77,6 +80,32 @@ final class Live: NSObject, SCStreamOutput, SCStreamDelegate {
           let info = (CMSampleBufferGetSampleAttachmentsArray(sb, createIfNecessary: false) as? [[SCStreamFrameInfo: Any]])?.first,
           let raw = info[.status] as? Int, SCFrameStatus(rawValue: raw) == .complete,
           let pb = sb.imageBuffer else { return }
+    offer(pb)
+  }
+
+  /// Text reading is nearly all the cost, so while the screen keeps changing only the newest frame is
+  /// kept; it is read once the screen has been still for 1.5 frame intervals (see `Settle`).
+  private func offer(_ pb: CVPixelBuffer) {
+    if let due = settle.offer(pb) {
+      settleTimer?.cancel()
+      settleTimer = nil
+      return read(due)
+    }
+    settleTimer?.cancel()
+    let t = DispatchSource.makeTimerSource(queue: queue)
+    t.schedule(deadline: .now() + opts.interval * 1.5, leeway: .milliseconds(100))
+    t.setEventHandler { [weak self] in self?.readPending() }
+    t.resume()
+    settleTimer = t
+  }
+
+  private func readPending() {
+    settleTimer?.cancel()
+    settleTimer = nil
+    if let pb = settle.take() { read(pb) }
+  }
+
+  private func read(_ pb: CVPixelBuffer) {
     // Vision autoreleases per call; drain every frame so a long-running service doesn't creep.
     autoreleasepool { if pipeline.process(pb) { emit() } }
   }
@@ -147,4 +176,28 @@ func captureOnce(_ opts: Options) async throws -> CVPixelBuffer {
     contentFilter: SCContentFilter(display: display, excludingWindows: []), configuration: cfg)
   guard let pb = sb.imageBuffer else { throw NSError(domain: "ascii-screen", code: 2) }
   return pb
+}
+
+/// Holds the newest frame while the screen keeps changing (scrolling, video, a page loading).
+/// `offer` hands a frame back to read right away only once changes have run for `maxLag` seconds
+/// (or always, when `maxLag` is 0); otherwise the caller reads `take()` when the screen settles.
+final class Settle<Frame> {
+  let maxLag: Double
+  private var pending: Frame?
+  private var since: Date?
+
+  init(maxLag: Double) { self.maxLag = maxLag }
+
+  func offer(_ frame: Frame, now: Date = Date()) -> Frame? {
+    guard maxLag > 0 else { return frame }
+    pending = frame
+    let start = since ?? now
+    since = start
+    return now.timeIntervalSince(start) >= maxLag ? take() : nil
+  }
+
+  func take() -> Frame? {
+    defer { pending = nil; since = nil }
+    return pending
+  }
 }

@@ -17,6 +17,7 @@ Options:
   --width <n>          Canvas width (default 160)
   --height <n>         Canvas height (default: from aspect ratio)
   --interval <s>       Minimum seconds between frames (default 1)
+  --max-lag <s>        While the screen keeps changing, read text at most this often (default 5; 0 = every frame)
   --scale <f>          Capture scale relative to display points (default 1; 2 = Retina pixels)
   --fast               Faster, less accurate OCR
   --correction         OCR language correction (about 2x the CPU, little gain on UI text)
@@ -57,6 +58,7 @@ while let a = args.next() {
   case "--display": opts.display = Int(value(a)) ?? 0
   case "--stats": opts.stats = true
   case "--history": opts.history = value(a)
+  case "--max-lag": opts.maxLag = Double(value(a)) ?? opts.maxLag
   case "--keep-days": opts.keepDays = Int(value(a)) ?? opts.keepDays
   case "--at": mode = "at"; atTime = value(a)
   case "--play": mode = "play"
@@ -80,6 +82,7 @@ if !(opts.interval >= 0.1 && opts.interval <= 3600) { invalid("--interval must b
 if !(opts.scale > 0 && opts.scale <= 4) { invalid("--scale must be above 0 and at most 4") }
 if opts.display < 0 { invalid("--display must be 0 or more") }
 if opts.fullEvery < 0 { invalid("--full-every must be 0 or more") }
+if !(opts.maxLag >= 0 && opts.maxLag <= 3600) { invalid("--max-lag must be 0-3600 seconds") }
 if opts.keepDays < 0 { invalid("--keep-days must be 0 or more") }
 if !(maxGap >= 0) { invalid("--max-gap must be 0 or more") }
 // Frames and history hold whatever was on screen; keep everything we create private to this user.
