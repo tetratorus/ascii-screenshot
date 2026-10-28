@@ -6,6 +6,8 @@ let usage = """
 Usage: ascii-screen [options]            live ASCII view of the screen, updated when it changes
        ascii-screen --once [options]     capture the screen once and exit
        ascii-screen --image <file>...    convert an image file (more files = successive frames)
+       ascii-screen --at <time>          print the saved frame that was on screen at <time>
+                                         (HH:MM[:SS] today, or ISO 8601 like 2026-10-27T14:05:00+07:00)
 
 Options:
   --width <n>          Canvas width (default 160)
@@ -20,10 +22,13 @@ Options:
   --out <file>         Write each frame atomically to <file> instead of stdout
   --display <i>        Display index (default 0)
   --stats              Log per-frame timing and CPU to stderr
+  --history <dir>      Also keep every changed frame, gzip-compressed, in <dir>/YYYY-MM-DD.txt.gz
+                       (read with gzcat or --at; written every 5 minutes and on sleep/lock/exit)
+  --keep-days <n>      Delete history files older than n days (default 14; 0 keeps everything)
 """
 
 var opts = Options()
-var mode = "live", imagePath = "", images: [String] = []
+var mode = "live", imagePath = "", images: [String] = [], atTime = ""
 var args = CommandLine.arguments.dropFirst().makeIterator()
 func value(_ flag: String) -> String {
   guard let v = args.next() else { log("\(flag) needs a value"); exit(2) }
@@ -43,6 +48,9 @@ while let a = args.next() {
   case "--out": opts.out = value(a)
   case "--display": opts.display = Int(value(a)) ?? 0
   case "--stats": opts.stats = true
+  case "--history": opts.history = value(a)
+  case "--keep-days": opts.keepDays = Int(value(a)) ?? opts.keepDays
+  case "--at": mode = "at"; atTime = value(a)
   case "--once": mode = "once"
   case "--image": mode = "image"; images.append(value(a)); imagePath = images[0]
   case "--detect-json": mode = "detect"; imagePath = value(a)
@@ -81,6 +89,14 @@ case "render":
     : addLines(a[0] as! String, (a[1] as! [[String: Any]]).map(lineFrom), a[2] as! Int, a[3] as! Int)
   let out = ["originalText": r.originalText, "linesText": r.linesText, "finalText": r.finalText]
   print(String(data: try JSONSerialization.data(withJSONObject: out), encoding: .utf8)!)
+case "at":
+  guard let t = parseTime(atTime) else { log("cannot parse time \(atTime)"); exit(2) }
+  let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
+  guard let (when, frame) = try History(dir: URL(fileURLWithPath: dir)).frame(at: t) else {
+    log("no saved frame at or before \(History.stamp(t)) in \(dir)"); exit(1)
+  }
+  log("frame saved at \(History.stamp(when))")
+  print(frame)
 case "once":
   try checkPermission()
   Task {
@@ -96,6 +112,14 @@ default:
   try checkPermission()
   setpriority(PRIO_DARWIN_PROCESS, 0, PRIO_DARWIN_BG) // efficiency cores, throttled I/O
   let live = Live(opts)
+  var signalSources: [DispatchSourceSignal] = []
+  for sig in [SIGTERM, SIGINT] {
+    signal(sig, SIG_IGN)
+    let src = DispatchSource.makeSignalSource(signal: sig, queue: .main)
+    src.setEventHandler { live.flushHistory(); exit(0) }
+    src.resume()
+    signalSources.append(src)
+  }
   Task {
     do { try await live.start() } catch { log("capture failed: \(error.localizedDescription)"); exit(1) }
   }

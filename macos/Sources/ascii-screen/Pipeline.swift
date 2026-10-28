@@ -16,6 +16,8 @@ struct Options {
   var display = 0
   var fullEvery = 30
   var atlas = true
+  var history: String?
+  var keepDays = 14
 }
 
 /// Keeps OCR/line state between frames and only redoes work for the parts of the screen that changed.
