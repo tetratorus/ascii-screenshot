@@ -29,7 +29,7 @@ Options:
   --stats              Log per-frame timing and CPU to stderr
   --history <dir>      Also keep every changed frame, gzip-compressed, in <dir>/YYYY-MM-DD.txt.gz
                        (read with gzcat or --at; saved within 10s of a change and on sleep/lock/exit)
-  --keep-days <n>      Delete history files older than n days (default 14; 0 keeps everything)
+  --keep-days <n>      Delete history files older than n days (default 365; 0 keeps everything)
   --from/--to <time>   Playback range (default: midnight today to now)
   --speed <x>          Playback speed (default 10)
   --max-gap <s>        Longest real-time pause between played frames (default 2)
