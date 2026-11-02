@@ -19,8 +19,10 @@ Usage: ascii-screen [options]            live ASCII view of the screen, updated 
                                          SQLite FTS5 syntax: invo*, a OR b, NOT, "exact phrase"
 
 Options:
-  --width <n>          Canvas width (default 160)
-  --height <n>         Canvas height (default: from aspect ratio)
+  --width <n>          Grid width in columns (default 240; --at/--play: your terminal's width)
+  --height <n>         Grid height in rows (default: keeps the screen's shape, at most 100;
+                       --at/--play: your terminal's height). History keeps every text box and line at
+                       its position, so saved frames can be shown again at any --width/--height
   --interval <s>       Minimum seconds between frames (default 1)
   --scale <f>          Capture scale relative to display points (default 1; 2 = Retina pixels)
   --fast               Faster, less accurate OCR
@@ -41,7 +43,7 @@ Options:
   --max-gap <s>        Longest real-time pause between played frames (default 2)
 """
 
-var opts = Options()
+var opts = Options(), gridGiven = false
 var mode = "live", imagePath = "", images: [String] = [], atTime = ""
 var fromTime: String?, toTime: String?, speed = 10.0, maxGap = 2.0, query = "", limit = 20, json = false
 var args = CommandLine.arguments.dropFirst().makeIterator()
@@ -51,8 +53,8 @@ func value(_ flag: String) -> String {
 }
 while let a = args.next() {
   switch a {
-  case "--width": opts.width = Int(value(a)) ?? opts.width
-  case "--height": opts.height = Int(value(a))
+  case "--width": opts.width = Int(value(a)) ?? opts.width; gridGiven = true
+  case "--height": opts.height = Int(value(a)); gridGiven = true
   case "--interval": opts.interval = Double(value(a)) ?? opts.interval
   case "--scale": opts.scale = Double(value(a)) ?? opts.scale
   case "--fast": opts.fast = true
@@ -94,6 +96,16 @@ if !(maxGap >= 0) { invalid("--max-gap must be 0 or more") }
 // Frames and history hold whatever was on screen; keep everything we create private to this user.
 umask(0o077)
 
+/// Grid for showing saved frames: --width/--height if given, else the terminal window (minus `spare` rows),
+/// else the default width.
+func showGrid(spare: Int) -> (Int, Int?) {
+  var ws = winsize()
+  guard !gridGiven, isatty(1) != 0, ioctl(1, TIOCGWINSZ, &ws) == 0, ws.ws_col > 1, ws.ws_row > spare + 1 else {
+    return (opts.width, opts.height)
+  }
+  return (Int(ws.ws_col), Int(ws.ws_row) - spare)
+}
+
 func time(_ s: String?, _ fallback: Date) -> Date {
   guard let s else { return fallback }
   guard let t = parseTime(s) else { log("cannot parse time \(s)"); exit(2) }
@@ -118,7 +130,8 @@ case "at":
     log("no saved frame at or before \(History.stamp(t)) in \(dir)"); exit(1)
   }
   log("frame saved at \(History.stamp(when))")
-  print(frame)
+  let (w, h) = showGrid(spare: 1)
+  print(History.display(frame, columns: w, rows: h))
 case "search":
   let from = time(fromTime, .distantPast), to = time(toTime, Date())
   let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
@@ -138,7 +151,9 @@ case "search":
 case "play":
   let from = time(fromTime, Calendar.current.startOfDay(for: Date())), to = time(toTime, Date())
   let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
-  var player = Playback(frames: History(dir: URL(fileURLWithPath: dir)).frames(from: from, to: to),
+  let (w, h) = showGrid(spare: 1)
+  var player = Playback(frames: History(dir: URL(fileURLWithPath: dir)).frames(from: from, to: to)
+                          .lazy.map { ($0.0, History.display($0.1, columns: w, rows: h)) },
                         speed: speed, maxGap: maxGap)
   guard player.frame(0) != nil else {
     log("no saved frames between \(History.stamp(from)) and \(History.stamp(to)) in \(dir)"); exit(1)

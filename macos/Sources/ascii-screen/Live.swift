@@ -13,6 +13,7 @@ final class Live: NSObject, SCStreamOutput, SCStreamDelegate {
   private var displayBounds = CGRect.zero
   private let output: FrameOutput
   private var lastCursorCell: (Int, Int)?
+  private var lastSaved: (obs: [Obs], lines: [DLine])?
   private var timer: DispatchSourceTimer?
   private var running = false
   private var deliveredFrames = 0
@@ -107,14 +108,17 @@ final class Live: NSObject, SCStreamOutput, SCStreamDelegate {
   private func emit() {
     let c = cursor()
     lastCursorCell = c.map { (jsRound(Double($0.x) * Double(opts.width)), jsRound(Double($0.y) * Double(pipeline.canvasHeight))) }
-    let text = pipeline.render(cursor: c)
-    do {
-      guard try output.emit(text) else { return }
-    } catch {
+    let frame = pipeline.frame(cursor: c)
+    let text = frame.render(columns: opts.width, rows: pipeline.canvasHeight)
+    let shown: Bool
+    do { shown = try output.emit(text) } catch {
       log("cannot write ASCII output: \(error.localizedDescription)")
       exit(1)
     }
-    do { try history?.record(text) } catch { log("cannot write history: \(error.localizedDescription)") }
+    // Also save text changes too small to show at this grid: history can be drawn bigger later.
+    guard shown || lastSaved.map({ $0.obs != frame.obs || $0.lines != frame.lines }) ?? true else { return }
+    lastSaved = (frame.obs, frame.lines)
+    do { try history?.record(frame.encode()) } catch { log("cannot write history: \(error.localizedDescription)") }
   }
 
   func flushHistory() {

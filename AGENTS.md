@@ -20,7 +20,7 @@ macOS only: the Swift app in `macos/` is the whole product. There are no other p
 
 # Screen history index
 
-- `~/.ascii-screen/history/YYYY-MM-DD.txt.gz` (gzip members of `@@ <ISO-8601 time>` + frame text records) is the source of truth. `index.sqlite` beside it is rebuilt from them, so it can be deleted.
+- `~/.ascii-screen/history/YYYY-MM-DD.txt.gz` (gzip members of `@@ <ISO-8601 time>` + a `#frame` record: every OCR text box and line at its position, see `Frame.swift`; older records hold drawn ASCII instead) is the source of truth. `index.sqlite` beside it is rebuilt from them, so it can be deleted.
 - `ascii-screen --search <query> --json` prints one `{"start","end","frames","line"}` object per run of consecutive matching frames, newest first; exit 1 means no match, exit 2 a bad query. Feed `start` to `--at` or `--play --from` to see the screen.
 - Query it directly with `sqlite3 -readonly`: `frames(id, time, day, offset, seq)` places each frame in a day file (`time` is Unix seconds, `offset` the gzip member's byte offset, `seq` the record within that member); `words` is a contentless FTS5 table (`detail=none`) with rowid = `frames.id`; `vocab` (fts5vocab, `term`/`doc`) lists every indexed word with the number of frames containing it.
 - Search has no fuzzy matching built in. OCR misreads words, so for near-misses look up spellings first, e.g. `SELECT term, doc FROM vocab WHERE term LIKE 'inv%ice%'`, then search `invoice OR lnvoice`.
