@@ -1,6 +1,7 @@
 #!/bin/bash
 # Install ascii-screen as a per-user background service (LaunchAgent).
-#   ./install.sh [ascii-screen flags...]   build, install, start (default flags: --out ~/.ascii-screen/screen.txt --history ~/.ascii-screen/history)
+#   ./install.sh [ascii-screen flags...]   build, install, start (always adds --out ~/.ascii-screen/screen.txt and
+#                                          --history ~/.ascii-screen/history unless the flags give their own)
 #   ./install.sh --uninstall               stop and remove
 # Also links `ascii-screen` into a directory on PATH so --search/--play/--at work from any terminal.
 set -euo pipefail
@@ -41,7 +42,11 @@ xml() { local s=${1//&/&amp;}; s=${s//</&lt;}; printf '%s' "${s//>/&gt;}"; }
 # Frames and history contain whatever was on screen: owner-only.
 chmod 700 "$DATA" && chmod -R go-rwx "$DATA"
 
-ARGS=("$@"); [[ ${#ARGS[@]} -eq 0 ]] && ARGS=(--out "$DATA/screen.txt" --history "$DATA/history")
+# The live file and history stay on unless the flags name their own --out/--history.
+ARGS=("$@")
+has() { local a; for a in "${ARGS[@]+"${ARGS[@]}"}"; do [[ "$a" == "$1" ]] && return 0; done; return 1; }
+has --history || ARGS=(--history "$DATA/history" "${ARGS[@]+"${ARGS[@]}"}")
+has --out || ARGS=(--out "$DATA/screen.txt" "${ARGS[@]+"${ARGS[@]}"}")
 {
   cat <<PL
 <?xml version="1.0" encoding="UTF-8"?>
