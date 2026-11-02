@@ -12,7 +12,7 @@ Usage: ascii-screen [options]            live ASCII view of the screen, updated 
        ascii-screen --play [--from <time>] [--to <time>] [--speed <x>]
                                          replay saved history in the terminal like a screen recording
                                          (default: today so far at 10x; keys: space pause, left/right step,
-                                         up/down or +/- speed, q quit)
+                                         up/down speed, =/- higher/lower resolution, q quit)
        ascii-screen --search <query> [--from <time>] [--to <time>] [--limit <n>] [--json]
                                          when matching text was on screen, newest first (default: all history,
                                          20 results). Plain words match in any order and as word starts; also
@@ -152,9 +152,11 @@ case "play":
   let from = time(fromTime, Calendar.current.startOfDay(for: Date())), to = time(toTime, Date())
   let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
   let (w, h) = showGrid(spare: 1)
-  var player = Playback(frames: History(dir: URL(fileURLWithPath: dir)).frames(from: from, to: to)
-                          .lazy.map { ($0.0, History.display($0.1, columns: w, rows: h)) },
-                        speed: speed, maxGap: maxGap)
+  var player = Playback(frames: History(dir: URL(fileURLWithPath: dir)).frames(from: from, to: to),
+                        speed: speed, maxGap: maxGap) { body, zoom in
+    History.display(body, columns: min(1000, max(10, Int((Double(w) * zoom).rounded()))),
+                    rows: h.map { min(1000, max(3, Int((Double($0) * zoom).rounded()))) })
+  }
   guard player.frame(0) != nil else {
     log("no saved frames between \(History.stamp(from)) and \(History.stamp(to)) in \(dir)"); exit(1)
   }
