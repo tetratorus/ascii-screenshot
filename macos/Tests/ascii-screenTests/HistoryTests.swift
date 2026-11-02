@@ -116,12 +116,31 @@ final class HistoryTests: XCTestCase {
     XCTAssertEqual(p.delay(after: 2), 0)
   }
 
+  func testPlaybackZoomRedrawsAtTheNewSizeWithinBounds() {
+    let t = Date(timeIntervalSince1970: 0)
+    var drawn = 0
+    var p = Playback(frames: [(t, "a")], speed: 1, maxGap: 2) { body, zoom in drawn += 1; return "\(body) \(zoom)" }
+    XCTAssertEqual(p.shown(0), "a 1.0")
+    XCTAssertEqual(p.shown(0), "a 1.0")
+    XCTAssertEqual(drawn, 1)
+    p.zoom(by: 1)
+    XCTAssertEqual(p.shown(0), "a 1.25")
+    p.zoom(by: -2)
+    XCTAssertEqual(p.shown(0), "a 0.8")
+    for _ in 0..<50 { p.zoom(by: 1) }
+    XCTAssertEqual(p.zoomStep, Playback.zoomSteps.upperBound)
+    for _ in 0..<50 { p.zoom(by: -1) }
+    XCTAssertEqual(p.zoomStep, Playback.zoomSteps.lowerBound)
+  }
+
   func testPlaybackKeys() {
     XCTAssertEqual(Playback.key([0x20]), .pause)
     XCTAssertEqual(Playback.key([0x1b, 0x5b, 0x43]), .next)
     XCTAssertEqual(Playback.key([0x1b, 0x5b, 0x44]), .previous)
     XCTAssertEqual(Playback.key([0x1b, 0x5b, 0x41]), .faster)
-    XCTAssertEqual(Playback.key([0x2d]), .slower)
+    XCTAssertEqual(Playback.key([0x1b, 0x5b, 0x42]), .slower)
+    XCTAssertEqual(Playback.key([0x3d]), .zoomIn)
+    XCTAssertEqual(Playback.key([0x2d]), .zoomOut)
     XCTAssertEqual(Playback.key([0x03]), .quit)
     XCTAssertEqual(Playback.key([0x78]), .other)
     XCTAssertEqual(Playback.keys([0x1b, 0x5b, 0x44, 0x1b, 0x5b, 0x44, 0x71]), [.previous, .previous, .quit])

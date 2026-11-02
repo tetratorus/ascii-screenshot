@@ -3,7 +3,8 @@ import Foundation
 /// Plays saved history in the terminal like a screen recording: frames are shown at their recorded
 /// spacing divided by `speed`, with long idle gaps capped at `maxGap` real seconds.
 /// Frames are pulled from `source` as playback reaches them; only the last `keepBack` are kept for stepping
-/// back, so memory stays flat however long the range is.
+/// back, so memory stays flat however long the range is. Frames are drawn by `render(body, zoom)` as they are
+/// shown; `=`/`-` change `zoom` (grid size) by 25% steps.
 struct Playback {
   private var source: AnyIterator<(Date, String)>
   private var window: [(Date, String)] = []
@@ -12,12 +13,30 @@ struct Playback {
   static let keepBack = 1000
   var speed: Double
   let maxGap: Double
+  private(set) var zoomStep = 0
+  private let render: (String, Double) -> String
+  private var drawn: (i: Int, step: Int, text: String)?
+  static let zoomSteps = -6...8
 
-  init<S: Sequence>(frames: S, speed: Double, maxGap: Double) where S.Element == (Date, String) {
+  init<S: Sequence>(frames: S, speed: Double, maxGap: Double,
+                    render: @escaping (String, Double) -> String = { body, _ in body }) where S.Element == (Date, String) {
     var it = frames.makeIterator()
     source = AnyIterator { it.next() }
     self.speed = speed
     self.maxGap = maxGap
+    self.render = render
+  }
+
+  var zoom: Double { pow(1.25, Double(zoomStep)) }
+
+  mutating func zoom(by d: Int) { zoomStep = min(max(zoomStep + d, Playback.zoomSteps.lowerBound), Playback.zoomSteps.upperBound) }
+
+  /// Frame `i` drawn at the current zoom (the last one is kept, so redrawing for a key press is free).
+  mutating func shown(_ i: Int) -> String? {
+    if let d = drawn, d.i == i, d.step == zoomStep { return d.text }
+    guard let f = frame(i) else { return nil }
+    drawn = (i, zoomStep, render(f.1, zoom))
+    return drawn!.text
   }
 
   /// Frame `i`, reading ahead as needed; nil past the end or before the kept window.
@@ -38,7 +57,7 @@ struct Playback {
     return max(0, min(b.0.timeIntervalSince(a.0) / speed, maxGap))
   }
 
-  enum Key: Equatable { case quit, pause, faster, slower, next, previous, other }
+  enum Key: Equatable { case quit, pause, faster, slower, next, previous, zoomIn, zoomOut, other }
 
   /// Split one read() into key presses (arrow keys arrive as 3-byte escape sequences).
   static func keys(_ bytes: [UInt8]) -> [Key] {
@@ -55,8 +74,10 @@ struct Playback {
     switch bytes {
     case [0x71], [0x51], [0x03]: return .quit                                  // q Q ctrl-c
     case [0x20], [0x70]: return .pause                                         // space p
-    case [0x2b], [0x3d], [0x1b, 0x5b, 0x41]: return .faster                    // + = up
-    case [0x2d], [0x5f], [0x1b, 0x5b, 0x42]: return .slower                    // - _ down
+    case [0x1b, 0x5b, 0x41]: return .faster                                    // up
+    case [0x1b, 0x5b, 0x42]: return .slower                                    // down
+    case [0x3d], [0x2b]: return .zoomIn                                        // = +
+    case [0x2d], [0x5f]: return .zoomOut                                       // - _
     case [0x6c], [0x2e], [0x1b, 0x5b, 0x43]: return .next                      // l . right
     case [0x68], [0x2c], [0x1b, 0x5b, 0x44]: return .previous                  // h , left
     default: return .other
@@ -73,8 +94,9 @@ struct Playback {
     let state = paused ? (isLast(i) ? "end" : "paused") : "playing"
     let total = ended ? "/\(first + window.count)" : ""
     let x = speed >= 1 ? String(format: "%gx", speed) : String(format: "%.3gx", speed)
-    return "\(Playback.clock.string(from: frame(i)!.0))  frame \(i + 1)\(total)  \(x)  \(state)"
-      + "   space pause  left/right step  up/down speed  q quit"
+    let z = zoomStep == 0 ? "" : String(format: "  zoom %d%%", Int((zoom * 100).rounded()))
+    return "\(Playback.clock.string(from: frame(i)!.0))  frame \(i + 1)\(total)  \(x)\(z)  \(state)"
+      + "   space pause  left/right step  up/down speed  =/- zoom  q quit"
   }
 
   mutating func run() {
@@ -115,10 +137,12 @@ struct Playback {
           case .slower: speed = max(speed / 2, 1.0 / 64)
           case .next: if !isLast(i) { i += 1 }
           case .previous: i = max(i - 1, first); paused = true
+          case .zoomIn: zoom(by: 1)
+          case .zoomOut: zoom(by: -1)
           case .other: break
           }
         }
-        if keys.contains(where: { $0 != .other }) { deadline = Date().addingTimeInterval(delay(after: i)) }
+        if keys.contains(where: { ![.other, .zoomIn, .zoomOut].contains($0) }) { deadline = Date().addingTimeInterval(delay(after: i)) }
         continue
       }
       if !paused {
@@ -129,7 +153,7 @@ struct Playback {
   }
 
   private mutating func draw(_ i: Int, paused: Bool, interactive: Bool) {
-    let f = frame(i)!
+    let f = (frame(i)!.0, shown(i)!)
     if interactive {
       var ws = winsize()
       let size = ioctl(1, TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0 ? (Int(ws.ws_col), Int(ws.ws_row)) : (Int.max, Int.max)
