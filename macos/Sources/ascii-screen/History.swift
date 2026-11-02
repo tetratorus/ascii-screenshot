@@ -174,7 +174,7 @@ final class History {
         if verify {
           if cached?.day != c.day || cached?.offset != c.offset { cached = (c.day, c.offset, member(c)) }
           guard let recs = cached?.records, c.seq < recs.count,
-                case let lines = recs[c.seq].1.split(separator: "\n").map({ History.words(String($0)) }),
+                case let lines = History.text(recs[c.seq].1).split(separator: "\n").map({ History.words(String($0)) }),
                 phrases.allSatisfy({ p in lines.contains { $0.contains(p) } }) else { next = -1; continue }
         }
         if !out.isEmpty, next == c.id {
@@ -196,7 +196,7 @@ final class History {
   private func bestLine(_ loc: HistoryIndex.Location, _ words: [String]) -> String {
     let recs = member(loc)
     guard loc.seq < recs.count else { return "" }
-    let lines = recs[loc.seq].1.split(separator: "\n").map { History.normalize(String($0)) }
+    let lines = History.text(recs[loc.seq].1).split(separator: "\n").map { History.normalize(String($0)) }
     return lines.max { a, b in words.filter(a.contains).count < words.filter(b.contains).count } ?? ""
   }
 

@@ -4,7 +4,7 @@ import Foundation
 import ImageIO
 
 struct Options {
-  var width = 160
+  var width = 240
   var height: Int?
   var interval = 1.0
   var scale = 1.0
@@ -42,7 +42,7 @@ final class Pipeline {
   }
 
   var canvasHeight: Int {
-    opts.height ?? min(100, max(1, jsFloor(Double(opts.width) * Double(imageSize.1) / Double(imageSize.0) * 0.5)))
+    opts.height ?? Frame.rows(columns: opts.width, width: imageSize.0, height: imageSize.1)
   }
 
   /// Returns false when the frame is pixel-identical to the previous one.
@@ -108,8 +108,10 @@ final class Pipeline {
     return true
   }
 
-  func render(cursor: CGPoint?) -> String {
-    renderAscii(obs, lines, cursor.map { Double($0.x) }, cursor.map { Double($0.y) }, opts.width, canvasHeight).finalText
+  func render(cursor: CGPoint?) -> String { frame(cursor: cursor).render(columns: opts.width, rows: canvasHeight) }
+
+  func frame(cursor: CGPoint?) -> Frame {
+    Frame(width: imageSize.0, height: imageSize.1, obs: obs, lines: lines, cursor: cursor).quantized()
   }
 
   /// Bounding boxes of changed tiles, padded so text that spills out of the change is re-read whole.

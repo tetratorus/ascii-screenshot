@@ -13,7 +13,9 @@ final class HistoryIndex {
     self.dir = dir
     try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true,
                                             attributes: [.posixPermissions: 0o700])
-    guard sqlite3_open(dir.appendingPathComponent("index.sqlite").path, &db) == SQLITE_OK else { throw error() }
+    let path = dir.appendingPathComponent("index.sqlite").path
+    guard sqlite3_open(path, &db) == SQLITE_OK else { throw error() }
+    chmod(path, 0o600) // SQLite gives its -wal/-shm files the same mode
     sqlite3_busy_timeout(db, 5000)
     if try query("PRAGMA user_version", []) { $0.int(0) }.first ?? 0 < 4 { // older layout: rebuild from the day files
       try exec("DROP TABLE IF EXISTS vocab; DROP TABLE IF EXISTS words; DROP TABLE IF EXISTS frames; DROP TABLE IF EXISTS files; VACUUM;")
@@ -55,7 +57,7 @@ final class HistoryIndex {
           try run("INSERT INTO frames(time, day, offset, seq) VALUES (?, ?, ?, ?)",
                   [time.timeIntervalSince1970, day, offset, seq])
           try run("INSERT INTO words(rowid, text) VALUES (?, ?)",
-                  [sqlite3_last_insert_rowid(db), text.replacingOccurrences(of: "\u{0332}", with: "")])
+                  [sqlite3_last_insert_rowid(db), History.text(text)])
         }
       }
       try run("INSERT OR REPLACE INTO files(day, indexed) VALUES (?, ?)", [day, members.goodEnd])

@@ -1,7 +1,7 @@
 import Foundation
 
-struct Obs { var text: String; var x, y, w, h: Double } // Vision box: normalized, bottom-left origin
-struct DLine { var vertical: Bool; var x, y, w, h: Double } // normalized, top-left origin
+struct Obs: Equatable { var text: String; var x, y, w, h: Double } // Vision box: normalized, bottom-left origin
+struct DLine: Equatable { var vertical: Bool; var x, y, w, h: Double } // normalized, top-left origin
 struct RenderResult { var originalText: String; var linesText: String; var finalText: String }
 
 @inline(__always) func jsFloor(_ v: Double) -> Int { v.isFinite ? Int(v.rounded(.down)) : 0 }
