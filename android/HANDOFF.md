@@ -13,6 +13,11 @@ The complete Android prototype, Gradle wrapper, and compiled OCR models are in t
 
 Original session: https://app.devin.ai/sessions/0463afb7463845a48ea07a709737a359
 
+Later device-selection research and the Xiaomi 17 Pro continuation notes are in
+[DEVICE_RESEARCH.md](DEVICE_RESEARCH.md). That document links the 112-entry market
+audit and OCR benchmark. It does not replace the non-root emulator acceptance
+tests below, and no physical phone has been validated.
+
 ## User's actual request
 
 The user challenged whether Android accessibility screenshot capture really works without root, then said:
