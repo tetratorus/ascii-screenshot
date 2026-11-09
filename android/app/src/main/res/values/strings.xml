@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="service_description">Takes a screenshot every second and OCRs it on-device into a local, searchable history.</string>
+</resources>

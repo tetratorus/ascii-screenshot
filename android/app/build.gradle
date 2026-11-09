@@ -1,0 +1,18 @@
+plugins { id "com.android.application" }
+android {
+    namespace "dev.smolfroggo.asciiscreen"
+    compileSdk 36
+    defaultConfig {
+        applicationId "dev.smolfroggo.asciiscreen"
+        minSdk 33
+        targetSdk 36
+        versionCode 1
+        versionName "0.1"
+    }
+    androidResources { noCompress += ["tflite"] }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+dependencies { implementation "com.google.ai.edge.litert:litert:2.3.2" }
