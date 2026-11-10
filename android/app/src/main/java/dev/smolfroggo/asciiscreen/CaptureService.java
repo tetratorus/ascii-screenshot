@@ -19,22 +19,27 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Screenshot via the accessibility API on a fixed 1 s clock and append one JSON line per capture to
  * files/capture.jsonl. Every changed frame is read, in order, on its own thread by {@link Pipeline}, which only
- * re-reads what changed. If reading falls more than MAX_BACKLOG frames behind, the oldest waiting frame is dropped
- * and logged. Capture pauses while the display is off.
+ * re-reads what changed. No frame is ever dropped: a waiting frame is kept as just its changed tiles, in memory up to
+ * MEMORY_BUDGET and in app-private files beyond that, and frames still waiting at shutdown are read before the OCR
+ * thread exits. Capture pauses while the display is off.
  */
 public class CaptureService extends AccessibilityService {
     static final String TAG = "AsciiScreen";
@@ -43,10 +48,11 @@ public class CaptureService extends AccessibilityService {
     private static final long REQUEST_TIMEOUT_MS = 5000;
     /** The platform rejects requests closer than 333 ms apart with ERROR_TAKE_SCREENSHOT_INTERVAL_TIME_SHORT. */
     private static final long MIN_GAP_MS = 400;
-    /** Each waiting frame is a full-resolution copy (~10 MB at 1080x2424). */
-    private static final int MAX_BACKLOG = 4;
+    /** Waiting patches beyond this many bytes are written to disk instead of held in memory. */
+    private static final long MEMORY_BUDGET = 48L << 20;
 
-    private record Frame(long n, int[] px, int w, int h, long capturedAt) {}
+    /** A changed frame waiting to be read: its patch in memory, or in spill when patch is null. */
+    private record Frame(long n, long capturedAt, FramePatch patch, File spill, long bytes) {}
 
     private HandlerThread captureThread, ocrThread;
     private Handler capture, ocrHandler;
@@ -55,8 +61,12 @@ public class CaptureService extends AccessibilityService {
     private Writer log;
     private volatile String foregroundPackage = "?";
     private final LinkedBlockingDeque<Frame> pending = new LinkedBlockingDeque<>();
-    private int[] lastPx;
-    private long frames, nextAt, dropped, inFlightSince, lastRequestAt = -MIN_GAP_MS, requestId;
+    private int[] lastPx, ocrPx;
+    private int lastW, lastH;
+    private File spillDir;
+    private final java.util.concurrent.atomic.AtomicLong queuedBytes = new java.util.concurrent.atomic.AtomicLong();
+    private volatile boolean resync;
+    private long frames, nextAt, spilled, lost, inFlightSince, lastRequestAt = -MIN_GAP_MS, requestId;
     private boolean ticking, inFlight;
     private volatile boolean destroyed;
     private final Runnable tick = this::tick;
@@ -80,6 +90,8 @@ public class CaptureService extends AccessibilityService {
             Log.e(TAG, "log open failed", e);
             return;
         }
+        spillDir = new File(getNoBackupFilesDir(), "backlog");
+        deleteSpill();
         captureThread = new HandlerThread("capture");
         captureThread.start();
         capture = new Handler(captureThread.getLooper());
@@ -185,31 +197,90 @@ public class CaptureService extends AccessibilityService {
         JSONObject j = base();
         put(j, "frame", n);
         put(j, "capture_ms", SystemClock.uptimeMillis() - requestedAt);
-        if (Arrays.equals(px, lastPx)) {
+        if (resync) { resync = false; lastPx = null; }
+        FramePatch p = FramePatch.diff(lastPx, lastW, lastH, px, w, h);
+        if (p == null) {
             put(j, "unchanged", true);
         } else {
-            lastPx = px;
-            pending.addLast(new Frame(n, px, w, h, SystemClock.uptimeMillis()));
-            if (pending.size() > MAX_BACKLOG) {
-                Frame old = pending.pollFirst();
-                if (old != null) {
-                    dropped++;
-                    put(j, "ocr_dropped_frame", old.n());
-                }
+            lastPx = px; lastW = w; lastH = h;
+            put(j, "changed_tiles", p.changedTiles());
+            long now = SystemClock.uptimeMillis();
+            Frame f;
+            if (!pending.isEmpty() && queuedBytes.get() + p.bytes() > MEMORY_BUDGET && (f = spill(n, now, p)) != null) {
+                spilled++;
+                put(j, "spilled", true);
+            } else {
+                queuedBytes.addAndGet(p.bytes());
+                f = new Frame(n, now, p, null, p.bytes());
             }
+            pending.addLast(f);
+            put(j, "queued", pending.size());
+            put(j, "queued_kb", queuedBytes.get() / 1024);
             ocrHandler.post(runOcr);
         }
         write(j);
     }
 
+    /** Write the patch to app-private storage; null (keep it in memory) if that fails. */
+    private Frame spill(long n, long now, FramePatch p) {
+        File file = new File(spillDir, n + ".patch");
+        try {
+            spillDir.mkdirs();
+            try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file), 1 << 16))) {
+                p.write(out);
+            }
+            return new Frame(n, now, null, file, 0);
+        } catch (IOException e) {
+            Log.e(TAG, "spill failed", e);
+            file.delete();
+            return null;
+        }
+    }
+
+    private FramePatch load(Frame f) throws IOException {
+        if (f.patch() != null) { queuedBytes.addAndGet(-f.bytes()); return f.patch(); }
+        try (DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(f.spill()), 1 << 16))) {
+            return FramePatch.read(in);
+        } finally {
+            f.spill().delete();
+        }
+    }
+
+    private void deleteSpill() {
+        File[] old = spillDir.listFiles();
+        if (old != null) for (File x : old) x.delete();
+    }
+
     private void runOcr() {
         Frame f = pending.pollFirst();
-        if (f == null || pipeline == null) return;
+        if (f == null) return;
         long t0 = SystemClock.uptimeMillis();
+        FramePatch p;
+        try {
+            p = load(f);
+            ocrPx = p.apply(ocrPx);
+        } catch (IOException | IllegalStateException e) {
+            // Later patches are relative to this frame, so ask capture for a whole frame next time.
+            Log.e(TAG, "frame load failed", e);
+            lost++;
+            resync = true;
+            ocrPx = null;
+            JSONObject j = base();
+            put(j, "ocr_frame", f.n());
+            put(j, "frame_lost", e.toString());
+            write(j);
+            return;
+        }
+        if (pipeline == null) {
+            JSONObject j = base();
+            put(j, "ocr_frame", f.n());
+            put(j, "ocr_unavailable", true);
+            write(j);
+            return;
+        }
         ocr.resetStats();
-        boolean changed = pipeline.process(f.px(), f.w(), f.h());
+        boolean changed = pipeline.process(ocrPx, p.w, p.h);
         long done = SystemClock.uptimeMillis();
-        if (destroyed) return;
         if (!changed) return;
         List<Ocr.Line> lines = pipeline.lines();
         JSONArray arr = new JSONArray();
@@ -231,6 +302,7 @@ public class CaptureService extends AccessibilityService {
         put(j, "moved", pipeline.moved);
         put(j, "area_pct", Math.round(pipeline.areaPct * 10) / 10.0);
         put(j, "backlog", pending.size());
+        put(j, "spilled", f.spill() != null);
         put(j, "ocr_ms", done - t0);
         put(j, "lag_ms", done - f.capturedAt());
         put(j, "det_runs", ocr.detRuns);
@@ -283,14 +355,18 @@ public class CaptureService extends AccessibilityService {
             unregisterReceiver(screenEvents);
             JSONObject j = event("SERVICE_DESTROYED");
             put(j, "frames", frames);
-            put(j, "ocr_dropped", dropped);
+            put(j, "spilled", spilled);
+            put(j, "ocr_backlog", pending.size());
             write(j);
             capture.post(this::stopTicking);
             captureThread.quitSafely();
-            // An OCR pass already running cannot be interrupted; its result is discarded and resources close after it.
-            pending.clear();
+            // Frames still waiting are read (their OCR runs are already posted) before resources close.
             ocrHandler.post(() -> {
+                JSONObject d = event("OCR_DRAINED");
+                put(d, "lost", lost);
+                write(d);
                 if (ocr != null) ocr.close();
+                deleteSpill();
                 closeLog();
             });
             ocrThread.quitSafely();

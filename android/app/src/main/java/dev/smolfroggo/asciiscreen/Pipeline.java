@@ -13,10 +13,10 @@ import java.util.Map;
  */
 final class Pipeline {
     interface Reader {
-        /** Detect and recognise text inside pixel rects {x0,y0,x1,y1}; null means the whole frame. */
-        List<Ocr.Line> read(int[] px, int w, int h, List<int[]> rects);
-        /** Recognise the text inside a known line box without detection; null if it is now blank. */
-        Ocr.Line reread(int[] px, int w, int h, Ocr.Line box);
+        /** Line boxes {x0,y0,x1,y1} found inside pixel rects {x0,y0,x1,y1}; null rects means the whole frame. */
+        List<int[]> detect(int[] px, int w, int h, List<int[]> rects);
+        /** The text in each box, in order, null where it is blank; all boxes in as few model calls as possible. */
+        List<Ocr.Line> recognize(int[] px, int w, int h, List<int[]> boxes);
     }
 
     static final int TILE = 32;
@@ -68,8 +68,10 @@ final class Pipeline {
 
         List<Ocr.Line> next = new ArrayList<>(lines.size());
         for (Ocr.Line l : lines) if (!again.contains(l) && !intersectsAny(l, rects)) next.add(l);
-        for (Ocr.Line l : again) { Ocr.Line r = reader.reread(px, w, h, l); if (r != null) next.add(r); }
-        if (!rects.isEmpty()) next.addAll(reader.read(px, w, h, rects));
+        List<int[]> boxes = new ArrayList<>();
+        for (Ocr.Line l : again) boxes.add(new int[]{l.x0(), l.y0(), l.x1(), l.y1()});
+        if (!rects.isEmpty()) boxes.addAll(reader.detect(px, w, h, rects));
+        if (!boxes.isEmpty()) for (Ocr.Line r : reader.recognize(px, w, h, boxes)) if (r != null) next.add(r);
         next.sort((a, b) -> a.y0() != b.y0() ? Integer.compare(a.y0(), b.y0()) : Integer.compare(a.x0(), b.x0()));
         lines = next;
         regions = rects.size();
@@ -83,7 +85,8 @@ final class Pipeline {
     }
 
     private boolean full(int[] px, int w, int h) {
-        lines = new ArrayList<>(reader.read(px, w, h, null));
+        lines = new ArrayList<>();
+        for (Ocr.Line l : reader.recognize(px, w, h, reader.detect(px, w, h, null))) if (l != null) lines.add(l);
         prev = px; pw = w; ph = h; sinceFull = 0;
         mode = "full"; areaPct = 100;
         return true;

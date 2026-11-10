@@ -20,20 +20,30 @@ public class PipelineTest {
         final List<Ocr.Line> rereads = new ArrayList<>();
         final List<int[]> words = new ArrayList<>();
 
-        @Override public List<Ocr.Line> read(int[] px, int w, int h, List<int[]> rects) {
+        private final List<int[]> found = new ArrayList<>();
+
+        @Override public List<int[]> detect(int[] px, int w, int h, List<int[]> rects) {
             reads.add(rects);
-            List<Ocr.Line> out = new ArrayList<>();
+            found.clear();
             for (int[] b : words) {
                 boolean in = rects == null;
                 if (rects != null) for (int[] r : rects) in |= b[0] >= r[0] && b[1] >= r[1] && b[2] <= r[2] && b[3] <= r[3];
-                if (in) out.add(new Ocr.Line(Integer.toHexString(px[b[1] * w + b[0]]), 1, b[0], b[1], b[2], b[3]));
+                if (in) found.add(b.clone());
             }
-            return out;
+            return new ArrayList<>(found);
         }
 
-        @Override public Ocr.Line reread(int[] px, int w, int h, Ocr.Line l) {
-            rereads.add(l);
-            return new Ocr.Line(Integer.toHexString(px[l.y0() * w + l.x0()]), 1, l.x0(), l.y0(), l.x1(), l.y1());
+        @Override public List<Ocr.Line> recognize(int[] px, int w, int h, List<int[]> boxes) {
+            List<Ocr.Line> out = new ArrayList<>();
+            for (int[] b : boxes) {
+                Ocr.Line l = new Ocr.Line(Integer.toHexString(px[b[1] * w + b[0]]), 1, b[0], b[1], b[2], b[3]);
+                boolean detected = false;
+                for (int[] d : found) detected |= d.equals(b) || Arrays.equals(d, b);
+                if (!detected) rereads.add(l);
+                out.add(l);
+            }
+            found.clear();
+            return out;
         }
     }
 

@@ -9,13 +9,13 @@ android {
         versionCode 1
         versionName "0.1"
     }
-    androidResources { noCompress += ["tflite"] }
+    androidResources { noCompress += ["onnx"] }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
 }
 dependencies {
-    implementation "com.google.ai.edge.litert:litert:2.3.2"
+    implementation "com.microsoft.onnxruntime:onnxruntime-android:1.22.0"
     testImplementation "junit:junit:4.13.2"
 }

@@ -3,8 +3,8 @@
 **Verdict:** on a stock, non-root Google Play Android 16 (API 36) emulator, an ordinary
 app enabled through Accessibility Settings captures screen pixels from other apps
 about once per second and OCRs Chinese and English text from them. Screen capture
-keeps the 1 s pace. Full-screen OCR on the emulator CPU takes about 3 s, so only
-about one changed frame in three gets OCRed. Raw evidence is in
+keeps the 1 s pace. Every changed frame is now OCRed, in order, with none dropped
+(see "Lossless queue, any-size models, rotation" at the end). Raw evidence is in
 [research/emulator-2026-11-10/](research/emulator-2026-11-10/).
 
 Not proven here: any physical phone, battery/heat, OEM background killing, or GPU/NPU OCR.
@@ -32,16 +32,16 @@ next screenshot. With ~3 s OCR that gave one frame every ~4 s while claiming 1 f
 `CaptureService` now:
 
 - captures on a fixed 1 s clock on its own thread and hands every changed frame, in
-  order, to a separate OCR thread (see "Incremental OCR" below). If OCR falls more than
-  4 frames behind, the oldest waiting frame is dropped and logged as `ocr_dropped_frame`;
+  order, to a separate OCR thread (see "Incremental OCR" below). No frame is dropped
+  (see the last section);
 - logs `capture_ms`, `ocr_ms`, and `lag_ms` (capture to OCR result) separately;
 - logs a slot as `missed_slot: in_flight` while a screenshot request is outstanding,
   times requests out after 5 s (`SCREENSHOT_TIMEOUT`), drops late results of
   timed-out requests (`LATE_SCREENSHOT_DROPPED`), and keeps 400 ms between requests
   (Android rejects requests closer than 333 ms with error 3);
 - pauses on `SCREEN_OFF`, resumes on `SCREEN_ON`;
-- on destroy, logs `SERVICE_DESTROYED` immediately and discards the result of any OCR
-  pass still running, then closes the models and log.
+- on destroy, logs `SERVICE_DESTROYED` immediately, reads any frames still waiting,
+  logs `OCR_DRAINED`, then closes the models and log.
 
 A debug-only `SecureFixtureActivity` (FLAG_SECURE window with English + Chinese text)
 is added for the secure-window test. It is not in release builds.
@@ -95,13 +95,14 @@ read, diff each frame against the previous one in 32 px tiles, and only read wha
   page and only newly revealed rows (and anything that changed on top) are read.
 - **Full re-read** every 30 frames, when changes cover more than half the screen, or when
   the screen size changes.
-- Every changed frame is read in order. Frames are only dropped when more than 4 are
-  waiting (each waiting frame is a ~10 MB copy), and every drop is logged.
+- Every changed frame is read in order (first version dropped frames past a backlog
+  of 4; that is gone, see the last section).
 
 Each OCR log line now records `mode` (`full`, `regions`, `reread`, `scroll+...`),
 `rects`, `area_pct`, `scroll_dy`, `moved`, `backlog`, and a time breakdown `ms` =
 [resize, detector input, detector, detector postprocess, recogniser input, recogniser].
 
+The rest of this section describes the first incremental build (fixed-size TFLite models).
 Where the time goes on this emulator (from `ms`): the detector costs ~500 ms per pass and
 a full 1080x2424 screen needs two passes; each line costs ~60-80 ms to recognise. The
 detector has a fixed 1280x608 input (its upsampling layers have constant sizes, so LiteRT
@@ -124,6 +125,53 @@ extra detector exported at a smaller input size for small regions. Neither is do
 The 30-frame full re-read (about 3.4 s here) builds a 3-frame backlog that clears within
 a few seconds.
 
+## Lossless queue, any-size models, rotation
+
+**No dropped frames.** A waiting frame is stored as only its changed 32 px tiles
+(`FramePatch.java`), not a full 10 MB copy. Waiting patches stay in memory up to 48 MB,
+then go to app-private files (`no_backup/backlog/`) and are read back in order. The OCR
+thread rebuilds each frame from the previous one plus the patch. If a spilled patch can't
+be read back, that frame is logged as `frame_lost` and the next capture is sent whole;
+this never happened in testing. At shutdown, waiting frames are read before the models
+close. Capture log lines now include `changed_tiles`, `queued`, `queued_kb`, `spilled`.
+
+**Models of any size.** The fixed sizes came from the TFLite conversion, which bakes the
+example input size into the graph; the official PaddlePaddle ONNX exports of the same
+PP-OCRv6 small models take any size. The app now runs those on ONNX Runtime 1.22 for
+Android (`com.microsoft.onnxruntime:onnxruntime-android`), 4 CPU threads:
+
+- The detector runs on exactly the image it is given: the whole screen in either
+  orientation, scaled so the short side is 608 px, or just the packed atlas of changed
+  regions. A small change now costs a small pass instead of a full 1280x608 one.
+- Lines are recognised at their natural width instead of padded to 640, and several
+  lines go through the recogniser in one call (sorted by width, up to 8 per call).
+- Same dictionary; the text output is the same quality as before.
+
+**Rotation.** A new screen size (portrait <-> landscape) forces a full re-read at the new
+size; cached text is discarded and the patch for that frame is the whole frame. The
+detector reads landscape at full width (boxes out to x=2375 on the 2424x1080 screen)
+instead of squashing it into a tall input.
+
+| Workload (same emulator) | Fixed-size TFLite | Any-size ONNX, lossless queue |
+|---|---|---|
+| Full screen read | median 2.9 s | 0.6-1.3 s typical, 3.3 s max (busy Chrome/Settings screens) |
+| Counter line re-read | median 138 ms | median 43 ms |
+| 10 fast swipes, launcher, Settings, Chrome, rotate to landscape, swipe, rotate back, rotate the other way, back | 8 of 46 frames dropped (first incremental build, no rotation) | 85 of 85 changed frames read, 0 dropped, 0 errors; backlog peaked at 7 frames / 44 MB; lag median 56 ms, max 8.1 s |
+| Same swipes with the memory budget cut to 1 MB (test build) | n/a | 18 of 18 read, 3 went through disk and back, 0 lost |
+
+Per mode in the swipe/rotation run: `reread` median 43 ms, `regions` median 421 ms,
+`scroll+regions` median 733 ms, `full` median 970 ms.
+([lossless-scroll-switch-rotate.jsonl](research/emulator-2026-11-10/lossless-scroll-switch-rotate.jsonl),
+[lossless-spill-1mb.jsonl](research/emulator-2026-11-10/lossless-spill-1mb.jsonl),
+[lossless-counter-start.jsonl](research/emulator-2026-11-10/lossless-counter-start.jsonl))
+
+Not done: patches from different waiting frames are not packed into one shared detector
+pass. Each frame's changed regions depend on the text read in the frame before, and with
+the any-size detector a pass costs roughly in proportion to its area, so packing frames
+together would save little on CPU. It may matter on a GPU/NPU, where each call has a
+fixed overhead. Lock, secure window and reboot were not re-run on this build; that capture
+code did not change. The APK is now ~109 MB because ONNX Runtime ships for 4 CPU types.
+
 ## Testing gotcha
 
 `adb shell uiautomator dump` (used to find buttons to tap) temporarily disconnects
@@ -137,6 +185,6 @@ less than 333 ms after the previous one right after such a restart (screenshot
 ## Not tested
 
 - Any physical phone, OEM battery/background policy, heat, battery drain.
-- GPU/NPU delegate (none is wired in; the emulator could not test it anyway).
+- GPU/NPU (ONNX Runtime has NNAPI/QNN options; none is wired in, and the emulator could not test it anyway).
 - Long runs (longest continuous run here was a few minutes).
 - Capture while the lock screen stays on for long periods, or with notifications arriving.

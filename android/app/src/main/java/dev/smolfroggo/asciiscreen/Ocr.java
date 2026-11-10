@@ -1,77 +1,81 @@
 package dev.smolfroggo.asciiscreen;
 
 import android.content.Context;
-import android.content.res.AssetFileDescriptor;
-
-import org.tensorflow.lite.Interpreter;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-/** PP-OCRv6 small: fixed-shape detector [1,3,1280,608] and recognizer [1,3,48,640], CTC decoding. */
+import ai.onnxruntime.OnnxTensor;
+import ai.onnxruntime.OrtEnvironment;
+import ai.onnxruntime.OrtException;
+import ai.onnxruntime.OrtSession;
+
+/**
+ * PP-OCRv6 small (official PaddlePaddle ONNX export) on ONNX Runtime. Both models take any input size: the detector
+ * runs on exactly the image it is given (full screen in either orientation, or a small atlas of changed regions), and
+ * text lines are recognised at their natural width, several per call.
+ */
 final class Ocr implements AutoCloseable, Pipeline.Reader {
     record Line(String text, float conf, int x0, int y0, int x1, int y1) {}
 
     private static final float[] MEAN = {0.485f, 0.456f, 0.406f};
     private static final float[] STD = {0.229f, 0.224f, 0.225f};
-    private static final int TILE_OVERLAP = 96;
-    private static final int TILE_EDGE = 48;
+    /** The screen's short side is scaled to this many detector pixels (the scale the models were benchmarked at). */
+    private static final int DET_SHORT = 608;
+    private static final int REC_H = 48, REC_MAX_W = 1280, REC_BATCH = 8;
     private static final float BIN_THRESHOLD = 0.3f;
     private static final float BOX_THRESHOLD = 0.6f;
     private static final float UNCLIP_RATIO = 1.5f;
     private static final int MIN_COMPONENT_PIXELS = 6;
 
-    private final Interpreter det;
-    private final Interpreter rec;
-    private final int detH, detW, recH, recW, steps, classes;
+    private final OrtEnvironment env = OrtEnvironment.getEnvironment();
+    private final OrtSession det, rec;
+    private final String detName, recName;
     private final String[] vocab;
-    private final ByteBuffer detIn, detOut, recIn, recOut;
-    private final FloatBuffer detInF, detOutF, recInF, recOutF;
+    private FloatBuffer buf = FloatBuffer.allocate(0);
 
     Ocr(Context ctx, int threads) throws IOException {
-        Interpreter.Options o = new Interpreter.Options().setNumThreads(threads);
-        det = new Interpreter(map(ctx, "v6_small_det608.tflite"), o);
-        rec = new Interpreter(map(ctx, "v6_small_rec640.tflite"), o);
-        int[] di = det.getInputTensor(0).shape();
-        int[] ri = rec.getInputTensor(0).shape();
-        int[] ro = rec.getOutputTensor(0).shape();
-        detH = di[2]; detW = di[3]; recH = ri[2]; recW = ri[3]; steps = ro[1]; classes = ro[2];
+        try (OrtSession.SessionOptions o = new OrtSession.SessionOptions()) {
+            o.setIntraOpNumThreads(threads);
+            o.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT);
+            det = env.createSession(asset(ctx, "v6_small_det.onnx"), o);
+            rec = env.createSession(asset(ctx, "v6_small_rec.onnx"), o);
+            detName = det.getInputNames().iterator().next();
+            recName = rec.getInputNames().iterator().next();
+        } catch (OrtException e) {
+            throw new IOException(e);
+        }
         List<String> chars = new ArrayList<>();
         chars.add("");
         try (BufferedReader r = new BufferedReader(new InputStreamReader(ctx.getAssets().open("v6_small_dict.txt"), StandardCharsets.UTF_8))) {
             for (String l; (l = r.readLine()) != null; ) chars.add(l);
         }
-        if (classes == chars.size() + 1) chars.add(" ");
+        chars.add(" ");
         vocab = chars.toArray(new String[0]);
-        detIn = direct(3 * detH * detW);
-        detOut = direct(detH * detW);
-        recIn = direct(3 * recH * recW);
-        recOut = direct(steps * classes);
-        detInF = detIn.asFloatBuffer(); detOutF = detOut.asFloatBuffer();
-        recInF = recIn.asFloatBuffer(); recOutF = recOut.asFloatBuffer();
     }
 
-    private static ByteBuffer direct(int floats) {
-        return ByteBuffer.allocateDirect(floats * 4).order(ByteOrder.nativeOrder());
+    private static byte[] asset(Context ctx, String name) throws IOException {
+        try (InputStream in = ctx.getAssets().open(name)) { return in.readAllBytes(); }
     }
 
-    private static MappedByteBuffer map(Context ctx, String name) throws IOException {
-        try (AssetFileDescriptor fd = ctx.getAssets().openFd(name);
-             FileInputStream in = new FileInputStream(fd.getFileDescriptor())) {
-            return in.getChannel().map(FileChannel.MapMode.READ_ONLY, fd.getStartOffset(), fd.getDeclaredLength());
-        }
+    /** A reusable direct buffer of exactly n floats, as ONNX Runtime wraps it without copying. */
+    private FloatBuffer floats(int n) {
+        if (buf.capacity() < n) buf = ByteBuffer.allocateDirect(n * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        buf.clear();
+        buf.limit(n);
+        return buf;
     }
 
     int detRuns, recRuns;
@@ -79,38 +83,17 @@ final class Ocr implements AutoCloseable, Pipeline.Reader {
 
     void resetStats() { detRuns = 0; recRuns = 0; resizeNs = detPrepNs = detNs = detPostNs = recPrepNs = recNs = 0; }
 
-    /** argb: full-resolution ARGB_8888 pixels, row-major. rects: pixel regions {x0,y0,x1,y1} to read, null for all. */
-    @Override public List<Line> read(int[] argb, int w, int h, List<int[]> rects) {
-        List<Line> out = new ArrayList<>();
-        for (int[] b : rects == null ? detect(argb, w, h) : detectAtlas(argb, w, rects)) {
-            int x0 = Math.max(0, b[0]), y0 = Math.max(0, b[1]), x1 = Math.min(w, b[2]), y1 = Math.min(h, b[3]);
-            Line l = recLine(argb, w, x0, y0, x1, y1);
-            if (l != null) out.add(l);
-        }
-        return out;
-    }
-
-    @Override public Line reread(int[] argb, int w, int h, Line box) {
-        return recLine(argb, w, box.x0(), box.y0(), box.x1(), box.y1());
-    }
-
-    private Line recLine(int[] argb, int w, int x0, int y0, int x1, int y1) {
-        if (x1 - x0 < 3 || y1 - y0 < 3) return null;
-        StringBuilder text = new StringBuilder();
-        float confSum = 0; int segs = 0;
-        for (int[] seg : splitWide(argb, w, x0, y0, x1, y1)) {
-            Object[] r = recognize(argb, w, seg[0], y0, seg[1] - seg[0], y1 - y0);
-            text.append((String) r[0]); confSum += (float) r[1]; segs++;
-        }
-        if (text.toString().isBlank()) return null;
-        return new Line(text.toString(), confSum / segs, x0, y0, x1, y1);
+    /** argb: full-resolution ARGB_8888 pixels, row-major. rects: pixel regions {x0,y0,x1,y1} to search, null for all. */
+    @Override public List<int[]> detect(int[] argb, int w, int h, List<int[]> rects) {
+        float sc = (float) DET_SHORT / Math.min(w, h);
+        return rects == null ? runDet(argb, w, h, sc) : detectAtlas(argb, w, rects, sc);
     }
 
     /**
-     * Packs the regions into one image as wide as the screen (so the detector sees text at the same scale as a full
-     * frame), detects once over it and maps each box back into the region its centre falls in, clipped to that region.
+     * Packs the regions into one image as wide as the screen, detects once over it at the screen's scale and maps each
+     * box back into the region its centre falls in, clipped to that region.
      */
-    private List<int[]> detectAtlas(int[] argb, int w, List<int[]> rects) {
+    private List<int[]> detectAtlas(int[] argb, int w, List<int[]> rects, float sc) {
         final int gap = 12;
         Integer[] order = new Integer[rects.size()];
         for (int i = 0; i < order.length; i++) order[i] = i;
@@ -132,7 +115,7 @@ final class Ocr implements AutoCloseable, Pipeline.Reader {
             for (int row = r[1]; row < r[3]; row++) System.arraycopy(argb, row * w + r[0], atlas, (at[i][1] + row - r[1]) * aw + at[i][0], r[2] - r[0]);
         }
         List<int[]> out = new ArrayList<>();
-        for (int[] b : detect(atlas, aw, ah)) {
+        for (int[] b : runDet(atlas, aw, ah, sc)) {
             int cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
             for (int i = 0; i < at.length; i++) {
                 int[] r = rects.get(i);
@@ -146,45 +129,42 @@ final class Ocr implements AutoCloseable, Pipeline.Reader {
         return out;
     }
 
-    private List<int[]> detect(int[] argb, int w, int h) {
-        float sc = (float) detW / w;
-        int rh = Math.round(h * sc);
+    /** One detector pass over the whole image, scaled by sc and padded to a multiple of 32. Boxes in image pixels. */
+    private List<int[]> runDet(int[] img, int iw, int ih, float sc) {
+        int rw = Math.max(1, Math.round(iw * sc)), rh = Math.max(1, Math.round(ih * sc));
+        int pw = (rw + 31) / 32 * 32, ph = (rh + 31) / 32 * 32, plane = pw * ph;
         long t = System.nanoTime();
-        int[] rs = resize(argb, w, 0, 0, w, h, detW, rh);
-        resizeNs += System.nanoTime() - t;
+        int[] rs = resize(img, iw, 0, 0, iw, ih, rw, rh);
+        long t0 = System.nanoTime();
+        resizeNs += t0 - t;
+        FloatBuffer in = floats(3 * plane);
+        for (int y = 0; y < ph; y++) for (int x = 0; x < pw; x++) {
+            int p = y < rh && x < rw ? rs[y * rw + x] : 0xff000000, i = y * pw + x;
+            in.put(i, (((p >> 16) & 0xff) / 255f - MEAN[0]) / STD[0]);
+            in.put(plane + i, (((p >> 8) & 0xff) / 255f - MEAN[1]) / STD[1]);
+            in.put(2 * plane + i, ((p & 0xff) / 255f - MEAN[2]) / STD[2]);
+        }
         List<int[]> boxes = new ArrayList<>();
-        int step = detH - TILE_OVERLAP;
-        for (int y = 0; y < Math.max(1, rh - TILE_OVERLAP); y += step) {
-            long t0 = System.nanoTime();
-            FloatBuffer in = detInF;
-            int plane = detH * detW;
-            for (int ty = 0; ty < detH; ty++) {
-                int sy = y + ty;
-                for (int tx = 0; tx < detW; tx++) {
-                    int p = sy < rh ? rs[sy * detW + tx] : 0xff000000;
-                    int i = ty * detW + tx;
-                    in.put(i, (((p >> 16) & 0xff) / 255f - MEAN[0]) / STD[0]);
-                    in.put(plane + i, (((p >> 8) & 0xff) / 255f - MEAN[1]) / STD[1]);
-                    in.put(2 * plane + i, ((p & 0xff) / 255f - MEAN[2]) / STD[2]);
+        try (OnnxTensor x = OnnxTensor.createTensor(env, in, new long[]{1, 3, ph, pw})) {
+            long t1 = System.nanoTime();
+            try (OrtSession.Result r = det.run(Map.of(detName, x))) {
+                long t2 = System.nanoTime();
+                detRuns++;
+                List<int[]> found = boxesFromProb(((OnnxTensor) r.get(0)).getFloatBuffer(), pw, ph);
+                detPrepNs += t1 - t0; detNs += t2 - t1; detPostNs += System.nanoTime() - t2;
+                for (int[] b : found) {
+                    boxes.add(new int[]{Math.max(0, (int) (b[0] / sc)), Math.max(0, (int) (b[1] / sc)),
+                            Math.min(iw, (int) Math.ceil(b[2] / sc)), Math.min(ih, (int) Math.ceil(b[3] / sc))});
                 }
             }
-            detIn.rewind(); detOut.rewind();
-            long t1 = System.nanoTime();
-            det.run(detIn, detOut);
-            long t2 = System.nanoTime();
-            detRuns++;
-            List<int[]> found = boxesFromProb(detOutF);
-            detPrepNs += t1 - t0; detNs += t2 - t1; detPostNs += System.nanoTime() - t2;
-            for (int[] b : found) {
-                if ((b[1] < TILE_EDGE && y > 0) || (b[3] > detH - TILE_EDGE && y + detH < rh)) continue;
-                boxes.add(new int[]{(int) (b[0] / sc), (int) ((b[1] + y) / sc), (int) (b[2] / sc), (int) ((b[3] + y) / sc)});
-            }
+        } catch (OrtException e) {
+            throw new IllegalStateException(e);
         }
         return boxes;
     }
 
     /** Connected components of the thresholded probability map, scored and expanded like PP-OCR's DB postprocess (axis-aligned). */
-    private List<int[]> boxesFromProb(FloatBuffer prob) {
+    private static List<int[]> boxesFromProb(FloatBuffer prob, int detW, int detH) {
         int n = detH * detW;
         boolean[] seen = new boolean[n];
         ArrayDeque<Integer> q = new ArrayDeque<>();
@@ -213,9 +193,101 @@ final class Ocr implements AutoCloseable, Pipeline.Reader {
         return out;
     }
 
-    /** Cut lines wider than the recognizer holds at the emptiest column (a gap between glyphs). */
-    private List<int[]> splitWide(int[] argb, int w, int x0, int y0, int x1, int y1) {
-        int cw = (y1 - y0) * recW / recH, width = x1 - x0;
+    /**
+     * Recognise each box (null where it reads blank), in the same order. Lines wider than the recogniser's limit are cut
+     * at glyph gaps; the pieces are sorted by width and run in batches of similar width.
+     */
+    @Override public List<Line> recognize(int[] argb, int w, int h, List<int[]> boxes) {
+        List<int[]> segs = new ArrayList<>(); // {box index, x0, y0, x1, y1, natural width}
+        for (int k = 0; k < boxes.size(); k++) {
+            int[] b = boxes.get(k);
+            int x0 = Math.max(0, b[0]), y0 = Math.max(0, b[1]), x1 = Math.min(w, b[2]), y1 = Math.min(h, b[3]);
+            if (x1 - x0 < 3 || y1 - y0 < 3) continue;
+            for (int[] s : splitWide(argb, w, x0, y0, x1, y1)) {
+                int nw = Math.min(REC_MAX_W, Math.max(8, Math.round((float) (s[1] - s[0]) * REC_H / (y1 - y0))));
+                segs.add(new int[]{k, s[0], y0, s[1], y1, nw});
+            }
+        }
+        String[] text = new String[segs.size()];
+        float[] conf = new float[segs.size()];
+        Integer[] order = new Integer[segs.size()];
+        for (int i = 0; i < order.length; i++) order[i] = i;
+        Arrays.sort(order, (p, q) -> Integer.compare(segs.get(p)[5], segs.get(q)[5]));
+        for (int i = 0; i < order.length; ) {
+            int j = i + 1, first = segs.get(order[i])[5];
+            while (j < order.length && j - i < REC_BATCH && segs.get(order[j])[5] <= first * 3 / 2 + 32) j++;
+            runRec(argb, w, segs, Arrays.copyOfRange(order, i, j), text, conf);
+            i = j;
+        }
+        StringBuilder[] sb = new StringBuilder[boxes.size()];
+        float[] cs = new float[boxes.size()];
+        int[] cn = new int[boxes.size()];
+        for (int i = 0; i < segs.size(); i++) {
+            int k = segs.get(i)[0];
+            if (sb[k] == null) sb[k] = new StringBuilder();
+            sb[k].append(text[i]); cs[k] += conf[i]; cn[k]++;
+        }
+        List<Line> out = new ArrayList<>(Collections.nCopies(boxes.size(), (Line) null));
+        for (int k = 0; k < boxes.size(); k++) {
+            if (sb[k] == null || sb[k].toString().isBlank()) continue;
+            int[] s = null;
+            for (int[] g : segs) if (g[0] == k) { s = s == null ? g.clone() : s; s[3] = Math.max(s[3], g[3]); }
+            out.set(k, new Line(sb[k].toString(), cs[k] / cn[k], s[1], s[2], s[3], s[4]));
+        }
+        return out;
+    }
+
+    private void runRec(int[] argb, int w, List<int[]> segs, Integer[] batch, String[] text, float[] conf) {
+        long t0 = System.nanoTime();
+        int bw = 0;
+        for (int i : batch) bw = Math.max(bw, segs.get(i)[5]);
+        bw = (bw + 7) / 8 * 8;
+        int plane = REC_H * bw, n = batch.length;
+        FloatBuffer in = floats(3 * plane * n);
+        for (int i = 0; i < 3 * plane * n; i++) in.put(i, 0f);
+        for (int b = 0; b < n; b++) {
+            int[] s = segs.get(batch[b]);
+            int nw = s[5], base = b * 3 * plane;
+            int[] px = resize(argb, w, s[1], s[2], s[3] - s[1], s[4] - s[2], nw, REC_H);
+            for (int y = 0; y < REC_H; y++) for (int x = 0; x < nw; x++) {
+                int p = px[y * nw + x], i = base + y * bw + x;
+                // Same channel order as the benchmarked pipeline (BGR).
+                in.put(i, (p & 0xff) / 127.5f - 1f);
+                in.put(plane + i, ((p >> 8) & 0xff) / 127.5f - 1f);
+                in.put(2 * plane + i, ((p >> 16) & 0xff) / 127.5f - 1f);
+            }
+        }
+        try (OnnxTensor x = OnnxTensor.createTensor(env, in, new long[]{n, 3, REC_H, bw})) {
+            long t1 = System.nanoTime();
+            try (OrtSession.Result r = rec.run(Map.of(recName, x))) {
+                recRuns++;
+                recPrepNs += t1 - t0; recNs += System.nanoTime() - t1;
+                OnnxTensor o = (OnnxTensor) r.get(0);
+                long[] shape = o.getInfo().getShape();
+                int steps = (int) shape[1], classes = (int) shape[2];
+                FloatBuffer f = o.getFloatBuffer();
+                for (int b = 0; b < n; b++) {
+                    int used = Math.min(steps, (segs.get(batch[b])[5] + 7) / 8);
+                    StringBuilder s = new StringBuilder();
+                    float cs = 0; int kept = 0, prev = 0, base = b * steps * classes;
+                    for (int t = 0; t < used; t++) {
+                        int best = 0; float bv = -Float.MAX_VALUE;
+                        for (int c = 0; c < classes; c++) { float v = f.get(base + t * classes + c); if (v > bv) { bv = v; best = c; } }
+                        if (best != prev && best != 0 && best < vocab.length) { s.append(vocab[best]); cs += bv; kept++; }
+                        prev = best;
+                    }
+                    text[batch[b]] = s.toString();
+                    conf[batch[b]] = kept == 0 ? 0f : cs / kept;
+                }
+            }
+        } catch (OrtException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /** Cut lines wider than the recogniser's limit at the emptiest column (a gap between glyphs). */
+    private static List<int[]> splitWide(int[] argb, int w, int x0, int y0, int x1, int y1) {
+        int cw = (y1 - y0) * REC_MAX_W / REC_H, width = x1 - x0;
         List<int[]> segs = new ArrayList<>();
         if (width <= cw) { segs.add(new int[]{x0, x1}); return segs; }
         int[] gray = new int[width * (y1 - y0)];
@@ -236,37 +308,6 @@ final class Ocr implements AutoCloseable, Pipeline.Reader {
         }
         segs.add(new int[]{x0 + prev, x1});
         return segs;
-    }
-
-    private Object[] recognize(int[] argb, int w, int cx, int cy, int cw, int ch) {
-        long t0 = System.nanoTime();
-        int nw = Math.min(recW, Math.max(1, Math.round((float) cw * recH / ch)));
-        int[] px = resize(argb, w, cx, cy, cw, ch, nw, recH);
-        FloatBuffer in = recInF;
-        int plane = recH * recW;
-        for (int i = 0; i < 3 * plane; i++) in.put(i, 0f);
-        for (int y = 0; y < recH; y++) for (int x = 0; x < nw; x++) {
-            int p = px[y * nw + x], i = y * recW + x;
-            // Same channel order as the benchmarked pipeline (BGR).
-            in.put(i, (p & 0xff) / 127.5f - 1f);
-            in.put(plane + i, ((p >> 8) & 0xff) / 127.5f - 1f);
-            in.put(2 * plane + i, ((p >> 16) & 0xff) / 127.5f - 1f);
-        }
-        recIn.rewind(); recOut.rewind();
-        long t1 = System.nanoTime();
-        rec.run(recIn, recOut);
-        recRuns++;
-        recPrepNs += t1 - t0; recNs += System.nanoTime() - t1;
-        FloatBuffer o = recOutF;
-        StringBuilder s = new StringBuilder();
-        float confSum = 0; int kept = 0, prev = 0;
-        for (int t = 0; t < steps; t++) {
-            int best = 0; float bv = -Float.MAX_VALUE;
-            for (int c = 0; c < classes; c++) { float v = o.get(t * classes + c); if (v > bv) { bv = v; best = c; } }
-            if (best != prev && best != 0 && best < vocab.length) { s.append(vocab[best]); confSum += bv; kept++; }
-            prev = best;
-        }
-        return new Object[]{s.toString(), kept == 0 ? 0f : confSum / kept};
     }
 
     /** Bilinear resize of a sub-rectangle with half-pixel centres (matches cv2.INTER_LINEAR). */
@@ -295,5 +336,7 @@ final class Ocr implements AutoCloseable, Pipeline.Reader {
         return out;
     }
 
-    @Override public void close() { det.close(); rec.close(); }
+    @Override public void close() {
+        try { det.close(); rec.close(); } catch (OrtException e) { throw new IllegalStateException(e); }
+    }
 }
