@@ -10,14 +10,48 @@ import java.util.Map;
  * Keeps the text read so far and only reads the parts of the screen that changed since the previous frame
  * (port of macos/Sources/ascii-screen/Pipeline.swift). A change that lies inside a line already read is
  * re-recognised without running the detector; other changes are packed into one image for a single detector pass.
+ * When frames are waiting, several are read together (see {@link #processAll}).
  */
 final class Pipeline {
+    /** A rect {x0,y0,x1,y1} of one frame's pixels. */
+    record Region(int[] px, int w, int h, int[] rect) {}
+
     interface Reader {
-        /** Line boxes {x0,y0,x1,y1} found inside pixel rects {x0,y0,x1,y1}; null rects means the whole frame. */
-        List<int[]> detect(int[] px, int w, int h, List<int[]> rects);
-        /** The text in each box, in order, null where it is blank; all boxes in as few model calls as possible. */
-        List<Ocr.Line> recognize(int[] px, int w, int h, List<int[]> boxes);
+        /**
+         * Line boxes found inside the regions (which may come from different frames of the same size), all in as few
+         * detector passes as possible. Each box is {x0,y0,x1,y1,index of its region}.
+         */
+        List<int[]> detect(List<Region> regions);
+        /** The text in each region, in order, null where it is blank; all in as few recogniser calls as possible. */
+        List<Ocr.Line> recognize(List<Region> boxes);
     }
+
+    /** What one frame's line says; shared by the copies of a line that moved with a scroll. Null s: blank. */
+    static final class Text {
+        Region at;
+        String s;
+        float conf;
+        Text(Region at) { this.at = at; }
+    }
+
+    /** A cached line. Its text may still be waiting for the recogniser while later frames are planned. */
+    record Box(int x0, int y0, int x1, int y1, Text t) {}
+
+    record Frame(int[] px, int w, int h) {}
+
+    /** One frame's result. */
+    static final class Result {
+        String mode;
+        int regions, rereads, scrollDy, moved, detBatch;
+        float areaPct;
+        List<int[]> rects = List.of();
+        List<Ocr.Line> lines;
+        private List<Box> boxes;
+    }
+
+    private record Plan(String mode, boolean full, Integer dy, int moved, List<Box> keep, List<Box> again, List<int[]> rects, float areaPct) {}
+
+    private record Pending(Result out, int[] px, int w, int h, List<int[]> rects) {}
 
     static final int TILE = 32;
     static final int FULL_EVERY = 30;
@@ -25,7 +59,7 @@ final class Pipeline {
     private final Reader reader;
     private int[] prev;
     private int pw, ph, sinceFull;
-    private List<Ocr.Line> lines = new ArrayList<>();
+    private List<Box> lines = new ArrayList<>();
     private int[] reference;
 
     /** Stats for the last processed frame. */
@@ -33,72 +67,159 @@ final class Pipeline {
     int regions, rereads, scrollDy, moved;
     float areaPct;
     List<int[]> lastRects = List.of();
+    private List<Ocr.Line> lastLines = List.of();
 
     Pipeline(Reader reader) { this.reader = reader; }
 
-    List<Ocr.Line> lines() { return lines; }
+    List<Ocr.Line> lines() { return lastLines; }
 
     /** Returns false when the frame is pixel-identical to the previous one. */
     boolean process(int[] px, int w, int h) {
-        regions = 0; rereads = 0; areaPct = 0; scrollDy = 0; moved = 0; lastRects = List.of();
-        if (prev == null || pw != w || ph != h || sinceFull >= FULL_EVERY) return full(px, w, h);
-        Integer dy = scrollShift(prev, px, w, h);
-        List<int[][]> dirty;
-        if (dy != null) {
-            scrollDy = dy;
-            dirty = followScroll(dy, prev, px, w, h);
-        } else {
-            dirty = dirtyRegions(prev, px, w, h);
-            if (dirty.isEmpty()) { mode = "unchanged"; return false; }
-        }
-
-        List<Ocr.Line> again = new ArrayList<>();
-        List<int[]> rects = new ArrayList<>();
-        for (int[][] d : dirty) {
-            Ocr.Line inside = lineContaining(d[1]);
-            if (inside != null) { if (!again.contains(inside)) again.add(inside); }
-            else rects.add(trimAway(d[0], d[1]));
-        }
-        if (!rects.isEmpty()) {
-            List<int[]> grown = expandOverText(rects, w, h);
-            if (grown == null || area(grown) > 0.5 * w * h) return full(px, w, h);
-            rects = grown;
-            again.removeIf(l -> intersectsAny(l, grown));
-        }
-
-        List<Ocr.Line> next = new ArrayList<>(lines.size());
-        for (Ocr.Line l : lines) if (!again.contains(l) && !intersectsAny(l, rects)) next.add(l);
-        List<int[]> boxes = new ArrayList<>();
-        for (Ocr.Line l : again) boxes.add(new int[]{l.x0(), l.y0(), l.x1(), l.y1()});
-        if (!rects.isEmpty()) boxes.addAll(reader.detect(px, w, h, rects));
-        if (!boxes.isEmpty()) for (Ocr.Line r : reader.recognize(px, w, h, boxes)) if (r != null) next.add(r);
-        next.sort((a, b) -> a.y0() != b.y0() ? Integer.compare(a.y0(), b.y0()) : Integer.compare(a.x0(), b.x0()));
-        lines = next;
-        regions = rects.size();
-        lastRects = rects;
-        rereads = again.size();
-        areaPct = 100f * area(rects) / ((float) w * h);
-        mode = (dy != null ? "scroll+" : "") + (rects.isEmpty() ? (again.isEmpty() ? "moved" : "reread") : "regions");
-        sinceFull++;
-        prev = px;
+        Result r = processAll(List.of(new Frame(px, w, h))).get(0);
+        if (r == null) { mode = "unchanged"; regions = rereads = scrollDy = moved = 0; areaPct = 0; lastRects = List.of(); return false; }
+        mode = r.mode; regions = r.regions; rereads = r.rereads; scrollDy = r.scrollDy; moved = r.moved; areaPct = r.areaPct;
+        lastRects = r.rects; lastLines = r.lines;
         return true;
     }
 
-    private boolean full(int[] px, int w, int h) {
-        lines = new ArrayList<>();
-        for (Ocr.Line l : reader.recognize(px, w, h, reader.detect(px, w, h, null))) if (l != null) lines.add(l);
-        prev = px; pw = w; ph = h; sinceFull = 0;
-        mode = "full"; areaPct = 100;
-        return true;
+    /**
+     * Read consecutive frames, each against the one before. Each frame is planned in order, but frames whose changed
+     * regions don't touch an earlier frame's still-unread regions share one detector pass, and every line of every
+     * frame goes through the recogniser together at the end. Null entries are frames identical to the one before.
+     */
+    List<Result> processAll(List<Frame> frames) {
+        List<Result> outs = new ArrayList<>();
+        List<Pending> pending = new ArrayList<>();
+        for (Frame f : frames) {
+            Plan p = plan(f.px(), f.w(), f.h());
+            if (p != null && !pending.isEmpty() && conflicts(p, pending)) {
+                flush(pending, outs);
+                p = plan(f.px(), f.w(), f.h());
+            }
+            if (p == null) { outs.add(null); continue; }
+            Result r = new Result();
+            List<Box> next = new ArrayList<>(p.keep());
+            for (Box l : p.again()) {
+                int[] b = {l.x0(), l.y0(), l.x1(), l.y1()};
+                next.add(new Box(b[0], b[1], b[2], b[3], new Text(new Region(f.px(), f.w(), f.h(), b))));
+            }
+            lines = next;
+            r.boxes = new ArrayList<>(next);
+            r.mode = p.mode(); r.rects = p.rects(); r.regions = p.full() ? 0 : p.rects().size(); r.rereads = p.again().size();
+            r.scrollDy = p.dy() == null ? 0 : p.dy(); r.moved = p.moved(); r.areaPct = p.areaPct();
+            if (!p.rects().isEmpty()) pending.add(new Pending(r, f.px(), f.w(), f.h(), p.rects()));
+            outs.add(r);
+            sinceFull = p.full() ? 0 : sinceFull + 1;
+            prev = f.px(); pw = f.w(); ph = f.h();
+        }
+        flush(pending, outs);
+        recognize(outs);
+        return outs;
+    }
+
+    /** Planning this frame needs the boxes of an earlier frame's unread regions: it touches them, scrolls, or reads all. */
+    private static boolean conflicts(Plan p, List<Pending> pending) {
+        if (p.full() || p.dy() != null) return true;
+        final int s = 4;
+        for (Pending q : pending) for (int[] r : q.rects()) {
+            int[] g = {r[0] - s, r[1] - s, r[2] + s, r[3] + s};
+            for (int[] o : p.rects()) if (o[0] < g[2] && o[2] > g[0] && o[1] < g[3] && o[3] > g[1]) return true;
+            for (Box l : p.again()) if (l.x0() < g[2] && l.x1() > g[0] && l.y0() < g[3] && l.y1() > g[1]) return true;
+        }
+        return false;
+    }
+
+    /**
+     * One detector pass over every waiting region. A frame's new boxes also belong to every later frame already
+     * planned, since none of those touched that region.
+     */
+    private void flush(List<Pending> pending, List<Result> outs) {
+        if (pending.isEmpty()) return;
+        List<Region> regions = new ArrayList<>();
+        List<Pending> owner = new ArrayList<>();
+        for (Pending q : pending) for (int[] r : q.rects()) { regions.add(new Region(q.px(), q.w(), q.h(), r)); owner.add(q); }
+        List<int[]> found = reader.detect(regions);
+        for (Pending q : pending) q.out().detBatch = pending.size();
+        for (int[] b : found) {
+            Pending q = owner.get(b[4]);
+            int[] box = {b[0], b[1], b[2], b[3]};
+            Box l = new Box(box[0], box[1], box[2], box[3], new Text(new Region(q.px(), q.w(), q.h(), box)));
+            for (int i = outs.indexOf(q.out()); i < outs.size(); i++) if (outs.get(i) != null) outs.get(i).boxes.add(l);
+            lines.add(l);
+        }
+        pending.clear();
+    }
+
+    /** Recognise every line still waiting for text, in one batch, and drop lines that read blank. */
+    private void recognize(List<Result> outs) {
+        List<Text> todo = new ArrayList<>();
+        List<Region> crops = new ArrayList<>();
+        for (Result r : outs) if (r != null) for (Box l : r.boxes) {
+            if (l.t().at != null && !todo.contains(l.t())) { todo.add(l.t()); crops.add(l.t().at); }
+        }
+        List<Ocr.Line> read = crops.isEmpty() ? List.of() : reader.recognize(crops);
+        for (int i = 0; i < todo.size(); i++) {
+            Ocr.Line l = read.get(i);
+            Text t = todo.get(i);
+            t.at = null;
+            if (l != null) { t.s = l.text(); t.conf = l.conf(); }
+        }
+        lines.removeIf(l -> l.t().s == null);
+        for (Result r : outs) {
+            if (r == null) continue;
+            r.boxes.removeIf(l -> l.t().s == null);
+            r.boxes.sort((a, b) -> a.y0() != b.y0() ? Integer.compare(a.y0(), b.y0()) : Integer.compare(a.x0(), b.x0()));
+            r.lines = new ArrayList<>();
+            for (Box l : r.boxes) r.lines.add(new Ocr.Line(l.t().s, l.t().conf, l.x0(), l.y0(), l.x1(), l.y1()));
+            r.boxes = null;
+        }
+    }
+
+    /** What to read for this frame given the cached lines, without changing any state. Null if nothing changed. */
+    private Plan plan(int[] px, int w, int h) {
+        if (prev == null || pw != w || ph != h || sinceFull >= FULL_EVERY) return fullPlan(w, h);
+        Integer dy = scrollShift(prev, px, w, h);
+        List<Box> base = lines;
+        int moved = 0;
+        List<int[][]> dirty;
+        if (dy != null) {
+            base = new ArrayList<>();
+            dirty = new ArrayList<>();
+            moved = followScroll(dy, prev, px, w, h, base, dirty);
+        } else {
+            dirty = dirtyRegions(prev, px, w, h);
+            if (dirty.isEmpty()) return null;
+        }
+        List<Box> again = new ArrayList<>();
+        List<int[]> rects = new ArrayList<>();
+        for (int[][] d : dirty) {
+            Box inside = lineContaining(base, d[1]);
+            if (inside != null) { if (!again.contains(inside)) again.add(inside); }
+            else rects.add(trimAway(base, d[0], d[1]));
+        }
+        if (!rects.isEmpty()) {
+            List<int[]> grown = expandOverText(base, rects, w, h);
+            if (grown == null || area(grown) > 0.5 * w * h) return fullPlan(w, h);
+            rects = grown;
+            again.removeIf(l -> intersectsAny(l, grown));
+        }
+        List<Box> keep = new ArrayList<>(base.size());
+        for (Box l : base) if (!again.contains(l) && !intersectsAny(l, rects)) keep.add(l);
+        String mode = (dy != null ? "scroll+" : "") + (rects.isEmpty() ? (again.isEmpty() ? "moved" : "reread") : "regions");
+        return new Plan(mode, false, dy, moved, keep, again, rects, 100f * area(rects) / ((float) w * h));
+    }
+
+    private static Plan fullPlan(int w, int h) {
+        return new Plan("full", true, null, 0, List.of(), List.of(), List.of(new int[]{0, 0, w, h}), 100);
     }
 
     /**
      * Cut the padding back off cached lines that the changed pixels don't touch, so a change beside unchanged text (a
      * scrollbar, a caret) doesn't make that text be read again.
      */
-    private int[] trimAway(int[] padded, int[] e) {
+    private static int[] trimAway(List<Box> lines, int[] padded, int[] e) {
         int[] r = padded.clone();
-        for (Ocr.Line l : lines) {
+        for (Box l : lines) {
             // Same 2 px slack as expandOverText, so a trimmed edge is not grown back over the line.
             int x0 = l.x0() - 2, y0 = l.y0() - 2, x1 = l.x1() + 2, y1 = l.y1() + 2;
             if (x0 >= r[2] || x1 <= r[0] || y0 >= r[3] || y1 <= r[1]) continue;
@@ -112,8 +233,8 @@ final class Pipeline {
     }
 
     /** A cached line whose box (with 2 px slack) holds every changed pixel of a region. */
-    private Ocr.Line lineContaining(int[] e) {
-        for (Ocr.Line l : lines) {
+    private static Box lineContaining(List<Box> lines, int[] e) {
+        for (Box l : lines) {
             if (e[0] >= l.x0() - 2 && e[1] >= l.y0() - 2 && e[2] <= l.x1() + 2 && e[3] <= l.y1() + 2) return l;
         }
         return null;
@@ -213,9 +334,9 @@ final class Pipeline {
 
     /**
      * After a scroll by dy, move cached lines along with the page and return only what really needs reading: newly
-     * revealed rows and anything that changed on top of the scroll.
+     * revealed rows and anything that changed on top of the scroll. Fills next and dirty; returns how many lines moved.
      */
-    private List<int[][]> followScroll(int dy, int[] a, int[] b, int w, int h) {
+    private int followScroll(int dy, int[] a, int[] b, int w, int h, List<Box> next, List<int[][]> dirty) {
         final int T = TILE;
         if (reference == null || reference.length != w * h) reference = new int[w * h];
         int[] ref = reference;
@@ -229,13 +350,13 @@ final class Pipeline {
                 if (Arrays.equals(a, s, s + n, b, r + x0, r + x0 + n)) System.arraycopy(a, s, ref, r + x0, n);
             }
         }
-        List<int[][]> dirty = dirtyRegions(ref, b, w, h);
-        List<Ocr.Line> next = new ArrayList<>(lines.size());
-        for (Ocr.Line l : lines) {
+        dirty.addAll(dirtyRegions(ref, b, w, h));
+        int moved = 0;
+        for (Box l : lines) {
             if (same(a, b, w, h, l.x0(), l.y0(), l.x1(), l.y1(), 0)) { next.add(l); continue; }
             int my0 = l.y0() - dy, my1 = l.y1() - dy;
             if (my0 >= 0 && my1 <= h && same(a, b, w, h, l.x0(), my0, l.x1(), my1, dy)) {
-                next.add(new Ocr.Line(l.text(), l.conf(), l.x0(), my0, l.x1(), my1));
+                next.add(new Box(l.x0(), my0, l.x1(), my1, l.t()));
                 moved++;
                 continue;
             }
@@ -244,8 +365,7 @@ final class Pipeline {
             int[] r = changedRows(a, b, w, h, l.x0(), my0, l.x1(), my1);
             if (r != null) dirty.add(new int[][]{r, r});
         }
-        lines = next;
-        return dirty;
+        return moved;
     }
 
     /** New rows y0..y1 at x0..x1 equal old rows y0+shift..y1+shift. */
@@ -269,13 +389,13 @@ final class Pipeline {
     }
 
     /** Grow rects until no cached line straddles an edge, then merge overlaps; null (read everything) if it doesn't settle. */
-    List<int[]> expandOverText(List<int[]> input, int w, int h) {
+    static List<int[]> expandOverText(List<Box> lines, List<int[]> input, int w, int h) {
         List<int[]> rects = new ArrayList<>();
         for (int[] r : input) rects.add(r.clone());
         for (int pass = 0; ; pass++) {
             if (pass > 64) return null;
             boolean changed = false;
-            for (int[] r : rects) for (Ocr.Line l : lines) {
+            for (int[] r : rects) for (Box l : lines) {
                 int bx0 = Math.max(0, l.x0() - 2), by0 = Math.max(0, l.y0() - 2), bx1 = Math.min(w, l.x1() + 2), by1 = Math.min(h, l.y1() + 2);
                 boolean meets = bx0 < r[2] && bx1 > r[0] && by0 < r[3] && by1 > r[1];
                 boolean inside = bx0 >= r[0] && by0 >= r[1] && bx1 <= r[2] && by1 <= r[3];
@@ -296,7 +416,7 @@ final class Pipeline {
         }
     }
 
-    private static boolean intersectsAny(Ocr.Line l, List<int[]> rects) {
+    private static boolean intersectsAny(Box l, List<int[]> rects) {
         for (int[] r : rects) if (l.x0() < r[2] && l.x1() > r[0] && l.y0() < r[3] && l.y1() > r[1]) return true;
         return false;
     }

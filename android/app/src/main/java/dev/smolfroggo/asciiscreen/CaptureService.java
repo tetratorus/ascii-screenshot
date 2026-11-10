@@ -31,6 +31,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -50,6 +51,8 @@ public class CaptureService extends AccessibilityService {
     private static final long MIN_GAP_MS = 400;
     /** Waiting patches beyond this many bytes are written to disk instead of held in memory. */
     private static final long MEMORY_BUDGET = 48L << 20;
+    /** Waiting frames read together; each is rebuilt as a full ~10 MB frame while it is read. */
+    private static final int MAX_BATCH = 4;
 
     /** A changed frame waiting to be read: its patch in memory, or in spill when patch is null. */
     private record Frame(long n, long capturedAt, FramePatch patch, File spill, long bytes) {}
@@ -251,66 +254,82 @@ public class CaptureService extends AccessibilityService {
         if (old != null) for (File x : old) x.delete();
     }
 
+    /** Read the waiting frames, up to MAX_BATCH at a time, together (see {@link Pipeline#processAll}). */
     private void runOcr() {
-        Frame f = pending.pollFirst();
-        if (f == null) return;
+        if (pending.isEmpty()) return;
         long t0 = SystemClock.uptimeMillis();
-        FramePatch p;
-        try {
-            p = load(f);
-            ocrPx = p.apply(ocrPx);
-        } catch (IOException | IllegalStateException e) {
-            // Later patches are relative to this frame, so ask capture for a whole frame next time.
-            Log.e(TAG, "frame load failed", e);
-            lost++;
-            resync = true;
-            ocrPx = null;
-            JSONObject j = base();
-            put(j, "ocr_frame", f.n());
-            put(j, "frame_lost", e.toString());
-            write(j);
-            return;
+        List<Frame> taken = new ArrayList<>();
+        List<Pipeline.Frame> frames = new ArrayList<>();
+        while (taken.size() < MAX_BATCH) {
+            Frame f = pending.pollFirst();
+            if (f == null) break;
+            try {
+                FramePatch p = load(f);
+                ocrPx = p.apply(ocrPx);
+                taken.add(f);
+                frames.add(new Pipeline.Frame(ocrPx, p.w, p.h));
+            } catch (IOException | IllegalStateException e) {
+                // Later patches are relative to this frame, so ask capture for a whole frame next time.
+                Log.e(TAG, "frame load failed", e);
+                lost++;
+                resync = true;
+                ocrPx = null;
+                JSONObject j = base();
+                put(j, "ocr_frame", f.n());
+                put(j, "frame_lost", e.toString());
+                write(j);
+                break;
+            }
         }
+        if (taken.isEmpty()) return;
         if (pipeline == null) {
-            JSONObject j = base();
-            put(j, "ocr_frame", f.n());
-            put(j, "ocr_unavailable", true);
-            write(j);
+            for (Frame f : taken) {
+                JSONObject j = base();
+                put(j, "ocr_frame", f.n());
+                put(j, "ocr_unavailable", true);
+                write(j);
+            }
             return;
         }
         ocr.resetStats();
-        boolean changed = pipeline.process(ocrPx, p.w, p.h);
+        List<Pipeline.Result> results = pipeline.processAll(frames);
         long done = SystemClock.uptimeMillis();
-        if (!changed) return;
-        List<Ocr.Line> lines = pipeline.lines();
-        JSONArray arr = new JSONArray();
-        for (Ocr.Line l : lines) {
-            JSONObject o = new JSONObject();
-            put(o, "text", l.text());
-            put(o, "box", new JSONArray().put(l.x0()).put(l.y0()).put(l.x1()).put(l.y1()));
-            arr.put(o);
+        for (int i = 0; i < taken.size(); i++) {
+            Pipeline.Result r = results.get(i);
+            if (r == null) continue;
+            Frame f = taken.get(i);
+            JSONArray arr = new JSONArray();
+            for (Ocr.Line l : r.lines) {
+                JSONObject o = new JSONObject();
+                put(o, "text", l.text());
+                put(o, "box", new JSONArray().put(l.x0()).put(l.y0()).put(l.x1()).put(l.y1()));
+                arr.put(o);
+            }
+            JSONObject j = base();
+            put(j, "ocr_frame", f.n());
+            put(j, "mode", r.mode);
+            put(j, "regions", r.regions);
+            put(j, "rereads", r.rereads);
+            JSONArray rects = new JSONArray();
+            for (int[] q : r.rects) rects.put(new JSONArray().put(q[0]).put(q[1]).put(q[2]).put(q[3]));
+            put(j, "rects", rects);
+            put(j, "scroll_dy", r.scrollDy);
+            put(j, "moved", r.moved);
+            put(j, "area_pct", Math.round(r.areaPct * 10) / 10.0);
+            put(j, "batch", taken.size());
+            put(j, "det_batch", r.detBatch);
+            put(j, "backlog", pending.size());
+            put(j, "spilled", f.spill() != null);
+            put(j, "ocr_ms", done - t0);
+            put(j, "lag_ms", done - f.capturedAt());
+            // Model runs and time breakdown are for the whole batch.
+            put(j, "det_runs", ocr.detRuns);
+            put(j, "rec_runs", ocr.recRuns);
+            put(j, "ms", new JSONArray().put(ocr.resizeNs / 1000000).put(ocr.detPrepNs / 1000000).put(ocr.detNs / 1000000)
+                    .put(ocr.detPostNs / 1000000).put(ocr.recPrepNs / 1000000).put(ocr.recNs / 1000000));
+            put(j, "lines", arr);
+            write(j);
         }
-        JSONObject j = base();
-        put(j, "ocr_frame", f.n());
-        put(j, "mode", pipeline.mode);
-        put(j, "regions", pipeline.regions);
-        put(j, "rereads", pipeline.rereads);
-        JSONArray rects = new JSONArray();
-        for (int[] r : pipeline.lastRects) rects.put(new JSONArray().put(r[0]).put(r[1]).put(r[2]).put(r[3]));
-        put(j, "rects", rects);
-        put(j, "scroll_dy", pipeline.scrollDy);
-        put(j, "moved", pipeline.moved);
-        put(j, "area_pct", Math.round(pipeline.areaPct * 10) / 10.0);
-        put(j, "backlog", pending.size());
-        put(j, "spilled", f.spill() != null);
-        put(j, "ocr_ms", done - t0);
-        put(j, "lag_ms", done - f.capturedAt());
-        put(j, "det_runs", ocr.detRuns);
-        put(j, "rec_runs", ocr.recRuns);
-        put(j, "ms", new JSONArray().put(ocr.resizeNs / 1000000).put(ocr.detPrepNs / 1000000).put(ocr.detNs / 1000000)
-                .put(ocr.detPostNs / 1000000).put(ocr.recPrepNs / 1000000).put(ocr.recNs / 1000000));
-        put(j, "lines", arr);
-        write(j);
     }
 
     private JSONObject base() {

@@ -165,12 +165,56 @@ Per mode in the swipe/rotation run: `reread` median 43 ms, `regions` median 421 
 [lossless-spill-1mb.jsonl](research/emulator-2026-11-10/lossless-spill-1mb.jsonl),
 [lossless-counter-start.jsonl](research/emulator-2026-11-10/lossless-counter-start.jsonl))
 
-Not done: patches from different waiting frames are not packed into one shared detector
-pass. Each frame's changed regions depend on the text read in the frame before, and with
-the any-size detector a pass costs roughly in proportion to its area, so packing frames
-together would save little on CPU. It may matter on a GPU/NPU, where each call has a
-fixed overhead. Lock, secure window and reboot were not re-run on this build; that capture
-code did not change. The APK is now ~109 MB because ONNX Runtime ships for 4 CPU types.
+Superseded below: waiting frames are now read together, and the APK is smaller.
+
+## Waiting frames read together, smaller APK
+
+**Shared passes.** When frames are waiting, the OCR thread takes up to 4 of them at once
+(`Pipeline.processAll`). It works out each frame's changes in order, as before. Regions
+from different frames that don't touch go into one detector call, and every line that
+needs reading, from all of those frames, goes through the recogniser together (up to 8
+per call). A frame has to wait for an earlier frame's detector pass only when its change
+touches a region that earlier frame is still reading, scrolls, or needs a full read; then
+the earlier frames' detector pass runs first. Text is still read once at the end for the
+whole group. Each frame keeps its own result: a line found in frame 2 is not in frame 1's
+output, and a line erased in frame 2 is still in frame 1's. Unit tests cover all three cases.
+
+Re-run of the same scenario on this build (counter 30 s, 10 fast swipes, launcher,
+Settings, Chrome, four rotations), [batch-scroll-switch-rotate.jsonl](research/emulator-2026-11-10/batch-scroll-switch-rotate.jsonl):
+
+- 106 screenshots, 57 changed, 57 read, none missing, no errors or lost frames.
+- Backlog peaked at 4 frames / 31 MB, nothing spilled to disk. Lag median 102 ms, max 12.5 s
+  (during the swipe burst), caught up afterwards.
+- Single-frame timings: `reread` median 60 ms, `full` median 0.9 s (max 3.3 s).
+- Groups of 2-4 waiting frames were read together 16 times. In this run every waiting
+  frame was either a full read (fast flings move more than half the screen between
+  frames) or touched the previous frame's region, so detector passes were not actually
+  shared; recogniser batches were. Shared detector passes help when separate parts of the
+  screen gain new text in consecutive frames while a backlog exists.
+
+**APK size.** Only the arm64 (phones) and x86_64 (emulator) ONNX Runtime libraries are
+packaged now: 109 MB -> 74 MB. A phone-only build would drop x86_64 for about 52 MB.
+
+**Faster CPU path tried: XNNPACK.** Turning on ONNX Runtime's XNNPACK backend crashed the
+app on its first OCR call on the x86_64 emulator (native SIGSEGV inside
+`libonnxruntime.so`, OCR thread). It is not enabled. Not tried on arm64. The crash also
+showed that a native crash kills the capture service and Android waits 30 minutes before
+restarting it, so a crashing model takes capture down with it.
+
+**Lock, secure window, disable, reboot re-run on this build** (09:26-09:30 UTC,
+[lifecycle-notes.txt](research/emulator-2026-11-10/lifecycle-notes.txt),
+[lifecycle-after-reboot.jsonl](research/emulator-2026-11-10/lifecycle-after-reboot.jsonl);
+disable/re-enable this time via `settings put secure enabled_accessibility_services`
+rather than the Settings UI):
+
+| Test | Result |
+|---|---|
+| PIN lock | Pass. Screen off 30 s: `SCREEN_OFF`, no captures. Screen on: lock screen read ("T-Mobile \| Tue, Nov 10"). PIN pad: captured blank, no text ([adb screencap](research/emulator-2026-11-10/shots/lc-bouncer.png) is also black). After the PIN, Chrome reading resumed in the same running service. |
+| FLAG_SECURE | Blocked as intended. One frame caught Chrome while the secure screen was opening; after that only the status bar was read. |
+| Disable / re-enable | Pass. Disable: `SERVICE_DESTROYED`, then `OCR_DRAINED lost 0` (waiting frames read before shutdown). Re-enable: `SERVICE_CONNECTED`, launcher and Chrome read. |
+| Reboot | Pass after first unlock. Before unlock: service not bound, nothing captured. After the PIN: bound and capturing with no user action. The first screenshot after boot timed out (5 s, `SCREENSHOT_TIMEOUT`, 5 one-second slots missed while it was pending); the next 11 s of frames were read late as the phone settled. |
+
+Every changed frame in each service run was read (30/30, 11/11, 12/12), no `frame_lost`.
 
 ## Testing gotcha
 
@@ -185,6 +229,6 @@ less than 333 ms after the previous one right after such a restart (screenshot
 ## Not tested
 
 - Any physical phone, OEM battery/background policy, heat, battery drain.
-- GPU/NPU (ONNX Runtime has NNAPI/QNN options; none is wired in, and the emulator could not test it anyway).
+- GPU/NPU (ONNX Runtime has NNAPI/QNN options; none is wired in, and the emulator could not test it anyway). XNNPACK crashed on the emulator (see above).
 - Long runs (longest continuous run here was a few minutes).
 - Capture while the lock screen stays on for long periods, or with notifications arriving.

@@ -39,7 +39,7 @@ The eventual product captures phone screens at about 1 fps, OCRs Chinese/English
 Verified in the previous Mac VM:
 
 - `./gradlew --no-daemon assembleDebug lintDebug --console=plain` succeeds (JDK 17). Java compilation is included. Gradle reports deprecation warnings, not a failed build. No runtime/instrumentation tests exist yet.
-- APK contains arm64-v8a, armeabi-v7a, and x86_64 native LiteRT libraries.
+- APK contains arm64-v8a and x86_64 native ONNX Runtime libraries (2026-11-10; originally arm64-v8a, armeabi-v7a, x86_64 LiteRT).
 - Android Studio's ARM Android 16/API 36 image could not boot in the Mac VM: `HV_UNSUPPORTED`, no nested virtualization. Even `-accel off` tried HVF. Do not repeat this on Ubuntu.
 - As a fallback, Bliss OS Android 13/API 33 x86_64 booted under software QEMU. `sys.boot_completed=1`; ADB shell UID was 2000; APK installation returned `Success`.
 - **No successful accessibility screenshot or on-device OCR output was observed.** The session was suspended while attempting to enable the service and inspect its log. Do not count that command as successful. All emulator processes are now gone; the live-CD guest was not a durable Android test environment.
@@ -65,7 +65,7 @@ Other rough edges to inspect rather than assume fixed: cleanup/callback races wh
 
 ## Build on Ubuntu
 
-Versions currently pinned: AGP 9.5.1; Gradle wrapper 9.8.2; LiteRT 2.3.2; Java 17; compile/target SDK 36; min SDK 33. The last uncommitted Mac edit lowered min SDK 34 -> 33 only to try Bliss; it is included here.
+Versions currently pinned: AGP 9.5.1; Gradle wrapper 9.8.2; ONNX Runtime Android 1.22.0 (was LiteRT 2.3.2); Java 17; compile/target SDK 36; min SDK 33. The last uncommitted Mac edit lowered min SDK 34 -> 33 only to try Bliss; it is included here.
 
 Inspect Ubuntu's architecture/JDK/SDK and existing emulator support before installing anything. Use an x86_64 image on an x86_64 host. For example, after installing official Android command-line tools:
 

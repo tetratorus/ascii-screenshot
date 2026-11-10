@@ -83,18 +83,24 @@ final class Ocr implements AutoCloseable, Pipeline.Reader {
 
     void resetStats() { detRuns = 0; recRuns = 0; resizeNs = detPrepNs = detNs = detPostNs = recPrepNs = recNs = 0; }
 
-    /** argb: full-resolution ARGB_8888 pixels, row-major. rects: pixel regions {x0,y0,x1,y1} to search, null for all. */
-    @Override public List<int[]> detect(int[] argb, int w, int h, List<int[]> rects) {
-        float sc = (float) DET_SHORT / Math.min(w, h);
-        return rects == null ? runDet(argb, w, h, sc) : detectAtlas(argb, w, rects, sc);
+    @Override public List<int[]> detect(List<Pipeline.Region> regions) {
+        Pipeline.Region f = regions.get(0);
+        int[] r0 = f.rect();
+        float sc = (float) DET_SHORT / Math.min(f.w(), f.h());
+        if (regions.size() > 1 || r0[0] != 0 || r0[1] != 0 || r0[2] != f.w() || r0[3] != f.h()) return detectAtlas(regions, f.w(), sc);
+        List<int[]> out = new ArrayList<>();
+        for (int[] b : runDet(f.px(), f.w(), f.h(), sc)) out.add(new int[]{b[0], b[1], b[2], b[3], 0});
+        return out;
     }
 
     /**
      * Packs the regions into one image as wide as the screen, detects once over it at the screen's scale and maps each
      * box back into the region its centre falls in, clipped to that region.
      */
-    private List<int[]> detectAtlas(int[] argb, int w, List<int[]> rects, float sc) {
+    private List<int[]> detectAtlas(List<Pipeline.Region> regions, int w, float sc) {
         final int gap = 12;
+        List<int[]> rects = new ArrayList<>();
+        for (Pipeline.Region g : regions) rects.add(g.rect());
         Integer[] order = new Integer[rects.size()];
         for (int i = 0; i < order.length; i++) order[i] = i;
         Arrays.sort(order, (a, b) -> Integer.compare(rects.get(b)[3] - rects.get(b)[1], rects.get(a)[3] - rects.get(a)[1]));
@@ -112,6 +118,7 @@ final class Ocr implements AutoCloseable, Pipeline.Reader {
         Arrays.fill(atlas, 0xffffffff);
         for (int i = 0; i < at.length; i++) {
             int[] r = rects.get(i);
+            int[] argb = regions.get(i).px();
             for (int row = r[1]; row < r[3]; row++) System.arraycopy(argb, row * w + r[0], atlas, (at[i][1] + row - r[1]) * aw + at[i][0], r[2] - r[0]);
         }
         List<int[]> out = new ArrayList<>();
@@ -122,7 +129,7 @@ final class Ocr implements AutoCloseable, Pipeline.Reader {
                 int ox = at[i][0], oy = at[i][1], rw = r[2] - r[0], rh = r[3] - r[1];
                 if (cx < ox || cx >= ox + rw || cy < oy || cy >= oy + rh) continue;
                 out.add(new int[]{r[0] + Math.max(0, b[0] - ox), r[1] + Math.max(0, b[1] - oy),
-                        r[0] + Math.min(rw, b[2] - ox), r[1] + Math.min(rh, b[3] - oy)});
+                        r[0] + Math.min(rw, b[2] - ox), r[1] + Math.min(rh, b[3] - oy), i});
                 break;
             }
         }
@@ -197,10 +204,12 @@ final class Ocr implements AutoCloseable, Pipeline.Reader {
      * Recognise each box (null where it reads blank), in the same order. Lines wider than the recogniser's limit are cut
      * at glyph gaps; the pieces are sorted by width and run in batches of similar width.
      */
-    @Override public List<Line> recognize(int[] argb, int w, int h, List<int[]> boxes) {
+    @Override public List<Line> recognize(List<Pipeline.Region> boxes) {
         List<int[]> segs = new ArrayList<>(); // {box index, x0, y0, x1, y1, natural width}
         for (int k = 0; k < boxes.size(); k++) {
-            int[] b = boxes.get(k);
+            Pipeline.Region c = boxes.get(k);
+            int[] argb = c.px(), b = c.rect();
+            int w = c.w(), h = c.h();
             int x0 = Math.max(0, b[0]), y0 = Math.max(0, b[1]), x1 = Math.min(w, b[2]), y1 = Math.min(h, b[3]);
             if (x1 - x0 < 3 || y1 - y0 < 3) continue;
             for (int[] s : splitWide(argb, w, x0, y0, x1, y1)) {
@@ -216,7 +225,7 @@ final class Ocr implements AutoCloseable, Pipeline.Reader {
         for (int i = 0; i < order.length; ) {
             int j = i + 1, first = segs.get(order[i])[5];
             while (j < order.length && j - i < REC_BATCH && segs.get(order[j])[5] <= first * 3 / 2 + 32) j++;
-            runRec(argb, w, segs, Arrays.copyOfRange(order, i, j), text, conf);
+            runRec(boxes, segs, Arrays.copyOfRange(order, i, j), text, conf);
             i = j;
         }
         StringBuilder[] sb = new StringBuilder[boxes.size()];
@@ -237,7 +246,7 @@ final class Ocr implements AutoCloseable, Pipeline.Reader {
         return out;
     }
 
-    private void runRec(int[] argb, int w, List<int[]> segs, Integer[] batch, String[] text, float[] conf) {
+    private void runRec(List<Pipeline.Region> crops, List<int[]> segs, Integer[] batch, String[] text, float[] conf) {
         long t0 = System.nanoTime();
         int bw = 0;
         for (int i : batch) bw = Math.max(bw, segs.get(i)[5]);
@@ -248,7 +257,8 @@ final class Ocr implements AutoCloseable, Pipeline.Reader {
         for (int b = 0; b < n; b++) {
             int[] s = segs.get(batch[b]);
             int nw = s[5], base = b * 3 * plane;
-            int[] px = resize(argb, w, s[1], s[2], s[3] - s[1], s[4] - s[2], nw, REC_H);
+            Pipeline.Region c = crops.get(s[0]);
+            int[] px = resize(c.px(), c.w(), s[1], s[2], s[3] - s[1], s[4] - s[2], nw, REC_H);
             for (int y = 0; y < REC_H; y++) for (int x = 0; x < nw; x++) {
                 int p = px[y * nw + x], i = base + y * bw + x;
                 // Same channel order as the benchmarked pipeline (BGR).

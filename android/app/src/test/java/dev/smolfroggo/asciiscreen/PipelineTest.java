@@ -21,25 +21,38 @@ public class PipelineTest {
         final List<int[]> words = new ArrayList<>();
 
         private final List<int[]> found = new ArrayList<>();
+        final List<Integer> detectCalls = new ArrayList<>(), recognizeCalls = new ArrayList<>();
 
-        @Override public List<int[]> detect(int[] px, int w, int h, List<int[]> rects) {
-            reads.add(rects);
-            found.clear();
-            for (int[] b : words) {
-                boolean in = rects == null;
-                if (rects != null) for (int[] r : rects) in |= b[0] >= r[0] && b[1] >= r[1] && b[2] <= r[2] && b[3] <= r[3];
-                if (in) found.add(b.clone());
+        @Override public List<int[]> detect(List<Pipeline.Region> regions) {
+            List<int[]> rects = new ArrayList<>();
+            for (Pipeline.Region g : regions) rects.add(g.rect());
+            int[] r0 = rects.get(0);
+            boolean whole = rects.size() == 1 && r0[0] == 0 && r0[1] == 0 && r0[2] == regions.get(0).w() && r0[3] == regions.get(0).h();
+            reads.add(whole ? null : rects);
+            detectCalls.add(regions.size());
+            List<int[]> out = new ArrayList<>();
+            for (int i = 0; i < regions.size(); i++) {
+                int[] r = rects.get(i);
+                for (int[] b : words) {
+                    if (b[0] >= r[0] && b[1] >= r[1] && b[2] <= r[2] && b[3] <= r[3]) {
+                        found.add(b.clone());
+                        out.add(new int[]{b[0], b[1], b[2], b[3], i});
+                    }
+                }
             }
-            return new ArrayList<>(found);
+            return out;
         }
 
-        @Override public List<Ocr.Line> recognize(int[] px, int w, int h, List<int[]> boxes) {
+        @Override public List<Ocr.Line> recognize(List<Pipeline.Region> boxes) {
+            recognizeCalls.add(boxes.size());
             List<Ocr.Line> out = new ArrayList<>();
-            for (int[] b : boxes) {
-                Ocr.Line l = new Ocr.Line(Integer.toHexString(px[b[1] * w + b[0]]), 1, b[0], b[1], b[2], b[3]);
+            for (Pipeline.Region g : boxes) {
+                int[] b = g.rect();
+                int c = g.px()[b[1] * g.w() + b[0]];
+                Ocr.Line l = c == 0xffffffff ? null : new Ocr.Line(Integer.toHexString(c), 1, b[0], b[1], b[2], b[3]);
                 boolean detected = false;
-                for (int[] d : found) detected |= d.equals(b) || Arrays.equals(d, b);
-                if (!detected) rereads.add(l);
+                for (int[] d : found) detected |= Arrays.equals(d, b);
+                if (!detected && l != null) rereads.add(l);
                 out.add(l);
             }
             found.clear();
@@ -201,5 +214,63 @@ public class PipelineTest {
         for (int[] r : f.reads.get(1)) assertTrue(r[0] >= a[2]);
         assertEquals(1, pl.lines().size());
         assertEquals(0, f.rereads.size());
+    }
+
+    /** Waiting frames whose changes are apart share one detector pass, and all their lines one recogniser call. */
+    @Test public void waitingFramesShareOnePass() {
+        int[] p0 = blank();
+        int[] a = {10, 100, 200, 120}, b = {10, 400, 200, 420}, c = {10, 700, 200, 720};
+        Fake f = screen(p0, a);
+        f.words.add(b); f.words.add(c);
+        Pipeline pl = new Pipeline(f);
+        pl.process(p0, W, H);
+        int[] p1 = p0.clone(); fill(p1, b, 0xff000000);
+        int[] p2 = p1.clone(); fill(p2, c, 0xff000000);
+        f.detectCalls.clear(); f.recognizeCalls.clear();
+        List<Pipeline.Result> rs = pl.processAll(List.of(new Pipeline.Frame(p1, W, H), new Pipeline.Frame(p2, W, H)));
+        assertEquals(List.of(2), f.detectCalls);
+        assertEquals(List.of(2), f.recognizeCalls);
+        assertEquals(2, rs.get(0).lines.size());
+        assertEquals(b[1], rs.get(0).lines.get(1).y0());
+        assertEquals(3, rs.get(1).lines.size());
+        assertEquals(c[1], rs.get(1).lines.get(2).y0());
+        assertEquals(2, rs.get(1).detBatch);
+    }
+
+    /** A frame that changes what an earlier waiting frame is still reading waits for that frame's detector pass. */
+    @Test public void overlappingFramesAreReadInOrder() {
+        int[] p0 = blank();
+        int[] b = {10, 400, 200, 420}, b2 = {10, 400, 260, 420};
+        Fake f = screen(p0);
+        Pipeline pl = new Pipeline(f);
+        pl.process(p0, W, H);
+        int[] p1 = p0.clone(); fill(p1, b, 0xff000000);
+        f.words.add(b);
+        int[] p2 = p1.clone(); fill(p2, new int[]{200, 400, 260, 420}, 0xff111111);
+        f.detectCalls.clear(); f.recognizeCalls.clear();
+        List<Pipeline.Result> rs = pl.processAll(List.of(new Pipeline.Frame(p1, W, H), new Pipeline.Frame(p2, W, H)));
+        // Frame 2 needs the box frame 1 found, so frame 1's detector pass runs first. Text is still read in one batch.
+        assertEquals(1, f.recognizeCalls.size());
+        assertEquals(2, (int) f.recognizeCalls.get(0));
+        assertEquals(1, rs.get(0).lines.size());
+        assertEquals(1, rs.get(1).lines.size());
+        assertEquals(1, (int) f.detectCalls.get(0));
+    }
+
+    /** A line erased in a waiting frame is gone from that frame on, and stays in the frames before it. */
+    @Test public void erasedLineLeavesLaterFramesOnly() {
+        int[] p0 = blank();
+        int[] a = {10, 100, 200, 120}, c = {10, 700, 200, 720};
+        Fake f = screen(p0, a);
+        f.words.add(c);
+        Pipeline pl = new Pipeline(f);
+        pl.process(p0, W, H);
+        int[] p1 = p0.clone(); fill(p1, c, 0xff000000);
+        int[] p2 = p1.clone(); fill(p2, a, 0xffffffff); f.words.remove(a);
+        List<Pipeline.Result> rs = pl.processAll(List.of(new Pipeline.Frame(p1, W, H), new Pipeline.Frame(p2, W, H)));
+        assertEquals(2, rs.get(0).lines.size());
+        assertEquals(1, rs.get(1).lines.size());
+        assertEquals(c[1], rs.get(1).lines.get(0).y0());
+        assertEquals(1, pl.processAll(List.of(new Pipeline.Frame(p2.clone(), W, H))).size());
     }
 }
