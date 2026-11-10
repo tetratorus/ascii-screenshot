@@ -1,0 +1,24 @@
+2026-11-10T06:18:56Z SECURE fixture start
+2026-11-10T06:19:09Z SECURE fixture end -> home
+2026-11-10T06:19:13Z open MainActivity then swipe out of recents
+2026-11-10T06:19:22Z swiped; opening chrome
+2026-11-10T06:19:34Z chrome after swipe done
+2026-11-10T06:19:54Z PIN lock configured (locksettings set-pin)
+2026-11-10T06:19:54Z screen off (POWER)
+2026-11-10T06:20:57Z screen on (WAKEUP), keyguard expected
+2026-11-10T06:21:10Z PIN entered
+2026-11-10T06:21:22Z post-unlock wait done
+2026-11-10T06:22:03Z disabled via Settings UI
+2026-11-10T06:22:11Z re-enable via Settings UI
+2026-11-10T06:22:29Z re-enable check done
+2026-11-10T06:22:38Z adb reboot
+2026-11-10T06:26:53Z boot completed (before first unlock)
+2026-11-10T06:27:13Z locked-after-reboot check done
+2026-11-10T06:27:35Z first unlock after reboot
+2026-11-10T06:29:30Z installed lifecycle-fix build
+2026-11-10T06:29:58Z MEASURE_START (no uiautomator during window)
+2026-11-10T06:30:18Z chrome fixture
+2026-11-10T06:30:48Z scrolling chrome
+2026-11-10T06:31:15Z settings
+2026-11-10T06:31:35Z secure fixture
+2026-11-10T06:32:05Z MEASURE_END

@@ -1,0 +1,654 @@
+{"t":"2026-11-10T06:17:18.989967Z","pkg":"?","event":"SERVICE_CONNECTED"}
+{"t":"2026-11-10T06:17:19.500756Z","pkg":"?","frame":0,"capture_ms":505}
+{"t":"2026-11-10T06:17:20.089984Z","pkg":"?","frame":1,"capture_ms":93,"unchanged":true}
+{"t":"2026-11-10T06:17:21.050455Z","pkg":"?","frame":2,"capture_ms":55,"unchanged":true}
+{"t":"2026-11-10T06:17:22.045364Z","pkg":"?","frame":3,"capture_ms":49,"unchanged":true}
+{"t":"2026-11-10T06:17:22.232379Z","pkg":"?","ocr_frame":0,"ocr_ms":2731,"lag_ms":2731,"det_runs":2,"rec_runs":10,"lines":[{"text":"6:17A","box":[37,47,165,92]},{"text":"O","box":[891,53,925,83]},{"text":"一","box":[984,55,1007,85]},{"text":"A","box":[937,58,969,88]},{"text":"Tue, Nov 10","box":[74,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"4","box":[756,2188,825,2271]}]}
+{"t":"2026-11-10T06:17:23.080154Z","pkg":"?","frame":4,"capture_ms":84,"unchanged":true}
+{"t":"2026-11-10T06:17:24.062170Z","pkg":"?","frame":5,"capture_ms":66,"unchanged":true}
+{"t":"2026-11-10T06:17:25.073125Z","pkg":"?","frame":6,"capture_ms":76,"unchanged":true}
+{"t":"2026-11-10T06:17:26.045569Z","pkg":"?","frame":7,"capture_ms":49,"unchanged":true}
+{"t":"2026-11-10T06:17:27.044290Z","pkg":"?","frame":8,"capture_ms":48,"unchanged":true}
+{"t":"2026-11-10T06:17:28.044195Z","pkg":"?","frame":9,"capture_ms":48,"unchanged":true}
+{"t":"2026-11-10T06:17:29.044740Z","pkg":"?","frame":10,"capture_ms":48,"unchanged":true}
+{"t":"2026-11-10T06:17:30.044858Z","pkg":"?","frame":11,"capture_ms":48}
+{"t":"2026-11-10T06:17:31.058859Z","pkg":"?","frame":12,"capture_ms":62,"unchanged":true}
+{"t":"2026-11-10T06:17:32.047679Z","pkg":"?","frame":13,"capture_ms":50,"unchanged":true}
+{"t":"2026-11-10T06:17:32.626208Z","pkg":"com.android.chrome","ocr_frame":11,"ocr_ms":2581,"lag_ms":2581,"det_runs":2,"rec_runs":10,"lines":[{"text":"6:17A","box":[37,47,165,92]},{"text":"O","box":[891,53,925,83]},{"text":"一","box":[984,55,1007,85]},{"text":"A","box":[936,58,971,88]},{"text":"Tue, Nov 10","box":[74,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"4","box":[756,2188,825,2271]}]}
+{"t":"2026-11-10T06:17:33.133528Z","pkg":"com.android.chrome","frame":14,"capture_ms":133}
+{"t":"2026-11-10T06:17:34.115797Z","pkg":"com.android.chrome","frame":15,"capture_ms":119}
+{"t":"2026-11-10T06:17:35.065182Z","pkg":"com.android.chrome","frame":16,"capture_ms":69,"ocr_superseded_frame":15}
+{"t":"2026-11-10T06:17:35.268703Z","pkg":"com.android.chrome","ocr_frame":14,"ocr_ms":2135,"lag_ms":2135,"det_runs":2,"rec_runs":3,"lines":[{"text":"6:17","box":[39,47,163,94]},{"text":"4","box":[893,53,1008,92]},{"text":"9","box":[364,650,715,1010]}]}
+{"t":"2026-11-10T06:17:36.080682Z","pkg":"com.android.chrome","frame":17,"capture_ms":84}
+{"t":"2026-11-10T06:17:36.990729Z","pkg":"com.android.chrome","ocr_frame":16,"ocr_ms":1722,"lag_ms":1925,"det_runs":2,"rec_runs":3,"lines":[{"text":"6:17","box":[39,47,163,94]},{"text":"4","box":[916,53,1008,92]},{"text":"9","box":[364,650,715,1010]}]}
+{"t":"2026-11-10T06:17:37.037974Z","pkg":"com.android.chrome","frame":18,"capture_ms":41}
+{"t":"2026-11-10T06:17:38.037863Z","pkg":"com.android.chrome","frame":19,"capture_ms":41,"unchanged":true}
+{"t":"2026-11-10T06:17:39.349972Z","pkg":"?","event":"SERVICE_CONNECTED"}
+{"t":"2026-11-10T06:17:39.510988Z","pkg":"?","frame":0,"capture_ms":160}
+{"t":"2026-11-10T06:17:39.869931Z","pkg":"com.android.chrome","ocr_frame":17,"ocr_ms":2879,"lag_ms":3789,"det_runs":2,"rec_runs":14,"lines":[{"text":"6:17","box":[39,47,165,92]},{"text":"9","box":[371,579,706,927]},{"text":"Make Chrome your own","box":[220,968,859,1035]},{"text":"Sign in to get your bookmarks, passwords,","box":[186,1071,893,1113]},{"text":"and more on all your devices","box":[298,1122,781,1165]},{"text":"Add account to device","box":[342,1964,738,2007]},{"text":"Use without an account","box":[333,2090,747,2133]},{"text":"By continuing, you agree to the Terms of Service. To help improve","box":[63,2211,1014,2254]},{"text":"the app, Chrome sendsusage and crash data to Google. Manage","box":[62,2254,1016,2296]}]}
+{"t":"2026-11-10T06:17:40.395912Z","pkg":"?","frame":1,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:17:41.402016Z","pkg":"?","frame":2,"capture_ms":50,"unchanged":true}
+{"t":"2026-11-10T06:17:42.404310Z","pkg":"?","frame":3,"capture_ms":52,"unchanged":true}
+{"t":"2026-11-10T06:17:42.447901Z","pkg":"?","ocr_frame":0,"ocr_ms":2873,"lag_ms":2937,"det_runs":2,"rec_runs":14,"lines":[{"text":"6:17","box":[39,47,165,92]},{"text":"9","box":[371,579,706,927]},{"text":"Make Chrome your own","box":[220,968,859,1035]},{"text":"Sign in to get your bookmarks, passwords,","box":[186,1071,893,1113]},{"text":"and more on all your devices","box":[298,1122,781,1165]},{"text":"Add account to device","box":[342,1964,738,2007]},{"text":"Use without an account","box":[333,2090,747,2133]},{"text":"By continuing, you agree to the Terms of Service. To help improve","box":[63,2211,1014,2254]},{"text":"the app, Chrome sendsusage and crash data to Google. Manage","box":[62,2254,1016,2296]}]}
+{"t":"2026-11-10T06:17:42.690478Z","pkg":"com.android.chrome","ocr_frame":18,"ocr_ms":2821,"lag_ms":5653,"det_runs":2,"rec_runs":14,"lines":[{"text":"6:17","box":[39,47,165,92]},{"text":"9","box":[371,579,706,927]},{"text":"Make Chrome your own","box":[220,968,859,1035]},{"text":"Sign in to get your bookmarks, passwords,","box":[186,1071,893,1113]},{"text":"and more on all your devices","box":[298,1122,781,1165]},{"text":"Add account to device","box":[342,1964,738,2007]},{"text":"Use without an account","box":[333,2090,747,2133]},{"text":"By continuing, you agree to the Terms of Service. To help improve","box":[63,2211,1014,2254]},{"text":"the app, Chrome sendsusage and crash data to Google. Manage","box":[62,2254,1016,2296]}]}
+{"t":"2026-11-10T06:17:42.703336Z","pkg":"com.android.chrome","event":"SERVICE_DESTROYED","frames":20,"ocr_superseded":1}
+{"t":"2026-11-10T06:17:43.403382Z","pkg":"?","frame":4,"capture_ms":52,"unchanged":true}
+{"t":"2026-11-10T06:17:44.395860Z","pkg":"?","frame":5,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:17:44.872643Z","pkg":"?","event":"SERVICE_DESTROYED","frames":6,"ocr_superseded":0}
+{"t":"2026-11-10T06:17:45.867567Z","pkg":"?","event":"SERVICE_CONNECTED"}
+{"t":"2026-11-10T06:17:45.993739Z","pkg":"?","frame":0,"capture_ms":125}
+{"t":"2026-11-10T06:17:46.919449Z","pkg":"?","frame":1,"capture_ms":50,"unchanged":true}
+{"t":"2026-11-10T06:17:48.038495Z","pkg":"com.android.chrome","frame":2,"capture_ms":169}
+{"t":"2026-11-10T06:17:49.037302Z","pkg":"com.android.chrome","frame":3,"capture_ms":168,"ocr_superseded_frame":2}
+{"t":"2026-11-10T06:17:49.579551Z","pkg":"com.android.chrome","ocr_frame":0,"ocr_ms":3586,"lag_ms":3586,"det_runs":2,"rec_runs":14,"lines":[{"text":"6:17","box":[39,47,165,92]},{"text":"9","box":[371,579,706,927]},{"text":"Make Chrome your own","box":[220,968,859,1035]},{"text":"Sign in to get your bookmarks, passwords,","box":[186,1071,893,1113]},{"text":"and more on all your devices","box":[298,1122,781,1165]},{"text":"Add account to device","box":[342,1964,738,2007]},{"text":"Use without an account","box":[333,2090,747,2133]},{"text":"By continuing, you agree to the Terms of Service. To help improve","box":[63,2211,1014,2254]},{"text":"the app, Chrome sendsusage and crash data to Google. Manage","box":[62,2254,1016,2296]}]}
+{"t":"2026-11-10T06:17:49.997894Z","pkg":"com.android.chrome","frame":4,"capture_ms":128}
+{"t":"2026-11-10T06:17:50.939165Z","pkg":"com.android.chrome","frame":5,"capture_ms":70,"ocr_superseded_frame":4}
+{"t":"2026-11-10T06:17:51.688597Z","pkg":"com.android.chrome","ocr_frame":3,"ocr_ms":2109,"lag_ms":2651,"det_runs":2,"rec_runs":3,"lines":[{"text":"6:17","box":[39,47,163,92]},{"text":"0","box":[31,181,97,248]},{"text":"Search or type URL","box":[198,184,589,246]}]}
+{"t":"2026-11-10T06:17:52.216346Z","pkg":"?","event":"SERVICE_CONNECTED"}
+{"t":"2026-11-10T06:17:52.411306Z","pkg":"?","frame":0,"capture_ms":194}
+{"t":"2026-11-10T06:17:53.269322Z","pkg":"?","frame":1,"capture_ms":51,"unchanged":true}
+{"t":"2026-11-10T06:17:54.239051Z","pkg":"com.android.chrome","ocr_frame":5,"ocr_ms":2550,"lag_ms":3299,"det_runs":2,"rec_runs":11,"lines":[{"text":"6:17","box":[39,47,163,92]},{"text":"10.0.2.2:8088","box":[202,193,470,236]},{"text":"1","box":[875,198,909,236]},{"text":"Chrome notifications make things","box":[62,1381,960,1453]},{"text":"easier","box":[62,1460,234,1518]},{"text":"You'll be able to easily manage media controls,","box":[62,1564,852,1618]},{"text":"Incognito sessions, downloads and more","box":[65,1618,753,1660]},{"text":"No thanks","box":[472,1747,655,1792]},{"text":"Continue","box":[754,1746,927,1795]}]}
+{"t":"2026-11-10T06:17:54.256416Z","pkg":"com.android.chrome","event":"SERVICE_DESTROYED","frames":6,"ocr_superseded":2}
+{"t":"2026-11-10T06:17:54.271992Z","pkg":"?","frame":2,"capture_ms":53,"unchanged":true}
+{"t":"2026-11-10T06:17:55.101058Z","pkg":"?","ocr_frame":0,"ocr_ms":2688,"lag_ms":2689,"det_runs":2,"rec_runs":13,"lines":[{"text":"6:17","box":[39,47,163,92]},{"text":"10.0.2.2:8088","box":[202,193,470,236]},{"text":"1","box":[872,197,911,238]},{"text":"今日新闻 Daily News","box":[42,415,792,525]},{"text":"Chrome notifications make things","box":[62,1381,960,1453]},{"text":"easier","box":[62,1460,234,1518]},{"text":"You'll be able to easilymanage media controls,","box":[63,1568,850,1616]},{"text":"Incognito sessions, downloads and more","box":[65,1618,753,1660]},{"text":"No thanks","box":[472,1747,655,1792]},{"text":"Continue","box":[756,1746,927,1795]}]}
+{"t":"2026-11-10T06:17:55.265915Z","pkg":"?","frame":3,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:17:56.263172Z","pkg":"?","frame":4,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:17:57.262490Z","pkg":"?","frame":5,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:17:58.270027Z","pkg":"?","frame":6,"capture_ms":51,"unchanged":true}
+{"t":"2026-11-10T06:17:59.265744Z","pkg":"?","frame":7,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:17:59.952393Z","pkg":"?","event":"SERVICE_DESTROYED","frames":8,"ocr_superseded":0}
+{"t":"2026-11-10T06:18:00.963729Z","pkg":"?","event":"SERVICE_CONNECTED"}
+{"t":"2026-11-10T06:18:01.170326Z","pkg":"?","frame":0,"capture_ms":195}
+{"t":"2026-11-10T06:18:02.061462Z","pkg":"?","frame":1,"capture_ms":85,"unchanged":true}
+{"t":"2026-11-10T06:18:03.055865Z","pkg":"com.android.chrome","frame":2,"capture_ms":78}
+{"t":"2026-11-10T06:18:03.982504Z","pkg":"com.android.chrome","ocr_frame":0,"ocr_ms":2812,"lag_ms":2812,"det_runs":2,"rec_runs":13,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"10.0.2.2:8088","box":[202,193,470,236]},{"text":"1","box":[875,198,909,236]},{"text":"今日新闻 Daily News","box":[42,415,792,525]},{"text":"Chrome notifications make things","box":[62,1381,960,1453]},{"text":"easier","box":[62,1460,234,1518]},{"text":"You'll be able to easilymanage media controls,","box":[63,1568,850,1616]},{"text":"Incognito sessions, downloads and more","box":[65,1618,753,1660]},{"text":"No thanks","box":[472,1747,655,1792]},{"text":"Continue","box":[756,1746,927,1795]}]}
+{"t":"2026-11-10T06:18:04.020888Z","pkg":"com.android.chrome","frame":3,"capture_ms":43}
+{"t":"2026-11-10T06:18:05.063092Z","pkg":"com.android.chrome","frame":4,"capture_ms":86,"ocr_superseded_frame":3}
+{"t":"2026-11-10T06:18:06.047825Z","pkg":"com.android.chrome","frame":5,"capture_ms":71,"ocr_superseded_frame":4}
+{"t":"2026-11-10T06:18:06.852864Z","pkg":"com.android.chrome","ocr_frame":2,"ocr_ms":2870,"lag_ms":3797,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 12","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:18:07.034308Z","pkg":"com.android.chrome","frame":6,"capture_ms":58}
+{"t":"2026-11-10T06:18:08.054446Z","pkg":"com.android.chrome","frame":7,"capture_ms":78,"ocr_superseded_frame":6}
+{"t":"2026-11-10T06:18:09.162826Z","pkg":"?","event":"SERVICE_CONNECTED"}
+{"t":"2026-11-10T06:18:09.313432Z","pkg":"?","frame":0,"capture_ms":146}
+{"t":"2026-11-10T06:18:09.718339Z","pkg":"com.android.chrome","ocr_frame":5,"ocr_ms":2866,"lag_ms":3671,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 15","box":[49,1206,499,1266]}]}
+{"t":"2026-11-10T06:18:10.229646Z","pkg":"?","frame":1,"capture_ms":58}
+{"t":"2026-11-10T06:18:11.239937Z","pkg":"?","frame":2,"capture_ms":70,"ocr_superseded_frame":1}
+{"t":"2026-11-10T06:18:12.231046Z","pkg":"?","frame":3,"capture_ms":62,"ocr_superseded_frame":2}
+{"t":"2026-11-10T06:18:12.815395Z","pkg":"?","ocr_frame":0,"ocr_ms":3492,"lag_ms":3502,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 19","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:18:13.232084Z","pkg":"?","frame":4,"capture_ms":63}
+{"t":"2026-11-10T06:18:13.506899Z","pkg":"com.android.chrome","ocr_frame":7,"ocr_ms":3788,"lag_ms":5452,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 17","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:18:13.521959Z","pkg":"com.android.chrome","event":"SERVICE_DESTROYED","frames":8,"ocr_superseded":3}
+{"t":"2026-11-10T06:18:14.220584Z","pkg":"?","frame":5,"capture_ms":52,"ocr_superseded_frame":4}
+{"t":"2026-11-10T06:18:15.225170Z","pkg":"?","frame":6,"capture_ms":57,"ocr_superseded_frame":5}
+{"t":"2026-11-10T06:18:16.127217Z","pkg":"?","ocr_frame":3,"ocr_ms":3311,"lag_ms":3896,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 22","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:18:16.228538Z","pkg":"?","frame":7,"capture_ms":60}
+{"t":"2026-11-10T06:18:17.218641Z","pkg":"?","frame":8,"capture_ms":50,"ocr_superseded_frame":7}
+{"t":"2026-11-10T06:18:18.219803Z","pkg":"?","frame":9,"capture_ms":51,"ocr_superseded_frame":8}
+{"t":"2026-11-10T06:18:19.220517Z","pkg":"?","frame":10,"capture_ms":52,"ocr_superseded_frame":9}
+{"t":"2026-11-10T06:18:19.229180Z","pkg":"?","ocr_frame":6,"ocr_ms":3101,"lag_ms":4003,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 25","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:18:20.225175Z","pkg":"?","frame":11,"capture_ms":57}
+{"t":"2026-11-10T06:18:21.217090Z","pkg":"?","frame":12,"capture_ms":48,"ocr_superseded_frame":11}
+{"t":"2026-11-10T06:18:22.212225Z","pkg":"?","frame":13,"capture_ms":44,"ocr_superseded_frame":12}
+{"t":"2026-11-10T06:18:22.314322Z","pkg":"?","ocr_frame":10,"ocr_ms":3085,"lag_ms":3094,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 29","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:18:23.215115Z","pkg":"?","frame":14,"capture_ms":46}
+{"t":"2026-11-10T06:18:24.227115Z","pkg":"?","frame":15,"capture_ms":58,"ocr_superseded_frame":14}
+{"t":"2026-11-10T06:18:25.215888Z","pkg":"?","frame":16,"capture_ms":47,"ocr_superseded_frame":15}
+{"t":"2026-11-10T06:18:25.379003Z","pkg":"?","ocr_frame":13,"ocr_ms":3064,"lag_ms":3166,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 32","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:18:26.222865Z","pkg":"?","frame":17,"capture_ms":54}
+{"t":"2026-11-10T06:18:27.216121Z","pkg":"?","frame":18,"capture_ms":47,"ocr_superseded_frame":17}
+{"t":"2026-11-10T06:18:28.220878Z","pkg":"?","frame":19,"capture_ms":52,"ocr_superseded_frame":18}
+{"t":"2026-11-10T06:18:28.355561Z","pkg":"?","ocr_frame":16,"ocr_ms":2976,"lag_ms":3140,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 35","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:18:29.237064Z","pkg":"?","frame":20,"capture_ms":68}
+{"t":"2026-11-10T06:18:30.213930Z","pkg":"?","frame":21,"capture_ms":45,"ocr_superseded_frame":20}
+{"t":"2026-11-10T06:18:31.218893Z","pkg":"?","frame":22,"capture_ms":49,"ocr_superseded_frame":21}
+{"t":"2026-11-10T06:18:31.357425Z","pkg":"?","ocr_frame":19,"ocr_ms":3002,"lag_ms":3137,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 38","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:18:32.215884Z","pkg":"?","frame":23,"capture_ms":47}
+{"t":"2026-11-10T06:18:33.217467Z","pkg":"?","frame":24,"capture_ms":49,"ocr_superseded_frame":23}
+{"t":"2026-11-10T06:18:34.230529Z","pkg":"?","frame":25,"capture_ms":62,"ocr_superseded_frame":24}
+{"t":"2026-11-10T06:18:34.401878Z","pkg":"?","ocr_frame":22,"ocr_ms":3044,"lag_ms":3183,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 41","box":[49,1206,492,1266]}]}
+{"t":"2026-11-10T06:18:35.223026Z","pkg":"?","frame":26,"capture_ms":54}
+{"t":"2026-11-10T06:18:36.259016Z","pkg":"?","frame":27,"capture_ms":90,"ocr_superseded_frame":26}
+{"t":"2026-11-10T06:18:37.220914Z","pkg":"?","frame":28,"capture_ms":52,"ocr_superseded_frame":27}
+{"t":"2026-11-10T06:18:37.809764Z","pkg":"?","ocr_frame":25,"ocr_ms":3408,"lag_ms":3579,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 44","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:18:38.213983Z","pkg":"?","frame":29,"capture_ms":45}
+{"t":"2026-11-10T06:18:39.216123Z","pkg":"?","frame":30,"capture_ms":46,"ocr_superseded_frame":29}
+{"t":"2026-11-10T06:18:40.225359Z","pkg":"?","frame":31,"capture_ms":57,"ocr_superseded_frame":30}
+{"t":"2026-11-10T06:18:40.702619Z","pkg":"?","ocr_frame":28,"ocr_ms":2893,"lag_ms":3482,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 47","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:18:41.216899Z","pkg":"?","frame":32,"capture_ms":48}
+{"t":"2026-11-10T06:18:42.223092Z","pkg":"?","frame":33,"capture_ms":54,"ocr_superseded_frame":32}
+{"t":"2026-11-10T06:18:43.214736Z","pkg":"?","frame":34,"capture_ms":46,"ocr_superseded_frame":33}
+{"t":"2026-11-10T06:18:43.738711Z","pkg":"?","ocr_frame":31,"ocr_ms":3036,"lag_ms":3513,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 50","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:18:44.219377Z","pkg":"?","frame":35,"capture_ms":51}
+{"t":"2026-11-10T06:18:45.210559Z","pkg":"?","frame":36,"capture_ms":42,"ocr_superseded_frame":35}
+{"t":"2026-11-10T06:18:46.217316Z","pkg":"?","frame":37,"capture_ms":49,"ocr_superseded_frame":36}
+{"t":"2026-11-10T06:18:46.737433Z","pkg":"?","ocr_frame":34,"ocr_ms":2999,"lag_ms":3523,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 53","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:18:47.214894Z","pkg":"?","frame":38,"capture_ms":46}
+{"t":"2026-11-10T06:18:48.214684Z","pkg":"?","frame":39,"capture_ms":46,"ocr_superseded_frame":38}
+{"t":"2026-11-10T06:18:49.218204Z","pkg":"?","frame":40,"capture_ms":50,"ocr_superseded_frame":39}
+{"t":"2026-11-10T06:18:49.687668Z","pkg":"?","ocr_frame":37,"ocr_ms":2950,"lag_ms":3470,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 56","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:18:50.251017Z","pkg":"?","frame":41,"capture_ms":83}
+{"t":"2026-11-10T06:18:51.228603Z","pkg":"?","frame":42,"capture_ms":60,"ocr_superseded_frame":41}
+{"t":"2026-11-10T06:18:52.217640Z","pkg":"?","frame":43,"capture_ms":49,"ocr_superseded_frame":42}
+{"t":"2026-11-10T06:18:52.691870Z","pkg":"?","ocr_frame":40,"ocr_ms":3004,"lag_ms":3473,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,802,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 59","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:18:53.220594Z","pkg":"?","frame":44,"capture_ms":52}
+{"t":"2026-11-10T06:18:54.242035Z","pkg":"?","frame":45,"capture_ms":70,"ocr_superseded_frame":44}
+{"t":"2026-11-10T06:18:55.213131Z","pkg":"?","frame":46,"capture_ms":44,"ocr_superseded_frame":45}
+{"t":"2026-11-10T06:18:55.796807Z","pkg":"?","ocr_frame":43,"ocr_ms":3105,"lag_ms":3579,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,804,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 62","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:18:56.218283Z","pkg":"?","frame":47,"capture_ms":50}
+{"t":"2026-11-10T06:18:57.325393Z","pkg":"dev.smolfroggo.asciiscreen","frame":48,"capture_ms":157,"ocr_superseded_frame":47}
+{"t":"2026-11-10T06:18:58.208617Z","pkg":"dev.smolfroggo.asciiscreen","frame":49,"capture_ms":40,"ocr_superseded_frame":48}
+{"t":"2026-11-10T06:18:59.165227Z","pkg":"dev.smolfroggo.asciiscreen","ocr_frame":46,"ocr_ms":3368,"lag_ms":3952,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:18 ","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,804,239]},{"text":"1","box":[852,188,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 65","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:18:59.207516Z","pkg":"dev.smolfroggo.asciiscreen","frame":50,"capture_ms":39,"unchanged":true}
+{"t":"2026-11-10T06:19:00.209080Z","pkg":"dev.smolfroggo.asciiscreen","frame":51,"capture_ms":40}
+{"t":"2026-11-10T06:19:00.707924Z","pkg":"dev.smolfroggo.asciiscreen","ocr_frame":49,"ocr_ms":1542,"lag_ms":2499,"det_runs":2,"rec_runs":3,"lines":[{"text":"6:18","box":[39,51,161,90]},{"text":"V","box":[897,55,932,85]},{"text":"A","box":[920,51,1008,92]}]}
+{"t":"2026-11-10T06:19:01.209220Z","pkg":"dev.smolfroggo.asciiscreen","frame":52,"capture_ms":41,"unchanged":true}
+{"t":"2026-11-10T06:19:02.212032Z","pkg":"dev.smolfroggo.asciiscreen","frame":53,"capture_ms":43,"unchanged":true}
+{"t":"2026-11-10T06:19:02.333457Z","pkg":"dev.smolfroggo.asciiscreen","ocr_frame":51,"ocr_ms":1626,"lag_ms":2125,"det_runs":2,"rec_runs":3,"lines":[{"text":"6:19","box":[39,51,161,90]},{"text":"2","box":[897,55,934,85]}]}
+{"t":"2026-11-10T06:19:03.208790Z","pkg":"dev.smolfroggo.asciiscreen","frame":54,"capture_ms":39,"unchanged":true}
+{"t":"2026-11-10T06:19:04.208147Z","pkg":"dev.smolfroggo.asciiscreen","frame":55,"capture_ms":39,"unchanged":true}
+{"t":"2026-11-10T06:19:05.225897Z","pkg":"dev.smolfroggo.asciiscreen","frame":56,"capture_ms":58,"unchanged":true}
+{"t":"2026-11-10T06:19:06.217605Z","pkg":"dev.smolfroggo.asciiscreen","frame":57,"capture_ms":49,"unchanged":true}
+{"t":"2026-11-10T06:19:07.220333Z","pkg":"dev.smolfroggo.asciiscreen","frame":58,"capture_ms":52,"unchanged":true}
+{"t":"2026-11-10T06:19:08.213701Z","pkg":"dev.smolfroggo.asciiscreen","frame":59,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:19:09.252187Z","pkg":"com.google.android.apps.nexuslauncher","frame":60,"capture_ms":84}
+{"t":"2026-11-10T06:19:10.298486Z","pkg":"com.google.android.apps.nexuslauncher","frame":61,"capture_ms":129}
+{"t":"2026-11-10T06:19:11.220270Z","pkg":"com.google.android.apps.nexuslauncher","frame":62,"capture_ms":52,"ocr_superseded_frame":61}
+{"t":"2026-11-10T06:19:11.685100Z","pkg":"com.google.android.apps.nexuslauncher","ocr_frame":60,"ocr_ms":2432,"lag_ms":2432,"det_runs":2,"rec_runs":9,"lines":[{"text":"à","box":[980,51,1008,88]},{"text":"6:19A","box":[39,49,163,88]},{"text":"O","box":[889,53,927,85]},{"text":"A","box":[937,53,975,90]},{"text":"Tue, Nov 10","box":[81,351,367,413]},{"text":"Gmail","box":[364,1699,470,1746]},{"text":"Play Store","box":[83,1699,262,1749]},{"text":"Photos","box":[596,1701,726,1746]},{"text":"YouTube","box":[829,1701,982,1746]}]}
+{"t":"2026-11-10T06:19:12.280871Z","pkg":"com.google.android.apps.nexuslauncher","frame":63,"capture_ms":108}
+{"t":"2026-11-10T06:19:13.253079Z","pkg":"dev.smolfroggo.asciiscreen","frame":64,"capture_ms":84,"ocr_superseded_frame":63}
+{"t":"2026-11-10T06:19:14.208995Z","pkg":"dev.smolfroggo.asciiscreen","frame":65,"capture_ms":40,"ocr_superseded_frame":64}
+{"t":"2026-11-10T06:19:14.268848Z","pkg":"dev.smolfroggo.asciiscreen","ocr_frame":62,"ocr_ms":2583,"lag_ms":3048,"det_runs":2,"rec_runs":10,"lines":[{"text":"à","box":[980,51,1008,88]},{"text":"6:19A","box":[39,49,163,88]},{"text":"O","box":[891,53,925,83]},{"text":"A","box":[937,53,975,90]},{"text":"Tue, Nov 10","box":[74,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"4","box":[756,2188,825,2271]}]}
+{"t":"2026-11-10T06:19:15.209521Z","pkg":"dev.smolfroggo.asciiscreen","frame":66,"capture_ms":41,"unchanged":true}
+{"t":"2026-11-10T06:19:15.785049Z","pkg":"dev.smolfroggo.asciiscreen","ocr_frame":65,"ocr_ms":1516,"lag_ms":1576,"det_runs":2,"rec_runs":3,"lines":[{"text":"6:19","box":[39,51,161,90]},{"text":"2","box":[897,55,934,85]}]}
+{"t":"2026-11-10T06:19:16.333754Z","pkg":"com.google.android.apps.nexuslauncher","frame":67,"capture_ms":165}
+{"t":"2026-11-10T06:19:17.216031Z","pkg":"com.google.android.apps.nexuslauncher","frame":68,"capture_ms":47}
+{"t":"2026-11-10T06:19:18.213473Z","pkg":"com.google.android.apps.nexuslauncher","frame":69,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:19:18.311611Z","pkg":"com.google.android.apps.nexuslauncher","ocr_frame":67,"ocr_ms":1976,"lag_ms":1978,"det_runs":2,"rec_runs":6,"lines":[{"text":"à","box":[976,51,1008,88]},{"text":"6:19 A","box":[37,47,165,92]},{"text":"口","box":[889,53,932,87]},{"text":"A","box":[925,49,991,92]},{"text":"D ：","box":[0,502,106,563]},{"text":"OCR","box":[0,866,92,920]}]}
+{"t":"2026-11-10T06:19:19.310126Z","pkg":"com.google.android.apps.nexuslauncher","frame":70,"capture_ms":141}
+{"t":"2026-11-10T06:19:21.169141Z","pkg":"com.google.android.apps.nexuslauncher","missed_slot":true}
+{"t":"2026-11-10T06:19:21.273507Z","pkg":"com.google.android.apps.nexuslauncher","ocr_frame":68,"ocr_ms":2962,"lag_ms":4058,"det_runs":2,"rec_runs":11,"lines":[{"text":"6:19 A","box":[37,46,165,92]},{"text":"4 à","box":[891,46,1014,92]},{"text":"D","box":[0,509,31,552]},{"text":"：","box":[53,508,103,555]},{"text":"OCR","box":[0,868,92,916]},{"text":"Select text and images to copy, share, and more","box":[145,1989,936,2032]},{"text":"「7","box":[248,2131,291,2158]},{"text":"Select","box":[726,2136,843,2183]},{"text":"Screenshot","box":[310,2138,511,2181]}]}
+{"t":"2026-11-10T06:19:22.169049Z","pkg":"com.android.chrome","missed_slot":true}
+{"t":"2026-11-10T06:19:23.168809Z","pkg":"com.android.chrome","missed_slot":true}
+{"t":"2026-11-10T06:19:24.169175Z","pkg":"com.android.chrome","missed_slot":true}
+{"t":"2026-11-10T06:19:24.314451Z","pkg":"com.android.chrome","ocr_frame":70,"ocr_ms":3041,"lag_ms":5004,"det_runs":2,"rec_runs":12,"lines":[{"text":"6:19 A","box":[37,46,165,92]},{"text":"4 à","box":[891,46,1014,92]},{"text":"D","box":[0,508,31,554]},{"text":"OCR","box":[0,868,92,916]},{"text":"Select text and images to copy, share, and more","box":[145,1989,936,2032]},{"text":"「7","box":[248,2131,291,2158]},{"text":"Screenshot","box":[310,2136,511,2181]},{"text":"Select","box":[724,2136,845,2183]},{"text":"J","box":[248,2160,289,2186]}]}
+{"t":"2026-11-10T06:19:25.168431Z","pkg":"com.android.chrome","missed_slot":true}
+{"t":"2026-11-10T06:19:26.168873Z","pkg":"com.android.chrome","event":"SCREENSHOT_TIMEOUT"}
+{"t":"2026-11-10T06:19:26.217537Z","pkg":"com.android.chrome","frame":71,"capture_ms":49}
+{"t":"2026-11-10T06:19:27.224118Z","pkg":"com.android.chrome","frame":72,"capture_ms":55}
+{"t":"2026-11-10T06:19:28.215845Z","pkg":"com.android.chrome","frame":73,"capture_ms":47,"ocr_superseded_frame":72}
+{"t":"2026-11-10T06:19:29.220011Z","pkg":"com.android.chrome","frame":74,"capture_ms":51,"ocr_superseded_frame":73}
+{"t":"2026-11-10T06:19:29.457578Z","pkg":"com.android.chrome","ocr_frame":71,"ocr_ms":3240,"lag_ms":3240,"det_runs":2,"rec_runs":19,"lines":[{"text":"6:19","box":[39,47,163,92]},{"text":"0","box":[33,182,97,248]},{"text":"十","box":[730,186,794,241]},{"text":"2","box":[854,186,930,245]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"A","box":[152,202,190,232]},{"text":"Translate page?","box":[163,312,476,367]},{"text":"Translate","box":[836,335,1005,387]},{"text":"Chinese (Simplified) to English","box":[163,369,612,417]},{"text":"今日新闻 νallyNews","box":[58,447,781,513]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTechat 3pm about OCR","box":[44,714,1016,779]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,900,895,960]},{"text":"Order #48213 shipped to Singapore","box":[46,1019,886,1085]},{"text":"238801","box":[47,1083,229,1140]},{"text":"计数器 Counter: 3","box":[49,1206,467,1266]}]}
+{"t":"2026-11-10T06:19:30.217614Z","pkg":"com.android.chrome","frame":75,"capture_ms":48}
+{"t":"2026-11-10T06:19:31.211726Z","pkg":"com.android.chrome","frame":76,"capture_ms":43,"ocr_superseded_frame":75}
+{"t":"2026-11-10T06:19:32.214616Z","pkg":"com.android.chrome","frame":77,"capture_ms":46,"ocr_superseded_frame":76}
+{"t":"2026-11-10T06:19:32.844137Z","pkg":"com.android.chrome","ocr_frame":74,"ocr_ms":3386,"lag_ms":3624,"det_runs":2,"rec_runs":19,"lines":[{"text":"6:19","box":[39,47,163,92]},{"text":"0","box":[33,182,97,248]},{"text":"十","box":[730,186,794,241]},{"text":"2","box":[854,186,930,245]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"A","box":[152,202,190,232]},{"text":"Translate page?","box":[163,312,476,367]},{"text":"Translate","box":[836,335,1005,387]},{"text":"Chinese (Simplified) to English","box":[163,369,612,417]},{"text":"今日新闻 νallyNews","box":[58,447,781,513]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTechat 3pm about OCR","box":[44,714,1016,779]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,900,895,960]},{"text":"Order #48213 shipped to Singapore","box":[46,1019,886,1085]},{"text":"238801","box":[47,1083,229,1140]},{"text":"计数器 Counter: 6","box":[49,1206,467,1266]}]}
+{"t":"2026-11-10T06:19:33.225045Z","pkg":"com.android.chrome","frame":78,"capture_ms":56}
+{"t":"2026-11-10T06:19:34.212295Z","pkg":"com.android.chrome","frame":79,"capture_ms":44,"ocr_superseded_frame":78}
+{"t":"2026-11-10T06:19:35.213437Z","pkg":"com.android.chrome","frame":80,"capture_ms":45,"ocr_superseded_frame":79}
+{"t":"2026-11-10T06:19:36.215346Z","pkg":"com.android.chrome","frame":81,"capture_ms":47,"ocr_superseded_frame":80}
+{"t":"2026-11-10T06:19:36.236994Z","pkg":"com.android.chrome","ocr_frame":77,"ocr_ms":3392,"lag_ms":4022,"det_runs":2,"rec_runs":19,"lines":[{"text":"6:19","box":[39,47,163,92]},{"text":"0","box":[33,182,97,248]},{"text":"十","box":[730,186,794,241]},{"text":"2","box":[854,186,930,245]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"A","box":[152,202,190,232]},{"text":"Translate page?","box":[163,312,476,367]},{"text":"Translate","box":[836,335,1005,387]},{"text":"Chinese (Simplified) to English","box":[163,369,612,417]},{"text":"今日新闻 νallyNews","box":[58,447,781,513]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTechat 3pm about OCR","box":[44,714,1016,779]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,900,895,960]},{"text":"Order #48213 shipped to Singapore","box":[46,1019,886,1085]},{"text":"238801","box":[47,1083,229,1140]},{"text":"计数器 Counter: 9","box":[49,1206,467,1266]}]}
+{"t":"2026-11-10T06:19:37.275616Z","pkg":"com.android.chrome","frame":82,"capture_ms":107}
+{"t":"2026-11-10T06:19:38.215988Z","pkg":"com.android.chrome","frame":83,"capture_ms":47,"ocr_superseded_frame":82}
+{"t":"2026-11-10T06:19:39.176171Z","pkg":"com.android.chrome","ocr_frame":81,"ocr_ms":2939,"lag_ms":2960,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:19","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,808,239]},{"text":"2","box":[845,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 13","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:19:39.214502Z","pkg":"com.android.chrome","frame":84,"capture_ms":45}
+{"t":"2026-11-10T06:19:40.219450Z","pkg":"com.android.chrome","frame":85,"capture_ms":51,"ocr_superseded_frame":84}
+{"t":"2026-11-10T06:19:41.212581Z","pkg":"com.android.chrome","frame":86,"capture_ms":44,"ocr_superseded_frame":85}
+{"t":"2026-11-10T06:19:42.041819Z","pkg":"com.android.chrome","ocr_frame":83,"ocr_ms":2865,"lag_ms":3826,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:19","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,808,239]},{"text":"2","box":[845,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 15","box":[49,1206,499,1266]}]}
+{"t":"2026-11-10T06:19:42.213611Z","pkg":"com.android.chrome","frame":87,"capture_ms":45}
+{"t":"2026-11-10T06:19:43.225723Z","pkg":"com.android.chrome","frame":88,"capture_ms":57,"ocr_superseded_frame":87}
+{"t":"2026-11-10T06:19:44.220839Z","pkg":"com.android.chrome","frame":89,"capture_ms":52,"ocr_superseded_frame":88}
+{"t":"2026-11-10T06:19:45.221890Z","pkg":"com.android.chrome","frame":90,"capture_ms":52,"ocr_superseded_frame":89}
+{"t":"2026-11-10T06:19:45.564443Z","pkg":"com.android.chrome","ocr_frame":86,"ocr_ms":3523,"lag_ms":4352,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:19","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,808,239]},{"text":"2","box":[845,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 18","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:19:46.228963Z","pkg":"com.android.chrome","frame":91,"capture_ms":59}
+{"t":"2026-11-10T06:19:47.219165Z","pkg":"com.android.chrome","frame":92,"capture_ms":50,"ocr_superseded_frame":91}
+{"t":"2026-11-10T06:19:48.218936Z","pkg":"com.android.chrome","frame":93,"capture_ms":50,"ocr_superseded_frame":92}
+{"t":"2026-11-10T06:19:49.221297Z","pkg":"com.android.chrome","frame":94,"capture_ms":52,"ocr_superseded_frame":93}
+{"t":"2026-11-10T06:19:49.424912Z","pkg":"com.android.chrome","ocr_frame":90,"ocr_ms":3860,"lag_ms":4203,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:19","box":[39,47,163,94]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,808,239]},{"text":"2","box":[845,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 22","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:19:50.221561Z","pkg":"com.android.chrome","frame":95,"capture_ms":53}
+{"t":"2026-11-10T06:19:51.220055Z","pkg":"com.android.chrome","frame":96,"capture_ms":51,"ocr_superseded_frame":95}
+{"t":"2026-11-10T06:19:52.233037Z","pkg":"com.android.chrome","frame":97,"capture_ms":64,"ocr_superseded_frame":96}
+{"t":"2026-11-10T06:19:52.983541Z","pkg":"com.android.chrome","ocr_frame":94,"ocr_ms":3559,"lag_ms":3762,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:19","box":[39,47,163,94]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,808,239]},{"text":"2","box":[845,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 26","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:19:53.234759Z","pkg":"com.android.chrome","frame":98,"capture_ms":66}
+{"t":"2026-11-10T06:19:54.232360Z","pkg":"com.android.chrome","frame":99,"capture_ms":64,"ocr_superseded_frame":98}
+{"t":"2026-11-10T06:19:55.373009Z","pkg":"com.android.chrome","frame":100,"capture_ms":204,"ocr_superseded_frame":99}
+{"t":"2026-11-10T06:19:55.542990Z","pkg":"com.android.chrome","event":"SCREEN_OFF"}
+{"t":"2026-11-10T06:19:57.184125Z","pkg":"com.android.systemui","ocr_frame":97,"ocr_ms":4200,"lag_ms":4951,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:19","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,808,239]},{"text":"2","box":[845,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 29","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:20:03.119714Z","pkg":"com.android.systemui","ocr_frame":100,"ocr_ms":5935,"lag_ms":7747,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:19","box":[39,47,163,94]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,808,239]},{"text":"2","box":[845,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 32","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:20:57.581608Z","pkg":"com.android.systemui","event":"SCREEN_ON"}
+{"t":"2026-11-10T06:20:57.812908Z","pkg":"com.android.systemui","frame":101,"capture_ms":231}
+{"t":"2026-11-10T06:20:58.637711Z","pkg":"com.android.systemui","frame":102,"capture_ms":55}
+{"t":"2026-11-10T06:20:59.633914Z","pkg":"com.android.systemui","frame":103,"capture_ms":51,"ocr_superseded_frame":102}
+{"t":"2026-11-10T06:21:00.267268Z","pkg":"com.android.systemui","ocr_frame":101,"ocr_ms":2449,"lag_ms":2454,"det_runs":2,"rec_runs":7,"lines":[{"text":"会","box":[813,51,833,81]},{"text":"6Molle","box":[37,49,188,92]},{"text":"2M","box":[881,51,975,90]},{"text":"06","box":[209,866,865,1410]},{"text":"一","box":[280,1360,397,1431]},{"text":"9","box":[557,1353,795,1723]}]}
+{"t":"2026-11-10T06:21:00.643035Z","pkg":"com.android.systemui","frame":104,"capture_ms":59}
+{"t":"2026-11-10T06:21:01.639727Z","pkg":"com.android.systemui","frame":105,"capture_ms":57,"unchanged":true}
+{"t":"2026-11-10T06:21:02.318040Z","pkg":"com.android.systemui","ocr_frame":103,"ocr_ms":2050,"lag_ms":2684,"det_runs":2,"rec_runs":5,"lines":[{"text":"T-Mobile","box":[39,49,188,94]},{"text":"Tue, Nov 10","box":[78,142,307,191]},{"text":"06","box":[216,872,861,1431]},{"text":"20","box":[161,1143,870,1826]},{"text":"0","box":[504,2090,571,2179]}]}
+{"t":"2026-11-10T06:21:02.649447Z","pkg":"com.android.systemui","frame":106,"capture_ms":67,"unchanged":true}
+{"t":"2026-11-10T06:21:03.723537Z","pkg":"com.android.systemui","frame":107,"capture_ms":141,"unchanged":true}
+{"t":"2026-11-10T06:21:04.669005Z","pkg":"com.android.systemui","frame":108,"capture_ms":86}
+{"t":"2026-11-10T06:21:05.289328Z","pkg":"com.android.systemui","ocr_frame":104,"ocr_ms":2971,"lag_ms":4647,"det_runs":2,"rec_runs":8,"lines":[{"text":"à","box":[920,53,950,87]},{"text":"T-Mobile","box":[39,49,188,94]},{"text":"Tue, Nov 10","box":[76,138,309,193]},{"text":"06","box":[243,902,662,1348]},{"text":"6","box":[515,950,799,1318]},{"text":"一","box":[564,1353,703,1435]},{"text":"2","box":[241,1355,534,1760]},{"text":"0","box":[504,2092,571,2179]}]}
+{"t":"2026-11-10T06:21:05.628757Z","pkg":"com.android.systemui","frame":109,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:21:06.626030Z","pkg":"com.android.systemui","frame":110,"capture_ms":43,"unchanged":true}
+{"t":"2026-11-10T06:21:06.676262Z","pkg":"com.android.systemui","ocr_frame":108,"ocr_ms":1387,"lag_ms":2008,"det_runs":2,"rec_runs":0,"lines":[]}
+{"t":"2026-11-10T06:21:07.691099Z","pkg":"com.android.systemui","frame":111,"capture_ms":109,"unchanged":true}
+{"t":"2026-11-10T06:21:08.794004Z","pkg":"com.android.chrome","frame":112,"capture_ms":211}
+{"t":"2026-11-10T06:21:09.640010Z","pkg":"com.android.chrome","frame":113,"capture_ms":57}
+{"t":"2026-11-10T06:21:10.635799Z","pkg":"com.android.chrome","frame":114,"capture_ms":52,"ocr_superseded_frame":113}
+{"t":"2026-11-10T06:21:11.646925Z","pkg":"com.android.chrome","frame":115,"capture_ms":64,"ocr_superseded_frame":114}
+{"t":"2026-11-10T06:21:12.243796Z","pkg":"com.android.chrome","ocr_frame":112,"ocr_ms":3450,"lag_ms":3450,"det_runs":2,"rec_runs":14,"lines":[{"text":"0","box":[37,186,97,245]},{"text":"十","box":[731,188,804,239]},{"text":"2","box":[843,184,948,245]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 93","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:21:12.648499Z","pkg":"com.android.chrome","frame":116,"capture_ms":65}
+{"t":"2026-11-10T06:21:13.630679Z","pkg":"com.android.chrome","frame":117,"capture_ms":48,"ocr_superseded_frame":116}
+{"t":"2026-11-10T06:21:14.635649Z","pkg":"com.android.chrome","frame":118,"capture_ms":53,"ocr_superseded_frame":117}
+{"t":"2026-11-10T06:21:15.619272Z","pkg":"com.android.chrome","ocr_frame":115,"ocr_ms":3375,"lag_ms":3972,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:21","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,808,239]},{"text":"2","box":[845,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 96","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:21:15.644148Z","pkg":"com.android.chrome","frame":119,"capture_ms":61}
+{"t":"2026-11-10T06:21:16.872778Z","pkg":"com.android.chrome","frame":120,"capture_ms":290,"ocr_superseded_frame":119}
+{"t":"2026-11-10T06:21:17.796725Z","pkg":"com.android.chrome","frame":121,"capture_ms":215,"ocr_superseded_frame":120}
+{"t":"2026-11-10T06:21:18.645599Z","pkg":"com.android.chrome","frame":122,"capture_ms":63,"ocr_superseded_frame":121}
+{"t":"2026-11-10T06:21:19.656699Z","pkg":"com.android.chrome","frame":123,"capture_ms":74,"ocr_superseded_frame":122}
+{"t":"2026-11-10T06:21:20.292167Z","pkg":"com.android.chrome","ocr_frame":118,"ocr_ms":4672,"lag_ms":5656,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:21","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,808,239]},{"text":"2","box":[845,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 99","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:21:20.632014Z","pkg":"com.android.chrome","frame":124,"capture_ms":48}
+{"t":"2026-11-10T06:21:21.633542Z","pkg":"com.android.chrome","frame":125,"capture_ms":51,"ocr_superseded_frame":124}
+{"t":"2026-11-10T06:21:22.655713Z","pkg":"com.android.chrome","frame":126,"capture_ms":73,"ocr_superseded_frame":125}
+{"t":"2026-11-10T06:21:23.666986Z","pkg":"com.android.chrome","frame":127,"capture_ms":84,"ocr_superseded_frame":126}
+{"t":"2026-11-10T06:21:23.915567Z","pkg":"com.android.chrome","ocr_frame":123,"ocr_ms":3623,"lag_ms":4259,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:21","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,808,239]},{"text":"2","box":[849,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 104","box":[51,1206,525,1266]}]}
+{"t":"2026-11-10T06:21:24.644804Z","pkg":"com.android.chrome","frame":128,"capture_ms":62}
+{"t":"2026-11-10T06:21:25.627296Z","pkg":"com.android.chrome","frame":129,"capture_ms":45,"ocr_superseded_frame":128}
+{"t":"2026-11-10T06:21:26.627790Z","pkg":"com.android.chrome","frame":130,"capture_ms":45,"ocr_superseded_frame":129}
+{"t":"2026-11-10T06:21:26.983670Z","pkg":"com.android.chrome","ocr_frame":127,"ocr_ms":3068,"lag_ms":3317,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:21","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,806,239]},{"text":"2","box":[849,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 108","box":[51,1206,525,1266]}]}
+{"t":"2026-11-10T06:21:27.634968Z","pkg":"com.android.chrome","frame":131,"capture_ms":52}
+{"t":"2026-11-10T06:21:28.627279Z","pkg":"com.android.chrome","frame":132,"capture_ms":44,"ocr_superseded_frame":131}
+{"t":"2026-11-10T06:21:29.628818Z","pkg":"com.android.chrome","frame":133,"capture_ms":46,"ocr_superseded_frame":132}
+{"t":"2026-11-10T06:21:29.843494Z","pkg":"com.android.chrome","ocr_frame":130,"ocr_ms":2860,"lag_ms":3216,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:21","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,808,239]},{"text":"2","box":[845,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 111","box":[51,1206,522,1266]}]}
+{"t":"2026-11-10T06:21:30.628979Z","pkg":"com.android.chrome","frame":134,"capture_ms":46}
+{"t":"2026-11-10T06:21:31.626931Z","pkg":"com.android.chrome","frame":135,"capture_ms":43,"ocr_superseded_frame":134}
+{"t":"2026-11-10T06:21:32.628767Z","pkg":"com.android.chrome","frame":136,"capture_ms":45,"ocr_superseded_frame":135}
+{"t":"2026-11-10T06:21:32.668165Z","pkg":"com.android.chrome","ocr_frame":133,"ocr_ms":2824,"lag_ms":3039,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:21","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,808,239]},{"text":"2","box":[849,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 114","box":[51,1206,527,1266]}]}
+{"t":"2026-11-10T06:21:33.630784Z","pkg":"com.android.chrome","frame":137,"capture_ms":48}
+{"t":"2026-11-10T06:21:34.629607Z","pkg":"com.android.chrome","frame":138,"capture_ms":47,"ocr_superseded_frame":137}
+{"t":"2026-11-10T06:21:35.498899Z","pkg":"com.android.chrome","ocr_frame":136,"ocr_ms":2830,"lag_ms":2870,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:21","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,806,239]},{"text":"2","box":[849,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 117","box":[51,1206,525,1266]}]}
+{"t":"2026-11-10T06:21:35.626715Z","pkg":"com.android.chrome","frame":139,"capture_ms":44}
+{"t":"2026-11-10T06:21:36.628429Z","pkg":"com.android.chrome","frame":140,"capture_ms":46,"ocr_superseded_frame":139}
+{"t":"2026-11-10T06:21:37.629751Z","pkg":"com.android.chrome","frame":141,"capture_ms":47,"ocr_superseded_frame":140}
+{"t":"2026-11-10T06:21:38.358227Z","pkg":"com.android.chrome","ocr_frame":138,"ocr_ms":2859,"lag_ms":3728,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:21","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,806,239]},{"text":"2","box":[849,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 119","box":[51,1206,525,1266]}]}
+{"t":"2026-11-10T06:21:38.626498Z","pkg":"com.android.chrome","frame":142,"capture_ms":44}
+{"t":"2026-11-10T06:21:39.626697Z","pkg":"com.android.chrome","frame":143,"capture_ms":44,"ocr_superseded_frame":142}
+{"t":"2026-11-10T06:21:40.630977Z","pkg":"com.android.chrome","frame":144,"capture_ms":48,"ocr_superseded_frame":143}
+{"t":"2026-11-10T06:21:41.187599Z","pkg":"com.android.chrome","ocr_frame":141,"ocr_ms":2829,"lag_ms":3558,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:21","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,806,239]},{"text":"2","box":[849,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 122","box":[51,1206,525,1266]}]}
+{"t":"2026-11-10T06:21:41.627017Z","pkg":"com.android.chrome","frame":145,"capture_ms":44}
+{"t":"2026-11-10T06:21:42.627218Z","pkg":"com.android.chrome","frame":146,"capture_ms":45,"ocr_superseded_frame":145}
+{"t":"2026-11-10T06:21:43.765623Z","pkg":"com.android.settings","frame":147,"capture_ms":179,"ocr_superseded_frame":146}
+{"t":"2026-11-10T06:21:44.238413Z","pkg":"com.android.settings","ocr_frame":144,"ocr_ms":3051,"lag_ms":3608,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:21","box":[39,47,163,92]},{"text":"0","box":[33,182,99,246]},{"text":"十","box":[731,188,806,239]},{"text":"2","box":[849,186,937,243]},{"text":"10.0.2.2:8088","box":[188,190,470,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,898,895,959]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 125","box":[51,1206,527,1266]}]}
+{"t":"2026-11-10T06:21:44.706399Z","pkg":"com.android.settings","frame":148,"capture_ms":121}
+{"t":"2026-11-10T06:21:45.638147Z","pkg":"com.android.settings","frame":149,"capture_ms":55,"ocr_superseded_frame":148}
+{"t":"2026-11-10T06:21:47.698626Z","pkg":"?","event":"SERVICE_CONNECTED"}
+{"t":"2026-11-10T06:21:47.997178Z","pkg":"?","frame":0,"capture_ms":298}
+{"t":"2026-11-10T06:21:48.778707Z","pkg":"?","frame":1,"capture_ms":78,"unchanged":true}
+{"t":"2026-11-10T06:21:49.745853Z","pkg":"com.android.settings","frame":2,"capture_ms":45}
+{"t":"2026-11-10T06:21:51.334047Z","pkg":"com.android.settings","frame":3,"capture_ms":680,"unchanged":true}
+{"t":"2026-11-10T06:21:52.100575Z","pkg":"com.android.settings","frame":4,"capture_ms":399,"unchanged":true}
+{"t":"2026-11-10T06:21:53.020443Z","pkg":"?","event":"SERVICE_CONNECTED"}
+{"t":"2026-11-10T06:21:53.249669Z","pkg":"?","frame":0,"capture_ms":228}
+{"t":"2026-11-10T06:21:54.084635Z","pkg":"?","frame":1,"capture_ms":63,"unchanged":true}
+{"t":"2026-11-10T06:21:54.807324Z","pkg":"com.android.settings","ocr_frame":0,"ocr_ms":6809,"lag_ms":6809,"det_runs":2,"rec_runs":27,"lines":[{"text":"6:21 A","box":[35,44,166,95]},{"text":"4à","box":[889,47,1014,94]},{"text":"←","box":[47,184,99,236]},{"text":"Accessibility","box":[51,438,598,548]},{"text":"Downloaded apps","box":[56,671,365,726]},{"text":"AsciiScreen capture","box":[181,790,666,856]},{"text":"On","box":[182,859,241,905]},{"text":"Screen reader","box":[56,1014,298,1062]},{"text":"TalkBack","box":[182,1133,412,1190]},{"text":"Off \/ Speak items on screen","box":[184,1199,653,1246]},{"text":"Display","box":[55,1351,190,1410]},{"text":"囚","box":[78,1477,131,1527]},{"text":"Display size and text","box":[184,1476,675,1536]},{"text":"国","box":[81,1628,126,1683]},{"text":"Color and motion","box":[181,1628,600,1689]},{"text":"Magnification","box":[182,1785,516,1847]},{"text":"α","box":[78,1808,129,1858]},{"text":"Off \/ Zoom in on the screen","box":[184,1850,643,1898]},{"text":"Select to Speak","box":[182,1991,557,2051]},{"text":"Off \/ Hear selected text","box":[182,2053,579,2106]},{"text":"Interaction controls","box":[58,2216,383,2259]},{"text":"Accessibility Menu","box":[182,2335,635,2390]},{"text":"…","box":[67,2350,138,2424]},{"text":"Off \/ ControLdevice vialarge m","box":[186,2401,699,2424]}]}
+{"t":"2026-11-10T06:21:55.145240Z","pkg":"com.android.settings","frame":2,"capture_ms":123}
+{"t":"2026-11-10T06:21:56.177140Z","pkg":"com.android.settings","frame":3,"capture_ms":154,"unchanged":true}
+{"t":"2026-11-10T06:21:56.863261Z","pkg":"com.android.settings","ocr_frame":0,"ocr_ms":3613,"lag_ms":3613,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:21 A","box":[35,44,166,95]},{"text":"Δ","box":[886,44,1016,97]},{"text":"←","box":[47,184,99,236]},{"text":"AsciiScreen capture","box":[47,433,911,554]},{"text":"Use AsciiScreen capture","box":[108,719,694,786]},{"text":"Options","box":[56,953,197,1005]},{"text":"AsciiScreen capture shortcut","box":[58,1074,749,1135]},{"text":"Off","box":[55,1136,124,1190]},{"text":"App info","box":[55,1277,268,1346]},{"text":"#","box":[56,1421,129,1495]},{"text":"Takes a screenshot every second and OCRs it on-device","box":[56,1545,978,1593]},{"text":"into a local, searchable history.","box":[56,1589,568,1637]}]}
+{"t":"2026-11-10T06:21:57.473602Z","pkg":"?","event":"SERVICE_CONNECTED"}
+{"t":"2026-11-10T06:21:57.773170Z","pkg":"?","frame":0,"capture_ms":294}
+{"t":"2026-11-10T06:21:58.808154Z","pkg":"?","frame":1,"capture_ms":325,"unchanged":true}
+{"t":"2026-11-10T06:21:59.482994Z","pkg":"com.android.settings","ocr_frame":2,"ocr_ms":4671,"lag_ms":9737,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:21 A","box":[35,44,166,95]},{"text":"Δ","box":[886,44,1016,97]},{"text":"←","box":[47,184,99,236]},{"text":"AsciiScreen capture","box":[47,433,911,554]},{"text":"Use AsciiScreen capture","box":[108,719,694,786]},{"text":"Options","box":[56,953,197,1005]},{"text":"AsciiScreen capture shortcut","box":[58,1074,749,1135]},{"text":"Off","box":[55,1136,124,1190]},{"text":"App info","box":[55,1277,268,1346]},{"text":"#","box":[56,1421,129,1495]},{"text":"Takes a screenshot every second and OCRs it on-device","box":[56,1545,978,1593]},{"text":"into a local, searchable history.","box":[56,1589,568,1637]}]}
+{"t":"2026-11-10T06:21:59.497607Z","pkg":"com.android.settings","event":"SERVICE_DESTROYED","frames":5,"ocr_superseded":0}
+{"t":"2026-11-10T06:22:00.278681Z","pkg":"?","event":"SERVICE_CONNECTED"}
+{"t":"2026-11-10T06:22:00.505435Z","pkg":"?","frame":0,"capture_ms":219}
+{"t":"2026-11-10T06:22:01.344967Z","pkg":"?","frame":1,"capture_ms":57,"unchanged":true}
+{"t":"2026-11-10T06:22:01.758607Z","pkg":"com.android.settings","ocr_frame":2,"ocr_ms":4895,"lag_ms":6613,"det_runs":2,"rec_runs":16,"lines":[{"text":"6:21 ","box":[35,46,165,92]},{"text":"4","box":[929,49,980,94]},{"text":"à","box":[980,53,1008,88]},{"text":"←","box":[47,186,101,234]},{"text":"AsciiScreen capture","box":[51,436,907,547]},{"text":"Use AsciiScreen capture","box":[106,717,694,783]},{"text":"Options","box":[56,953,197,1003]},{"text":"AsciiScreen canture shortcut","box":[62,1074,747,1122]},{"text":"Turn off AsciiScreen capture?","box":[127,1167,754,1222]},{"text":"Keep on","box":[616,1282,767,1334]},{"text":"Turn off","box":[808,1282,959,1332]},{"text":"Takes a screenshot every second and OCRs it on-device","box":[58,1547,978,1589]},{"text":"into a local, searchable history.","box":[58,1591,566,1634]}]}
+{"t":"2026-11-10T06:22:01.773059Z","pkg":"com.android.settings","event":"SERVICE_DESTROYED","frames":4,"ocr_superseded":0}
+{"t":"2026-11-10T06:22:02.410140Z","pkg":"?","ocr_frame":0,"ocr_ms":4606,"lag_ms":4636,"det_runs":2,"rec_runs":16,"lines":[{"text":"6:21 ","box":[35,46,165,92]},{"text":"4","box":[929,49,980,94]},{"text":"à","box":[980,53,1008,88]},{"text":"←","box":[47,186,101,234]},{"text":"AsciiScreen capture","box":[51,436,907,547]},{"text":"Use AsciiScreen capture","box":[106,717,694,783]},{"text":"Options","box":[56,953,197,1003]},{"text":"AsciiScreen canture shortcut","box":[62,1074,747,1122]},{"text":"Turn off AsciiScreen capture?","box":[127,1167,754,1222]},{"text":"Keep on","box":[616,1282,767,1334]},{"text":"Turn off","box":[808,1282,959,1332]},{"text":"Takes a screenshot every second and OCRs it on-device","box":[58,1547,978,1589]},{"text":"into a local, searchable history.","box":[58,1591,566,1634]}]}
+{"t":"2026-11-10T06:22:02.436033Z","pkg":"?","event":"SERVICE_DESTROYED","frames":2,"ocr_superseded":0}
+{"t":"2026-11-10T06:22:04.053440Z","pkg":"?","ocr_frame":0,"ocr_ms":3545,"lag_ms":3548,"det_runs":2,"rec_runs":16,"lines":[{"text":"6:22","box":[35,46,165,92]},{"text":"4","box":[929,49,980,94]},{"text":"à","box":[980,53,1008,88]},{"text":"←","box":[47,186,101,234]},{"text":"AsciiScreen capture","box":[51,436,907,547]},{"text":"Use AsciiScreen capture","box":[106,717,694,783]},{"text":"Options","box":[56,953,197,1003]},{"text":"AsciiScreen canture shortcut","box":[62,1074,747,1122]},{"text":"Turn off AsciiScreen capture?","box":[127,1167,754,1222]},{"text":"Keep on","box":[616,1282,767,1334]},{"text":"Turn off","box":[808,1282,959,1332]},{"text":"Takes a screenshot every second and OCRs it on-device","box":[58,1547,978,1589]},{"text":"into a local, searchable history.","box":[58,1591,566,1634]}]}
+{"t":"2026-11-10T06:22:04.066973Z","pkg":"?","event":"SERVICE_DESTROYED","frames":2,"ocr_superseded":0}
+{"t":"2026-11-10T06:22:18.362385Z","pkg":"?","event":"SERVICE_CONNECTED"}
+{"t":"2026-11-10T06:22:19.026711Z","pkg":"?","frame":0,"capture_ms":660}
+{"t":"2026-11-10T06:22:19.926134Z","pkg":"com.android.settings","frame":1,"capture_ms":558}
+{"t":"2026-11-10T06:22:20.858415Z","pkg":"com.android.settings","frame":2,"capture_ms":484,"ocr_superseded_frame":1}
+{"t":"2026-11-10T06:22:22.724907Z","pkg":"com.google.android.apps.nexuslauncher","frame":3,"capture_ms":1358,"unchanged":true}
+{"t":"2026-11-10T06:22:23.625004Z","pkg":"com.google.android.apps.nexuslauncher","frame":4,"capture_ms":324,"ocr_superseded_frame":2}
+{"t":"2026-11-10T06:22:23.650197Z","pkg":"com.google.android.apps.nexuslauncher","screenshot_error":3}
+{"t":"2026-11-10T06:22:24.428378Z","pkg":"com.google.android.apps.nexuslauncher","frame":5,"capture_ms":61,"unchanged":true}
+{"t":"2026-11-10T06:22:25.429376Z","pkg":"com.google.android.apps.nexuslauncher","frame":6,"capture_ms":62,"unchanged":true}
+{"t":"2026-11-10T06:22:26.418930Z","pkg":"com.google.android.apps.nexuslauncher","frame":7,"capture_ms":51,"ocr_superseded_frame":4}
+{"t":"2026-11-10T06:22:27.419522Z","pkg":"com.google.android.apps.nexuslauncher","frame":8,"capture_ms":52,"unchanged":true}
+{"t":"2026-11-10T06:22:28.324245Z","pkg":"com.google.android.apps.nexuslauncher","ocr_frame":0,"ocr_ms":9297,"lag_ms":9297,"det_runs":2,"rec_runs":27,"lines":[{"text":"6:22 ","box":[37,46,165,92]},{"text":"0","box":[975,53,1008,87]},{"text":"4","box":[930,53,985,90]},{"text":"K","box":[47,184,101,234]},{"text":"价","box":[490,534,589,635]},{"text":"Allow AsciiScreen capture to have","box":[136,682,945,742]},{"text":"full control of your device?","box":[225,744,852,804]},{"text":"Full control is appropriate for apps that help","box":[126,852,950,907]},{"text":"you with accessibilityneeds, but not for","box":[126,905,872,953]},{"text":"most apps.","box":[126,955,349,1005]},{"text":"O","box":[129,1092,181,1129]},{"text":"View and control screen","box":[207,1095,662,1138]},{"text":"It can read all content on the screen and","box":[206,1151,868,1191]},{"text":"display content over other apps.","box":[209,1195,738,1238]},{"text":"View and perform actions","box":[202,1305,696,1358]},{"text":"It can track your interactions with an app or","box":[207,1365,923,1408]},{"text":"a hardware sensor, and interact with apps on","box":[206,1408,945,1451]},{"text":"your behalf.","box":[202,1447,410,1497]},{"text":"Allow","box":[486,1609,595,1662]},{"text":"Deny","box":[490,1762,589,1817]},{"text":"Uninstall","box":[460,1911,618,1961]}]}
+{"t":"2026-11-10T06:22:28.424816Z","pkg":"com.google.android.apps.nexuslauncher","frame":9,"capture_ms":57,"unchanged":true}
+{"t":"2026-11-10T06:22:29.424345Z","pkg":"com.google.android.apps.nexuslauncher","frame":10,"capture_ms":56,"unchanged":true}
+{"t":"2026-11-10T06:22:30.414619Z","pkg":"com.google.android.apps.nexuslauncher","frame":11,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:22:30.731316Z","pkg":"com.google.android.apps.nexuslauncher","ocr_frame":7,"ocr_ms":2407,"lag_ms":4313,"det_runs":2,"rec_runs":9,"lines":[{"text":"à","box":[980,51,1008,88]},{"text":"6:22","box":[39,49,161,88]},{"text":"O","box":[891,53,925,83]},{"text":"Tue, Nov 10","box":[74,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"4","box":[756,2188,825,2271]}]}
+{"t":"2026-11-10T06:22:31.410284Z","pkg":"com.google.android.apps.nexuslauncher","frame":12,"capture_ms":43,"unchanged":true}
+{"t":"2026-11-10T06:22:32.411872Z","pkg":"com.google.android.apps.nexuslauncher","frame":13,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:22:33.413272Z","pkg":"com.google.android.apps.nexuslauncher","frame":14,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:22:34.414903Z","pkg":"com.google.android.apps.nexuslauncher","frame":15,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:22:35.412021Z","pkg":"com.google.android.apps.nexuslauncher","frame":16,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:22:36.413249Z","pkg":"com.google.android.apps.nexuslauncher","frame":17,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:22:37.414238Z","pkg":"com.google.android.apps.nexuslauncher","frame":18,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:27:33.639411Z","pkg":"?","event":"SERVICE_CONNECTED"}
+{"t":"2026-11-10T06:27:35.053406Z","pkg":"com.google.android.apps.nexuslauncher","frame":0,"capture_ms":1439}
+{"t":"2026-11-10T06:27:35.899355Z","pkg":"com.google.android.apps.nexuslauncher","frame":1,"capture_ms":793,"ocr_superseded_frame":0}
+{"t":"2026-11-10T06:27:36.506295Z","pkg":"com.google.android.apps.nexuslauncher","frame":2,"capture_ms":607}
+{"t":"2026-11-10T06:27:36.865499Z","pkg":"com.google.android.apps.nexuslauncher","frame":3,"capture_ms":196,"ocr_superseded_frame":2}
+{"t":"2026-11-10T06:27:38.413502Z","pkg":"com.google.android.apps.nexuslauncher","frame":4,"capture_ms":746,"ocr_superseded_frame":3}
+{"t":"2026-11-10T06:27:38.916127Z","pkg":"com.google.android.apps.nexuslauncher","frame":5,"capture_ms":249,"ocr_superseded_frame":4}
+{"t":"2026-11-10T06:27:40.007991Z","pkg":"com.google.android.apps.nexuslauncher","frame":6,"capture_ms":261,"ocr_superseded_frame":5}
+{"t":"2026-11-10T06:27:40.957899Z","pkg":"com.google.android.apps.nexuslauncher","frame":7,"capture_ms":283,"ocr_superseded_frame":6}
+{"t":"2026-11-10T06:27:41.673387Z","pkg":"com.google.android.apps.nexuslauncher","ocr_frame":1,"ocr_ms":5477,"lag_ms":5774,"det_runs":2,"rec_runs":5,"lines":[{"text":"白","box":[976,51,1008,88]},{"text":"6:27","box":[39,49,117,88]},{"text":"一","box":[889,53,929,85]},{"text":"A","box":[932,53,978,90]},{"text":"0","box":[467,1138,607,1280]}]}
+{"t":"2026-11-10T06:27:41.829263Z","pkg":"com.google.android.apps.nexuslauncher","frame":8,"capture_ms":155,"unchanged":true}
+{"t":"2026-11-10T06:27:42.797808Z","pkg":"com.google.android.apps.nexuslauncher","frame":9,"capture_ms":131,"unchanged":true}
+{"t":"2026-11-10T06:27:43.778059Z","pkg":"com.google.android.apps.nexuslauncher","frame":10,"capture_ms":107,"unchanged":true}
+{"t":"2026-11-10T06:27:44.738129Z","pkg":"com.google.android.apps.nexuslauncher","frame":11,"capture_ms":71,"unchanged":true}
+{"t":"2026-11-10T06:27:45.739787Z","pkg":"com.google.android.apps.nexuslauncher","frame":12,"capture_ms":73,"unchanged":true}
+{"t":"2026-11-10T06:27:45.852704Z","pkg":"com.google.android.apps.nexuslauncher","ocr_frame":7,"ocr_ms":4179,"lag_ms":4894,"det_runs":2,"rec_runs":10,"lines":[{"text":"6:27","box":[37,46,119,92]},{"text":"白","box":[980,51,1008,88]},{"text":"O","box":[891,53,925,83]},{"text":"A","box":[937,55,973,88]},{"text":"Tue, Nov 10","box":[74,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"0","box":[758,2191,818,2268]}]}
+{"t":"2026-11-10T06:27:46.718225Z","pkg":"com.google.android.apps.nexuslauncher","frame":13,"capture_ms":51,"unchanged":true}
+{"t":"2026-11-10T06:27:47.725371Z","pkg":"com.google.android.apps.nexuslauncher","frame":14,"capture_ms":58,"unchanged":true}
+{"t":"2026-11-10T06:27:48.719722Z","pkg":"com.google.android.apps.nexuslauncher","frame":15,"capture_ms":53,"unchanged":true}
+{"t":"2026-11-10T06:27:49.722497Z","pkg":"com.google.android.apps.nexuslauncher","frame":16,"capture_ms":55,"unchanged":true}
+{"t":"2026-11-10T06:27:50.719279Z","pkg":"com.google.android.apps.nexuslauncher","frame":17,"capture_ms":51,"unchanged":true}
+{"t":"2026-11-10T06:27:51.726031Z","pkg":"com.google.android.apps.nexuslauncher","frame":18,"capture_ms":59,"unchanged":true}
+{"t":"2026-11-10T06:27:52.711612Z","pkg":"com.google.android.apps.nexuslauncher","frame":19,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:27:53.711727Z","pkg":"com.google.android.apps.nexuslauncher","frame":20,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:27:54.711272Z","pkg":"com.google.android.apps.nexuslauncher","frame":21,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:27:55.712055Z","pkg":"com.google.android.apps.nexuslauncher","frame":22,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:27:56.724021Z","pkg":"com.google.android.apps.nexuslauncher","frame":23,"capture_ms":51,"unchanged":true}
+{"t":"2026-11-10T06:27:57.710853Z","pkg":"com.google.android.apps.nexuslauncher","frame":24,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:27:58.714650Z","pkg":"com.google.android.apps.nexuslauncher","frame":25,"capture_ms":47}
+{"t":"2026-11-10T06:27:59.712154Z","pkg":"com.google.android.apps.nexuslauncher","frame":26,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:28:00.714452Z","pkg":"com.google.android.apps.nexuslauncher","frame":27,"capture_ms":47}
+{"t":"2026-11-10T06:28:01.086351Z","pkg":"com.google.android.apps.nexuslauncher","ocr_frame":25,"ocr_ms":2371,"lag_ms":2372,"det_runs":2,"rec_runs":10,"lines":[{"text":"6:27","box":[37,46,119,92]},{"text":"O","box":[891,53,925,83]},{"text":"A","box":[937,58,969,88]},{"text":"Tue, Nov 10","box":[74,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"0","box":[758,2191,818,2268]}]}
+{"t":"2026-11-10T06:28:01.714428Z","pkg":"com.google.android.apps.nexuslauncher","frame":28,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:28:02.728981Z","pkg":"com.google.android.apps.nexuslauncher","frame":29,"capture_ms":62,"unchanged":true}
+{"t":"2026-11-10T06:28:03.598097Z","pkg":"com.google.android.apps.nexuslauncher","ocr_frame":27,"ocr_ms":2512,"lag_ms":2884,"det_runs":2,"rec_runs":10,"lines":[{"text":"6:28","box":[37,46,119,92]},{"text":"O","box":[891,53,925,83]},{"text":"A","box":[937,58,969,88]},{"text":"Tue, Nov 10","box":[74,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"0","box":[758,2191,818,2268]}]}
+{"t":"2026-11-10T06:28:03.716635Z","pkg":"com.google.android.apps.nexuslauncher","frame":30,"capture_ms":49,"unchanged":true}
+{"t":"2026-11-10T06:28:04.711559Z","pkg":"com.google.android.apps.nexuslauncher","frame":31,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:28:05.713372Z","pkg":"com.google.android.apps.nexuslauncher","frame":32,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:28:06.412525Z","pkg":"com.google.android.apps.nexuslauncher","event":"SERVICE_DESTROYED","frames":33,"ocr_superseded":6}
+{"t":"2026-11-10T06:28:07.410894Z","pkg":"?","event":"SERVICE_CONNECTED"}
+{"t":"2026-11-10T06:28:07.622255Z","pkg":"?","frame":0,"capture_ms":210}
+{"t":"2026-11-10T06:28:08.459066Z","pkg":"?","frame":1,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:28:09.466255Z","pkg":"?","frame":2,"capture_ms":53,"unchanged":true}
+{"t":"2026-11-10T06:28:09.989362Z","pkg":"?","ocr_frame":0,"ocr_ms":2348,"lag_ms":2367,"det_runs":2,"rec_runs":10,"lines":[{"text":"6:28","box":[37,46,119,92]},{"text":"O","box":[891,53,925,83]},{"text":"A","box":[937,58,969,88]},{"text":"Tue, Nov 10","box":[74,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"0","box":[758,2191,818,2268]}]}
+{"t":"2026-11-10T06:28:10.459025Z","pkg":"?","frame":3,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:28:11.459837Z","pkg":"?","frame":4,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:28:12.463706Z","pkg":"?","frame":5,"capture_ms":51,"unchanged":true}
+{"t":"2026-11-10T06:28:13.462345Z","pkg":"?","frame":6,"capture_ms":49,"unchanged":true}
+{"t":"2026-11-10T06:28:14.456467Z","pkg":"?","frame":7,"capture_ms":43,"unchanged":true}
+{"t":"2026-11-10T06:28:15.466645Z","pkg":"?","frame":8,"capture_ms":52,"unchanged":true}
+{"t":"2026-11-10T06:28:16.460085Z","pkg":"?","frame":9,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:28:17.473459Z","pkg":"?","frame":10,"capture_ms":60,"unchanged":true}
+{"t":"2026-11-10T06:28:18.459960Z","pkg":"?","frame":11,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:28:19.458876Z","pkg":"?","frame":12,"capture_ms":46}
+{"t":"2026-11-10T06:28:20.460297Z","pkg":"?","frame":13,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:28:21.460948Z","pkg":"?","frame":14,"capture_ms":48,"unchanged":true}
+{"t":"2026-11-10T06:28:21.808156Z","pkg":"?","ocr_frame":12,"ocr_ms":2349,"lag_ms":2349,"det_runs":2,"rec_runs":10,"lines":[{"text":"6:28","box":[37,46,119,92]},{"text":"O","box":[891,53,925,83]},{"text":"A","box":[936,58,971,88]},{"text":"Tue, Nov 10","box":[74,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"0","box":[758,2191,818,2268]}]}
+{"t":"2026-11-10T06:28:22.458282Z","pkg":"?","frame":15,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:28:23.458721Z","pkg":"?","frame":16,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:28:24.458984Z","pkg":"?","frame":17,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:28:25.460893Z","pkg":"?","frame":18,"capture_ms":48,"unchanged":true}
+{"t":"2026-11-10T06:28:26.457203Z","pkg":"?","frame":19,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:28:27.463274Z","pkg":"?","frame":20,"capture_ms":50,"unchanged":true}
+{"t":"2026-11-10T06:28:28.460750Z","pkg":"?","frame":21,"capture_ms":48,"unchanged":true}
+{"t":"2026-11-10T06:28:29.459199Z","pkg":"?","frame":22,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:28:30.461750Z","pkg":"?","frame":23,"capture_ms":49,"unchanged":true}
+{"t":"2026-11-10T06:28:31.458821Z","pkg":"?","frame":24,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:28:32.461650Z","pkg":"?","frame":25,"capture_ms":48,"unchanged":true}
+{"t":"2026-11-10T06:28:33.459516Z","pkg":"?","frame":26,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:28:34.461943Z","pkg":"?","frame":27,"capture_ms":48,"unchanged":true}
+{"t":"2026-11-10T06:28:35.457388Z","pkg":"?","frame":28,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:28:36.462017Z","pkg":"?","frame":29,"capture_ms":49,"unchanged":true}
+{"t":"2026-11-10T06:28:37.458239Z","pkg":"?","frame":30,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:28:38.460034Z","pkg":"?","frame":31,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:28:39.459333Z","pkg":"?","frame":32,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:28:40.460222Z","pkg":"?","frame":33,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:28:41.458183Z","pkg":"?","frame":34,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:28:42.458743Z","pkg":"?","frame":35,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:28:43.510666Z","pkg":"?","frame":36,"capture_ms":97,"unchanged":true}
+{"t":"2026-11-10T06:28:44.469558Z","pkg":"?","frame":37,"capture_ms":56,"unchanged":true}
+{"t":"2026-11-10T06:28:45.469495Z","pkg":"?","frame":38,"capture_ms":56,"unchanged":true}
+{"t":"2026-11-10T06:28:46.468138Z","pkg":"?","frame":39,"capture_ms":54,"unchanged":true}
+{"t":"2026-11-10T06:28:47.477293Z","pkg":"?","frame":40,"capture_ms":64,"unchanged":true}
+{"t":"2026-11-10T06:28:48.468420Z","pkg":"?","frame":41,"capture_ms":55,"unchanged":true}
+{"t":"2026-11-10T06:28:49.461173Z","pkg":"?","frame":42,"capture_ms":48}
+{"t":"2026-11-10T06:28:50.460376Z","pkg":"?","frame":43,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:28:51.460464Z","pkg":"?","frame":44,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:28:51.712881Z","pkg":"?","ocr_frame":42,"ocr_ms":2252,"lag_ms":2252,"det_runs":2,"rec_runs":9,"lines":[{"text":"6:28","box":[37,46,119,92]},{"text":"O","box":[891,53,925,83]},{"text":"Tue, Nov 10","box":[74,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"0","box":[758,2191,818,2268]}]}
+{"t":"2026-11-10T06:28:52.458320Z","pkg":"?","frame":45,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:28:53.478236Z","pkg":"?","frame":46,"capture_ms":65,"unchanged":true}
+{"t":"2026-11-10T06:28:54.458250Z","pkg":"?","frame":47,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:28:55.458809Z","pkg":"?","frame":48,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:28:56.465724Z","pkg":"?","frame":49,"capture_ms":53,"unchanged":true}
+{"t":"2026-11-10T06:28:57.466685Z","pkg":"?","frame":50,"capture_ms":54,"unchanged":true}
+{"t":"2026-11-10T06:28:58.470894Z","pkg":"?","frame":51,"capture_ms":58,"unchanged":true}
+{"t":"2026-11-10T06:28:59.476104Z","pkg":"?","frame":52,"capture_ms":63,"unchanged":true}
+{"t":"2026-11-10T06:29:00.468545Z","pkg":"?","frame":53,"capture_ms":55}
+{"t":"2026-11-10T06:29:01.460906Z","pkg":"?","frame":54,"capture_ms":48,"unchanged":true}
+{"t":"2026-11-10T06:29:02.467224Z","pkg":"?","frame":55,"capture_ms":54,"unchanged":true}
+{"t":"2026-11-10T06:29:03.479960Z","pkg":"?","frame":56,"capture_ms":67,"unchanged":true}
+{"t":"2026-11-10T06:29:03.530730Z","pkg":"?","ocr_frame":53,"ocr_ms":3062,"lag_ms":3062,"det_runs":2,"rec_runs":9,"lines":[{"text":"6:29","box":[37,46,119,92]},{"text":"O","box":[891,53,925,83]},{"text":"Tue, Nov 10","box":[74,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"0","box":[758,2191,818,2268]}]}
+{"t":"2026-11-10T06:29:04.465631Z","pkg":"?","frame":57,"capture_ms":52,"unchanged":true}
+{"t":"2026-11-10T06:29:05.459378Z","pkg":"?","frame":58,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:29:06.459664Z","pkg":"?","frame":59,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:29:07.477668Z","pkg":"?","frame":60,"capture_ms":65,"unchanged":true}
+{"t":"2026-11-10T06:29:08.482608Z","pkg":"?","frame":61,"capture_ms":69,"unchanged":true}
+{"t":"2026-11-10T06:29:09.464804Z","pkg":"?","frame":62,"capture_ms":52,"unchanged":true}
+{"t":"2026-11-10T06:29:10.477115Z","pkg":"?","frame":63,"capture_ms":64,"unchanged":true}
+{"t":"2026-11-10T06:29:11.489506Z","pkg":"?","frame":64,"capture_ms":76,"unchanged":true}
+{"t":"2026-11-10T06:29:12.470235Z","pkg":"?","frame":65,"capture_ms":57,"unchanged":true}
+{"t":"2026-11-10T06:29:13.472669Z","pkg":"?","frame":66,"capture_ms":59,"unchanged":true}
+{"t":"2026-11-10T06:29:14.488925Z","pkg":"?","frame":67,"capture_ms":76,"unchanged":true}
+{"t":"2026-11-10T06:29:15.464619Z","pkg":"?","frame":68,"capture_ms":51,"unchanged":true}
+{"t":"2026-11-10T06:29:16.459686Z","pkg":"?","frame":69,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:29:17.493526Z","pkg":"?","frame":70,"capture_ms":80,"unchanged":true}
+{"t":"2026-11-10T06:29:18.476132Z","pkg":"?","frame":71,"capture_ms":63,"unchanged":true}
+{"t":"2026-11-10T06:29:19.491911Z","pkg":"?","frame":72,"capture_ms":79,"unchanged":true}
+{"t":"2026-11-10T06:29:20.479239Z","pkg":"?","frame":73,"capture_ms":66,"unchanged":true}
+{"t":"2026-11-10T06:29:21.459819Z","pkg":"?","frame":74,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:29:22.458645Z","pkg":"?","frame":75,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:29:23.466150Z","pkg":"?","frame":76,"capture_ms":53,"unchanged":true}
+{"t":"2026-11-10T06:29:24.458549Z","pkg":"?","frame":77,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:29:25.459479Z","pkg":"?","frame":78,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:29:26.458118Z","pkg":"?","frame":79,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:29:27.463344Z","pkg":"?","frame":80,"capture_ms":50,"unchanged":true}
+{"t":"2026-11-10T06:29:28.460725Z","pkg":"?","frame":81,"capture_ms":48,"unchanged":true}
+{"t":"2026-11-10T06:29:29.457520Z","pkg":"?","frame":82,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:29:29.866246Z","pkg":"?","event":"SERVICE_CONNECTED"}
+{"t":"2026-11-10T06:29:30.290592Z","pkg":"?","frame":0,"capture_ms":370}
+{"t":"2026-11-10T06:29:30.970842Z","pkg":"?","frame":1,"capture_ms":49,"unchanged":true}
+{"t":"2026-11-10T06:29:31.968421Z","pkg":"?","frame":2,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:29:32.705261Z","pkg":"?","ocr_frame":0,"ocr_ms":2412,"lag_ms":2414,"det_runs":2,"rec_runs":9,"lines":[{"text":"6:29","box":[37,46,119,92]},{"text":"O","box":[891,53,925,83]},{"text":"Tue, Nov 10","box":[74,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"0","box":[758,2191,818,2268]}]}
+{"t":"2026-11-10T06:29:32.968345Z","pkg":"?","frame":3,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:29:33.966436Z","pkg":"?","frame":4,"capture_ms":43,"unchanged":true}
+{"t":"2026-11-10T06:29:34.966851Z","pkg":"?","frame":5,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:29:35.968275Z","pkg":"?","frame":6,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:29:36.967091Z","pkg":"?","frame":7,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:29:37.967165Z","pkg":"?","frame":8,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:29:38.968652Z","pkg":"?","frame":9,"capture_ms":46}
+{"t":"2026-11-10T06:29:39.967769Z","pkg":"?","frame":10,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:29:40.969720Z","pkg":"?","frame":11,"capture_ms":48,"unchanged":true}
+{"t":"2026-11-10T06:29:41.277150Z","pkg":"?","ocr_frame":9,"ocr_ms":2308,"lag_ms":2308,"det_runs":2,"rec_runs":10,"lines":[{"text":"6:29","box":[37,46,119,92]},{"text":"白","box":[980,51,1008,88]},{"text":"O","box":[891,53,925,83]},{"text":"A","box":[937,55,973,88]},{"text":"Tue, Nov 10","box":[74,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"0","box":[758,2191,818,2268]}]}
+{"t":"2026-11-10T06:29:41.969341Z","pkg":"?","frame":12,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:29:42.966281Z","pkg":"?","frame":13,"capture_ms":43,"unchanged":true}
+{"t":"2026-11-10T06:29:43.966794Z","pkg":"?","frame":14,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:29:44.967471Z","pkg":"?","frame":15,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:29:45.968367Z","pkg":"?","frame":16,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:29:46.969155Z","pkg":"?","frame":17,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:29:47.966142Z","pkg":"?","frame":18,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:29:48.965986Z","pkg":"?","frame":19,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:29:49.965586Z","pkg":"?","frame":20,"capture_ms":43,"unchanged":true}
+{"t":"2026-11-10T06:29:50.965931Z","pkg":"?","frame":21,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:29:51.964930Z","pkg":"?","frame":22,"capture_ms":43,"unchanged":true}
+{"t":"2026-11-10T06:29:52.966088Z","pkg":"?","frame":23,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:29:53.967263Z","pkg":"?","frame":24,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:29:54.967192Z","pkg":"?","frame":25,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:29:55.968484Z","pkg":"?","frame":26,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:29:56.968487Z","pkg":"?","frame":27,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:29:58.523842Z","pkg":"?","frame":28,"capture_ms":597}
+{"t":"2026-11-10T06:29:59.017887Z","pkg":"?","frame":29,"capture_ms":97}
+{"t":"2026-11-10T06:29:59.973183Z","pkg":"?","frame":30,"capture_ms":51,"unchanged":true}
+{"t":"2026-11-10T06:30:00.967532Z","pkg":"?","frame":31,"capture_ms":45,"ocr_superseded_frame":29}
+{"t":"2026-11-10T06:30:01.298255Z","pkg":"?","ocr_frame":28,"ocr_ms":2774,"lag_ms":2774,"det_runs":2,"rec_runs":10,"lines":[{"text":"6:29","box":[37,46,119,92]},{"text":"O","box":[891,53,925,83]},{"text":"A","box":[937,55,973,88]},{"text":"Tue, Nov 10","box":[76,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"4","box":[756,2188,825,2271]}]}
+{"t":"2026-11-10T06:30:01.971260Z","pkg":"?","frame":32,"capture_ms":48,"unchanged":true}
+{"t":"2026-11-10T06:30:02.971541Z","pkg":"?","frame":33,"capture_ms":49,"unchanged":true}
+{"t":"2026-11-10T06:30:03.705068Z","pkg":"?","ocr_frame":31,"ocr_ms":2407,"lag_ms":2738,"det_runs":2,"rec_runs":10,"lines":[{"text":"6:30","box":[37,46,120,92]},{"text":"O","box":[891,53,925,83]},{"text":"A","box":[937,58,973,88]},{"text":"Tue, Nov 10","box":[76,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"4","box":[756,2188,825,2271]}]}
+{"t":"2026-11-10T06:30:03.967489Z","pkg":"?","frame":34,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:30:04.969191Z","pkg":"?","frame":35,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:30:05.973135Z","pkg":"?","frame":36,"capture_ms":51,"unchanged":true}
+{"t":"2026-11-10T06:30:06.988077Z","pkg":"?","frame":37,"capture_ms":65,"unchanged":true}
+{"t":"2026-11-10T06:30:07.968529Z","pkg":"?","frame":38,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:30:08.969961Z","pkg":"?","frame":39,"capture_ms":47}
+{"t":"2026-11-10T06:30:09.966199Z","pkg":"?","frame":40,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:30:10.969274Z","pkg":"?","frame":41,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:30:11.278716Z","pkg":"?","ocr_frame":39,"ocr_ms":2308,"lag_ms":2308,"det_runs":2,"rec_runs":10,"lines":[{"text":"6:30","box":[37,46,120,92]},{"text":"O","box":[891,53,923,83]},{"text":"4","box":[941,60,968,87]},{"text":"Tue, Nov 10","box":[76,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"4","box":[756,2188,825,2271]}]}
+{"t":"2026-11-10T06:30:11.966873Z","pkg":"?","frame":42,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:30:12.965547Z","pkg":"?","frame":43,"capture_ms":43,"unchanged":true}
+{"t":"2026-11-10T06:30:13.966612Z","pkg":"?","frame":44,"capture_ms":43,"unchanged":true}
+{"t":"2026-11-10T06:30:14.973666Z","pkg":"?","frame":45,"capture_ms":51,"unchanged":true}
+{"t":"2026-11-10T06:30:15.967142Z","pkg":"?","frame":46,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:30:16.968199Z","pkg":"?","frame":47,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:30:18.176048Z","pkg":"com.android.chrome","frame":48,"capture_ms":254}
+{"t":"2026-11-10T06:30:19.171419Z","pkg":"com.android.chrome","frame":49,"capture_ms":249}
+{"t":"2026-11-10T06:30:20.097257Z","pkg":"com.android.chrome","frame":50,"capture_ms":171,"ocr_superseded_frame":49}
+{"t":"2026-11-10T06:30:21.026209Z","pkg":"com.android.chrome","frame":51,"capture_ms":104,"ocr_superseded_frame":50}
+{"t":"2026-11-10T06:30:21.128062Z","pkg":"com.android.chrome","ocr_frame":48,"ocr_ms":2948,"lag_ms":2952,"det_runs":2,"rec_runs":7,"lines":[{"text":"6:30","box":[37,46,120,92]},{"text":"Tue, Nov 10","box":[74,339,367,406]},{"text":"Gmail","box":[362,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1751]},{"text":"4","box":[756,2188,825,2271]}]}
+{"t":"2026-11-10T06:30:22.025041Z","pkg":"com.android.chrome","frame":52,"capture_ms":103}
+{"t":"2026-11-10T06:30:23.014402Z","pkg":"com.android.chrome","frame":53,"capture_ms":92,"ocr_superseded_frame":52}
+{"t":"2026-11-10T06:30:24.048122Z","pkg":"com.android.chrome","frame":54,"capture_ms":125,"ocr_superseded_frame":53}
+{"t":"2026-11-10T06:30:24.961159Z","pkg":"com.android.chrome","ocr_frame":51,"ocr_ms":3833,"lag_ms":3935,"det_runs":2,"rec_runs":19,"lines":[{"text":"6:30","box":[35,44,120,94]},{"text":"A","box":[930,51,1008,92]},{"text":"0","box":[37,186,95,245]},{"text":"十","box":[730,186,792,243]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"A","box":[152,204,191,232]},{"text":"Translate page?","box":[161,312,477,367]},{"text":"Review your inactive tabs here","box":[524,325,1032,373]},{"text":"Chinese (Simplified) td","box":[163,369,493,417]},{"text":"今日新闻 νallyNews","box":[58,447,781,513]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,717,1014,778]},{"text":"capture.","box":[47,785,246,841]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,900,895,960]},{"text":"Order #48213 shipped to Singapore","box":[44,1017,888,1088]},{"text":"238801","box":[47,1083,229,1140]},{"text":"计数器 Counter: 1","box":[49,1206,463,1266]}]}
+{"t":"2026-11-10T06:30:25.043369Z","pkg":"com.android.chrome","frame":55,"capture_ms":121}
+{"t":"2026-11-10T06:30:26.114167Z","pkg":"com.android.chrome","frame":56,"capture_ms":192,"ocr_superseded_frame":55}
+{"t":"2026-11-10T06:30:27.045496Z","pkg":"com.android.chrome","frame":57,"capture_ms":117,"ocr_superseded_frame":56}
+{"t":"2026-11-10T06:30:28.023105Z","pkg":"com.android.chrome","frame":58,"capture_ms":101,"ocr_superseded_frame":57}
+{"t":"2026-11-10T06:30:28.826492Z","pkg":"com.android.chrome","ocr_frame":54,"ocr_ms":3865,"lag_ms":4778,"det_runs":2,"rec_runs":19,"lines":[{"text":"6:30","box":[35,44,120,94]},{"text":"A","box":[930,51,1008,92]},{"text":"0","box":[37,186,95,245]},{"text":"十","box":[730,186,792,243]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"A","box":[152,204,191,232]},{"text":"Translate page?","box":[161,312,477,367]},{"text":"Review your inactive tabs here","box":[524,325,1032,373]},{"text":"Chinese (Simplified) td","box":[163,369,493,417]},{"text":"今日新闻 νallyNews","box":[58,447,781,513]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,717,1014,778]},{"text":"capture.","box":[47,785,246,841]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,900,895,960]},{"text":"Order #48213 shipped to Singapore","box":[44,1017,888,1088]},{"text":"238801","box":[47,1083,229,1140]},{"text":"计数器 Counter: 4","box":[49,1206,468,1266]}]}
+{"t":"2026-11-10T06:30:29.013482Z","pkg":"com.android.chrome","frame":59,"capture_ms":91}
+{"t":"2026-11-10T06:30:30.000721Z","pkg":"com.android.chrome","frame":60,"capture_ms":78,"ocr_superseded_frame":59}
+{"t":"2026-11-10T06:30:30.991744Z","pkg":"com.android.chrome","frame":61,"capture_ms":70,"ocr_superseded_frame":60}
+{"t":"2026-11-10T06:30:32.013194Z","pkg":"com.android.chrome","frame":62,"capture_ms":91,"ocr_superseded_frame":61}
+{"t":"2026-11-10T06:30:32.624383Z","pkg":"com.android.chrome","ocr_frame":58,"ocr_ms":3797,"lag_ms":4601,"det_runs":2,"rec_runs":18,"lines":[{"text":"6:30","box":[35,44,120,94]},{"text":"0","box":[37,186,95,245]},{"text":"十","box":[730,186,792,245]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"A","box":[152,204,191,232]},{"text":"Translate page?","box":[161,312,477,367]},{"text":"Review your inactive tabs here","box":[524,325,1032,373]},{"text":"Chinese (Simplified) td","box":[163,369,493,417]},{"text":"今日新闻 νallyNews","box":[58,447,781,513]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,717,1014,778]},{"text":"capture.","box":[47,785,246,841]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,900,895,960]},{"text":"Order #48213 shipped to Singapore","box":[44,1017,888,1088]},{"text":"238801","box":[47,1083,229,1140]},{"text":"计数器 Counter: 8","box":[49,1206,467,1266]}]}
+{"t":"2026-11-10T06:30:33.029118Z","pkg":"com.android.chrome","frame":63,"capture_ms":107}
+{"t":"2026-11-10T06:30:34.030931Z","pkg":"com.android.chrome","frame":64,"capture_ms":109,"ocr_superseded_frame":63}
+{"t":"2026-11-10T06:30:35.058667Z","pkg":"com.android.chrome","frame":65,"capture_ms":133,"ocr_superseded_frame":64}
+{"t":"2026-11-10T06:30:35.888113Z","pkg":"com.android.chrome","ocr_frame":62,"ocr_ms":3264,"lag_ms":3875,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:30","box":[33,42,122,97]},{"text":"4","box":[900,47,1012,94]},{"text":"0","box":[37,186,97,245]},{"text":"十","box":[730,190,792,243]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"Review your inactive tabs here","box":[524,325,1032,373]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[47,897,897,962]},{"text":"Order #48213 shipped to Singapore","box":[47,1019,886,1085]},{"text":"238801","box":[47,1083,229,1140]},{"text":"计数器 Counter: 12","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:30:36.056045Z","pkg":"com.android.chrome","frame":66,"capture_ms":133}
+{"t":"2026-11-10T06:30:37.026500Z","pkg":"com.android.chrome","frame":67,"capture_ms":104,"ocr_superseded_frame":66}
+{"t":"2026-11-10T06:30:38.068499Z","pkg":"com.android.chrome","frame":68,"capture_ms":146,"ocr_superseded_frame":67}
+{"t":"2026-11-10T06:30:39.024334Z","pkg":"com.android.chrome","frame":69,"capture_ms":102,"ocr_superseded_frame":68}
+{"t":"2026-11-10T06:30:39.475138Z","pkg":"com.android.chrome","ocr_frame":65,"ocr_ms":3587,"lag_ms":4416,"det_runs":2,"rec_runs":16,"lines":[{"text":"6:30","box":[35,44,120,94]},{"text":"74","box":[900,47,1010,94]},{"text":"0","box":[37,186,97,245]},{"text":"十","box":[731,188,786,245]},{"text":"10.0.2.2:8088","box":[190,190,472,239]},{"text":"Review your inactive tabs here","box":[524,325,1032,373]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,900,895,960]},{"text":"Order #48213 shipped to Singapore","box":[47,1019,886,1085]},{"text":"238801","box":[47,1083,229,1140]},{"text":"计数器 Counter: 15","box":[49,1206,499,1266]}]}
+{"t":"2026-11-10T06:30:40.027039Z","pkg":"com.android.chrome","frame":70,"capture_ms":101}
+{"t":"2026-11-10T06:30:41.027099Z","pkg":"com.android.chrome","frame":71,"capture_ms":104,"ocr_superseded_frame":70}
+{"t":"2026-11-10T06:30:42.031039Z","pkg":"com.android.chrome","frame":72,"capture_ms":109,"ocr_superseded_frame":71}
+{"t":"2026-11-10T06:30:42.743518Z","pkg":"com.android.chrome","ocr_frame":69,"ocr_ms":3268,"lag_ms":3719,"det_runs":2,"rec_runs":16,"lines":[{"text":"6:30","box":[33,42,122,97]},{"text":"4","box":[914,47,1010,94]},{"text":"0","box":[37,186,97,245]},{"text":"十","box":[730,190,792,243]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"Review your inactive tabs here","box":[524,325,1032,373]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,900,895,960]},{"text":"Order #48213 shipped to Singapore","box":[47,1019,886,1085]},{"text":"238801","box":[47,1083,229,1140]},{"text":"计数器 Counter: 19","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:30:43.052338Z","pkg":"com.android.chrome","frame":73,"capture_ms":130}
+{"t":"2026-11-10T06:30:44.032230Z","pkg":"com.android.chrome","frame":74,"capture_ms":100,"ocr_superseded_frame":73}
+{"t":"2026-11-10T06:30:45.051667Z","pkg":"com.android.chrome","frame":75,"capture_ms":129,"ocr_superseded_frame":74}
+{"t":"2026-11-10T06:30:46.037193Z","pkg":"com.android.chrome","frame":76,"capture_ms":115,"ocr_superseded_frame":75}
+{"t":"2026-11-10T06:30:46.169679Z","pkg":"com.android.chrome","ocr_frame":72,"ocr_ms":3425,"lag_ms":4138,"det_runs":2,"rec_runs":16,"lines":[{"text":"6:30","box":[33,42,122,97]},{"text":"4","box":[900,47,1012,94]},{"text":"0","box":[37,186,97,245]},{"text":"十","box":[730,190,792,243]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"Review your inactive tabs here","box":[524,325,1032,373]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,900,895,960]},{"text":"Order #48213 shipped to Singapore","box":[47,1019,886,1085]},{"text":"238801","box":[47,1083,229,1140]},{"text":"计数器 Counter: 22","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:30:47.056603Z","pkg":"com.android.chrome","frame":77,"capture_ms":131}
+{"t":"2026-11-10T06:30:48.042006Z","pkg":"com.android.chrome","frame":78,"capture_ms":120,"ocr_superseded_frame":77}
+{"t":"2026-11-10T06:30:48.964722Z","pkg":"com.android.chrome","frame":79,"capture_ms":43,"ocr_superseded_frame":78}
+{"t":"2026-11-10T06:30:49.538306Z","pkg":"com.android.chrome","ocr_frame":76,"ocr_ms":3368,"lag_ms":3501,"det_runs":2,"rec_runs":16,"lines":[{"text":"6:30","box":[33,42,122,97]},{"text":"4","box":[900,47,1012,94]},{"text":"0","box":[37,186,97,245]},{"text":"十","box":[730,190,792,243]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"Review your inactive tabs here","box":[524,325,1032,373]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[49,900,895,960]},{"text":"Order #48213 shipped to Singapore","box":[47,1019,886,1085]},{"text":"238801","box":[47,1083,229,1140]},{"text":"计数器 Counter: 26","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:30:49.965785Z","pkg":"com.android.chrome","frame":80,"capture_ms":44}
+{"t":"2026-11-10T06:30:50.974993Z","pkg":"com.android.chrome","frame":81,"capture_ms":53,"ocr_superseded_frame":80}
+{"t":"2026-11-10T06:30:51.966992Z","pkg":"com.android.chrome","frame":82,"capture_ms":45,"ocr_superseded_frame":81}
+{"t":"2026-11-10T06:30:52.424181Z","pkg":"com.android.chrome","ocr_frame":79,"ocr_ms":2886,"lag_ms":3459,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:30","box":[33,40,122,97]},{"text":"4","box":[889,44,1016,97]},{"text":"0","box":[35,186,97,245]},{"text":"十","box":[730,188,797,239]},{"text":"1","box":[861,190,923,241]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[47,897,897,962]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 29","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:30:52.965618Z","pkg":"com.android.chrome","frame":83,"capture_ms":43}
+{"t":"2026-11-10T06:30:53.965676Z","pkg":"com.android.chrome","frame":84,"capture_ms":44,"ocr_superseded_frame":83}
+{"t":"2026-11-10T06:30:54.966356Z","pkg":"com.android.chrome","frame":85,"capture_ms":44,"ocr_superseded_frame":84}
+{"t":"2026-11-10T06:30:55.318012Z","pkg":"com.android.chrome","ocr_frame":82,"ocr_ms":2894,"lag_ms":3351,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:30","box":[33,40,122,97]},{"text":"4","box":[889,44,1016,97]},{"text":"0","box":[35,186,97,245]},{"text":"十","box":[730,188,797,239]},{"text":"1","box":[861,190,923,241]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[47,897,897,962]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 32","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:30:55.964237Z","pkg":"com.android.chrome","frame":86,"capture_ms":41}
+{"t":"2026-11-10T06:30:56.964119Z","pkg":"com.android.chrome","frame":87,"capture_ms":42,"ocr_superseded_frame":86}
+{"t":"2026-11-10T06:30:57.964814Z","pkg":"com.android.chrome","frame":88,"capture_ms":43,"ocr_superseded_frame":87}
+{"t":"2026-11-10T06:30:58.189055Z","pkg":"com.android.chrome","ocr_frame":85,"ocr_ms":2871,"lag_ms":3223,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:30","box":[33,40,122,97]},{"text":"4","box":[889,44,1016,97]},{"text":"0","box":[35,186,97,245]},{"text":"十","box":[730,188,797,239]},{"text":"1","box":[861,190,923,241]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[47,897,897,962]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 35","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:30:58.965120Z","pkg":"com.android.chrome","frame":89,"capture_ms":43}
+{"t":"2026-11-10T06:30:59.964593Z","pkg":"com.android.chrome","frame":90,"capture_ms":42,"ocr_superseded_frame":89}
+{"t":"2026-11-10T06:31:00.970385Z","pkg":"com.android.chrome","frame":91,"capture_ms":48,"ocr_superseded_frame":90}
+{"t":"2026-11-10T06:31:01.147053Z","pkg":"com.android.chrome","ocr_frame":88,"ocr_ms":2958,"lag_ms":3182,"det_runs":2,"rec_runs":15,"lines":[{"text":"6:30","box":[33,40,122,97]},{"text":"4","box":[889,44,1016,97]},{"text":"0","box":[35,186,97,245]},{"text":"十","box":[730,188,797,239]},{"text":"1","box":[861,190,923,241]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[47,897,897,962]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 38","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:31:01.966819Z","pkg":"com.android.chrome","frame":92,"capture_ms":45}
+{"t":"2026-11-10T06:31:02.963640Z","pkg":"com.android.chrome","frame":93,"capture_ms":41,"ocr_superseded_frame":92}
+{"t":"2026-11-10T06:31:03.964181Z","pkg":"com.android.chrome","frame":94,"capture_ms":42,"ocr_superseded_frame":93}
+{"t":"2026-11-10T06:31:04.013700Z","pkg":"com.android.chrome","ocr_frame":91,"ocr_ms":2866,"lag_ms":3043,"det_runs":2,"rec_runs":14,"lines":[{"text":"6:31","box":[35,44,119,94]},{"text":"0","box":[37,186,97,245]},{"text":"十","box":[731,188,797,239]},{"text":"①","box":[865,191,920,239]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[47,897,897,962]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 41","box":[49,1206,492,1266]}]}
+{"t":"2026-11-10T06:31:04.965726Z","pkg":"com.android.chrome","frame":95,"capture_ms":44}
+{"t":"2026-11-10T06:31:05.964211Z","pkg":"com.android.chrome","frame":96,"capture_ms":42,"ocr_superseded_frame":95}
+{"t":"2026-11-10T06:31:06.906189Z","pkg":"com.android.chrome","ocr_frame":94,"ocr_ms":2892,"lag_ms":2942,"det_runs":2,"rec_runs":14,"lines":[{"text":"6:31","box":[35,44,119,94]},{"text":"0","box":[37,186,97,245]},{"text":"十","box":[731,188,797,239]},{"text":"①","box":[865,191,920,239]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[47,897,897,962]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 44","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:31:06.972239Z","pkg":"com.android.chrome","frame":97,"capture_ms":50}
+{"t":"2026-11-10T06:31:07.971586Z","pkg":"com.android.chrome","frame":98,"capture_ms":49,"ocr_superseded_frame":97}
+{"t":"2026-11-10T06:31:08.964678Z","pkg":"com.android.chrome","frame":99,"capture_ms":43,"ocr_superseded_frame":98}
+{"t":"2026-11-10T06:31:09.713744Z","pkg":"com.android.chrome","ocr_frame":96,"ocr_ms":2807,"lag_ms":3749,"det_runs":2,"rec_runs":14,"lines":[{"text":"6:31","box":[35,44,119,94]},{"text":"0","box":[37,186,97,245]},{"text":"十","box":[731,188,797,239]},{"text":"①","box":[865,191,920,239]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[47,897,897,962]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 46","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:31:09.964866Z","pkg":"com.android.chrome","frame":100,"capture_ms":43}
+{"t":"2026-11-10T06:31:10.965100Z","pkg":"com.android.chrome","frame":101,"capture_ms":43,"ocr_superseded_frame":100}
+{"t":"2026-11-10T06:31:11.965645Z","pkg":"com.android.chrome","frame":102,"capture_ms":43,"ocr_superseded_frame":101}
+{"t":"2026-11-10T06:31:12.571096Z","pkg":"com.android.chrome","ocr_frame":99,"ocr_ms":2857,"lag_ms":3606,"det_runs":2,"rec_runs":14,"lines":[{"text":"6:31","box":[35,44,119,94]},{"text":"0","box":[37,186,97,245]},{"text":"十","box":[731,188,797,239]},{"text":"①","box":[865,191,920,239]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[47,897,897,962]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 49","box":[49,1206,495,1266]}]}
+{"t":"2026-11-10T06:31:12.965878Z","pkg":"com.android.chrome","frame":103,"capture_ms":44}
+{"t":"2026-11-10T06:31:13.965876Z","pkg":"com.android.chrome","frame":104,"capture_ms":44,"ocr_superseded_frame":103}
+{"t":"2026-11-10T06:31:15.191686Z","pkg":"com.android.settings","frame":105,"capture_ms":227,"ocr_superseded_frame":104}
+{"t":"2026-11-10T06:31:15.712100Z","pkg":"com.android.settings","ocr_frame":102,"ocr_ms":3141,"lag_ms":3747,"det_runs":2,"rec_runs":14,"lines":[{"text":"6:31","box":[35,44,119,94]},{"text":"0","box":[37,186,97,245]},{"text":"十","box":[731,188,797,239]},{"text":"①","box":[865,191,920,239]},{"text":"10.0.2.2:8088","box":[188,190,472,239]},{"text":"今日新闻 Daily News","box":[47,420,786,518]},{"text":"新加坡天气：晴，最高温度32度。","box":[49,595,817,655]},{"text":"Meeting with GovTech at 3pm about OCR","box":[46,715,1014,776]},{"text":"capture.","box":[46,781,248,843]},{"text":"购物清单：牛奶、鸡蛋、面包、苹果","box":[47,897,897,962]},{"text":"Order #48213 shipped to Singapore","box":[46,1016,888,1087]},{"text":"238801","box":[46,1080,230,1142]},{"text":"计数器 Counter: 52","box":[49,1206,497,1266]}]}
+{"t":"2026-11-10T06:31:15.999819Z","pkg":"com.android.settings","frame":106,"capture_ms":78}
+{"t":"2026-11-10T06:31:17.010088Z","pkg":"com.android.settings","frame":107,"capture_ms":88,"ocr_superseded_frame":106}
+{"t":"2026-11-10T06:31:17.674256Z","pkg":"com.android.settings","ocr_frame":105,"ocr_ms":1962,"lag_ms":2482,"det_runs":2,"rec_runs":5,"lines":[{"text":"6:31","box":[35,49,117,95]},{"text":"8","box":[287,964,794,1456]}]}
+{"t":"2026-11-10T06:31:18.010216Z","pkg":"com.android.settings","frame":108,"capture_ms":87,"unchanged":true}
+{"t":"2026-11-10T06:31:18.965535Z","pkg":"com.android.settings","frame":109,"capture_ms":43,"unchanged":true}
+{"t":"2026-11-10T06:31:19.964435Z","pkg":"com.android.settings","frame":110,"capture_ms":41,"unchanged":true}
+{"t":"2026-11-10T06:31:20.963212Z","pkg":"com.android.settings","frame":111,"capture_ms":41,"unchanged":true}
+{"t":"2026-11-10T06:31:21.438972Z","pkg":"com.android.settings","ocr_frame":107,"ocr_ms":3765,"lag_ms":4429,"det_runs":2,"rec_runs":23,"lines":[{"text":"6:31","box":[35,44,119,94]},{"text":"Q Search Settings","box":[99,222,566,294]},{"text":"Google","box":[198,440,385,509]},{"text":"G","box":[97,458,172,532]},{"text":"Services & preferences","box":[202,509,595,557]},{"text":"Network & internet","box":[204,694,653,747]},{"text":"C","box":[103,717,168,772]},{"text":"Mobile, Wi-Fi, hotspot","box":[204,758,568,806]},{"text":"Connected devices","box":[202,897,664,957]},{"text":"Bluetooth, pairing","box":[204,964,500,1014]},{"text":"Apps","box":[198,1142,344,1215]},{"text":"Assistant, recent apps, default apps","box":[204,1213,799,1261]},{"text":"Notifications","box":[202,1353,515,1408]},{"text":"Notification history, conversations","box":[202,1415,772,1469]},{"text":"Sound & vibration","box":[204,1559,627,1614]},{"text":"D","box":[106,1582,166,1639]},{"text":"Volume and haptics","box":[204,1623,540,1673]},{"text":"Modes","box":[198,1760,380,1824]},{"text":"Do Not Disturb, Bedtime, Driving","box":[200,1827,738,1881]},{"text":"Display & touch","box":[202,1971,580,2032]},{"text":"Dark theme, font size, touch","box":[202,2033,671,2087]},{"text":"Colors, themed icons, app grid","box":[204,2239,714,2293]}]}
+{"t":"2026-11-10T06:31:21.963538Z","pkg":"com.android.settings","frame":112,"capture_ms":41,"unchanged":true}
+{"t":"2026-11-10T06:31:22.964598Z","pkg":"com.android.settings","frame":113,"capture_ms":41,"unchanged":true}
+{"t":"2026-11-10T06:31:23.965140Z","pkg":"com.android.settings","frame":114,"capture_ms":43,"unchanged":true}
+{"t":"2026-11-10T06:31:24.964589Z","pkg":"com.android.settings","frame":115,"capture_ms":42,"unchanged":true}
+{"t":"2026-11-10T06:31:25.962639Z","pkg":"com.android.settings","frame":116,"capture_ms":40,"unchanged":true}
+{"t":"2026-11-10T06:31:26.974701Z","pkg":"com.android.settings","frame":117,"capture_ms":53,"unchanged":true}
+{"t":"2026-11-10T06:31:27.960052Z","pkg":"com.android.settings","frame":118,"capture_ms":38,"unchanged":true}
+{"t":"2026-11-10T06:31:28.971949Z","pkg":"com.android.settings","frame":119,"capture_ms":50,"unchanged":true}
+{"t":"2026-11-10T06:31:29.962698Z","pkg":"com.android.settings","frame":120,"capture_ms":41,"unchanged":true}
+{"t":"2026-11-10T06:31:30.965580Z","pkg":"com.android.settings","frame":121,"capture_ms":43,"unchanged":true}
+{"t":"2026-11-10T06:31:31.963082Z","pkg":"com.android.settings","frame":122,"capture_ms":41,"unchanged":true}
+{"t":"2026-11-10T06:31:32.965745Z","pkg":"com.android.settings","frame":123,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:31:33.964168Z","pkg":"com.android.settings","frame":124,"capture_ms":42,"unchanged":true}
+{"t":"2026-11-10T06:31:35.113775Z","pkg":"dev.smolfroggo.asciiscreen","frame":125,"capture_ms":187}
+{"t":"2026-11-10T06:31:35.962795Z","pkg":"dev.smolfroggo.asciiscreen","frame":126,"capture_ms":41}
+{"t":"2026-11-10T06:31:36.962484Z","pkg":"dev.smolfroggo.asciiscreen","frame":127,"capture_ms":40,"unchanged":true}
+{"t":"2026-11-10T06:31:37.001804Z","pkg":"dev.smolfroggo.asciiscreen","ocr_frame":125,"ocr_ms":1888,"lag_ms":1888,"det_runs":2,"rec_runs":5,"lines":[{"text":"V","box":[884,44,1016,97]},{"text":"6:31","box":[37,47,117,95]},{"text":"8","box":[328,996,749,1346]}]}
+{"t":"2026-11-10T06:31:37.965710Z","pkg":"dev.smolfroggo.asciiscreen","frame":128,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:31:38.478597Z","pkg":"dev.smolfroggo.asciiscreen","ocr_frame":126,"ocr_ms":1476,"lag_ms":2515,"det_runs":2,"rec_runs":1,"lines":[{"text":"6:31","box":[37,51,117,92]}]}
+{"t":"2026-11-10T06:31:38.969034Z","pkg":"dev.smolfroggo.asciiscreen","frame":129,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:31:39.964464Z","pkg":"dev.smolfroggo.asciiscreen","frame":130,"capture_ms":42,"unchanged":true}
+{"t":"2026-11-10T06:31:40.966433Z","pkg":"dev.smolfroggo.asciiscreen","frame":131,"capture_ms":43,"unchanged":true}
+{"t":"2026-11-10T06:31:41.971654Z","pkg":"dev.smolfroggo.asciiscreen","frame":132,"capture_ms":48,"unchanged":true}
+{"t":"2026-11-10T06:31:42.965643Z","pkg":"dev.smolfroggo.asciiscreen","frame":133,"capture_ms":43,"unchanged":true}
+{"t":"2026-11-10T06:31:43.971716Z","pkg":"dev.smolfroggo.asciiscreen","frame":134,"capture_ms":50,"unchanged":true}
+{"t":"2026-11-10T06:31:44.971538Z","pkg":"dev.smolfroggo.asciiscreen","frame":135,"capture_ms":49,"unchanged":true}
+{"t":"2026-11-10T06:31:45.968843Z","pkg":"dev.smolfroggo.asciiscreen","frame":136,"capture_ms":47,"unchanged":true}
+{"t":"2026-11-10T06:31:46.988799Z","pkg":"dev.smolfroggo.asciiscreen","frame":137,"capture_ms":67,"unchanged":true}
+{"t":"2026-11-10T06:31:47.971043Z","pkg":"dev.smolfroggo.asciiscreen","frame":138,"capture_ms":49,"unchanged":true}
+{"t":"2026-11-10T06:31:48.969859Z","pkg":"dev.smolfroggo.asciiscreen","frame":139,"capture_ms":48}
+{"t":"2026-11-10T06:31:50.279053Z","pkg":"com.google.android.apps.nexuslauncher","frame":140,"capture_ms":355}
+{"t":"2026-11-10T06:31:50.988555Z","pkg":"com.google.android.apps.nexuslauncher","frame":141,"capture_ms":66,"ocr_superseded_frame":140}
+{"t":"2026-11-10T06:31:51.219881Z","pkg":"com.google.android.apps.nexuslauncher","ocr_frame":139,"ocr_ms":2250,"lag_ms":2250,"det_runs":2,"rec_runs":2,"lines":[{"text":"6:31","box":[39,51,117,92]}]}
+{"t":"2026-11-10T06:31:51.988632Z","pkg":"com.google.android.apps.nexuslauncher","frame":142,"capture_ms":66,"unchanged":true}
+{"t":"2026-11-10T06:31:52.975426Z","pkg":"com.google.android.apps.nexuslauncher","frame":143,"capture_ms":53,"unchanged":true}
+{"t":"2026-11-10T06:31:53.973693Z","pkg":"com.google.android.apps.nexuslauncher","frame":144,"capture_ms":52,"unchanged":true}
+{"t":"2026-11-10T06:31:54.166892Z","pkg":"com.google.android.apps.nexuslauncher","ocr_frame":141,"ocr_ms":2947,"lag_ms":3179,"det_runs":2,"rec_runs":10,"lines":[{"text":"6:31","box":[35,46,117,92]},{"text":"à","box":[980,51,1008,88]},{"text":"O","box":[891,53,925,83]},{"text":"A","box":[937,53,975,90]},{"text":"Tue, Nov 10","box":[76,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"4","box":[756,2188,825,2271]}]}
+{"t":"2026-11-10T06:31:54.967123Z","pkg":"com.google.android.apps.nexuslauncher","frame":145,"capture_ms":45,"unchanged":true}
+{"t":"2026-11-10T06:31:55.967836Z","pkg":"com.google.android.apps.nexuslauncher","frame":146,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:31:56.966217Z","pkg":"com.google.android.apps.nexuslauncher","frame":147,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:31:57.978665Z","pkg":"com.google.android.apps.nexuslauncher","frame":148,"capture_ms":56,"unchanged":true}
+{"t":"2026-11-10T06:31:58.972221Z","pkg":"com.google.android.apps.nexuslauncher","frame":149,"capture_ms":50,"unchanged":true}
+{"t":"2026-11-10T06:31:59.970046Z","pkg":"com.google.android.apps.nexuslauncher","frame":150,"capture_ms":48,"unchanged":true}
+{"t":"2026-11-10T06:32:00.977661Z","pkg":"com.google.android.apps.nexuslauncher","frame":151,"capture_ms":55}
+{"t":"2026-11-10T06:32:02.000212Z","pkg":"com.google.android.apps.nexuslauncher","frame":152,"capture_ms":78,"unchanged":true}
+{"t":"2026-11-10T06:32:03.003546Z","pkg":"com.google.android.apps.nexuslauncher","frame":153,"capture_ms":81,"unchanged":true}
+{"t":"2026-11-10T06:32:03.982158Z","pkg":"com.google.android.apps.nexuslauncher","frame":154,"capture_ms":60,"unchanged":true}
+{"t":"2026-11-10T06:32:04.050529Z","pkg":"com.google.android.apps.nexuslauncher","ocr_frame":151,"ocr_ms":3072,"lag_ms":3073,"det_runs":2,"rec_runs":10,"lines":[{"text":"6:32","box":[37,46,120,92]},{"text":"à","box":[980,51,1008,88]},{"text":"O","box":[891,53,925,83]},{"text":"A","box":[937,53,975,90]},{"text":"Tue, Nov 10","box":[76,339,367,406]},{"text":"Gmail","box":[364,1705,470,1751]},{"text":"Photos","box":[598,1707,728,1751]},{"text":"YouTube","box":[833,1707,987,1751]},{"text":"Play Store","box":[79,1708,257,1753]},{"text":"4","box":[756,2188,825,2271]}]}
+{"t":"2026-11-10T06:32:04.997978Z","pkg":"com.google.android.apps.nexuslauncher","frame":155,"capture_ms":76,"unchanged":true}
+{"t":"2026-11-10T06:32:05.982159Z","pkg":"com.google.android.apps.nexuslauncher","frame":156,"capture_ms":60,"unchanged":true}
+{"t":"2026-11-10T06:32:06.979992Z","pkg":"com.google.android.apps.nexuslauncher","frame":157,"capture_ms":58,"unchanged":true}
+{"t":"2026-11-10T06:32:07.992452Z","pkg":"com.google.android.apps.nexuslauncher","frame":158,"capture_ms":70,"unchanged":true}
+{"t":"2026-11-10T06:32:08.999734Z","pkg":"com.google.android.apps.nexuslauncher","frame":159,"capture_ms":77,"unchanged":true}
+{"t":"2026-11-10T06:32:09.970908Z","pkg":"com.google.android.apps.nexuslauncher","frame":160,"capture_ms":49,"unchanged":true}
+{"t":"2026-11-10T06:32:10.968259Z","pkg":"com.google.android.apps.nexuslauncher","frame":161,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:32:11.968544Z","pkg":"com.google.android.apps.nexuslauncher","frame":162,"capture_ms":46,"unchanged":true}
+{"t":"2026-11-10T06:32:12.967667Z","pkg":"com.google.android.apps.nexuslauncher","frame":163,"capture_ms":44,"unchanged":true}
+{"t":"2026-11-10T06:32:13.966353Z","pkg":"com.google.android.apps.nexuslauncher","frame":164,"capture_ms":44,"unchanged":true}

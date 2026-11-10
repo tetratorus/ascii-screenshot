@@ -34,6 +34,8 @@ The eventual product captures phone screens at about 1 fps, OCRs Chinese/English
 
 ## What is verified, and what is NOT
 
+**Update 2026-11-10:** the Ubuntu emulator run is done. See [EMULATOR_RESULTS.md](EMULATOR_RESULTS.md). The Mac notes below are kept for history.
+
 Verified in the previous Mac VM:
 
 - `./gradlew --no-daemon assembleDebug lintDebug --console=plain` succeeds (JDK 17). Java compilation is included. Gradle reports deprecation warnings, not a failed build. No runtime/instrumentation tests exist yet.
