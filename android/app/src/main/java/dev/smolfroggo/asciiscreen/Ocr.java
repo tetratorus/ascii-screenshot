@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /** PP-OCRv6 small: fixed-shape detector [1,3,1280,608] and recognizer [1,3,48,640], CTC decoding. */
-final class Ocr implements AutoCloseable {
+final class Ocr implements AutoCloseable, Pipeline.Reader {
     record Line(String text, float conf, int x0, int y0, int x1, int y1) {}
 
     private static final float[] MEAN = {0.485f, 0.456f, 0.406f};
@@ -75,22 +75,73 @@ final class Ocr implements AutoCloseable {
     }
 
     int detRuns, recRuns;
+    long resizeNs, detPrepNs, detNs, detPostNs, recPrepNs, recNs;
 
-    /** argb: full-resolution ARGB_8888 pixels, row-major. */
-    List<Line> run(int[] argb, int w, int h) {
-        detRuns = 0; recRuns = 0;
+    void resetStats() { detRuns = 0; recRuns = 0; resizeNs = detPrepNs = detNs = detPostNs = recPrepNs = recNs = 0; }
+
+    /** argb: full-resolution ARGB_8888 pixels, row-major. rects: pixel regions {x0,y0,x1,y1} to read, null for all. */
+    @Override public List<Line> read(int[] argb, int w, int h, List<int[]> rects) {
         List<Line> out = new ArrayList<>();
-        for (int[] b : detect(argb, w, h)) {
+        for (int[] b : rects == null ? detect(argb, w, h) : detectAtlas(argb, w, rects)) {
             int x0 = Math.max(0, b[0]), y0 = Math.max(0, b[1]), x1 = Math.min(w, b[2]), y1 = Math.min(h, b[3]);
-            if (x1 - x0 < 3 || y1 - y0 < 3) continue;
-            StringBuilder text = new StringBuilder();
-            float confSum = 0; int segs = 0;
-            for (int[] seg : splitWide(argb, w, x0, y0, x1, y1)) {
-                Object[] r = recognize(argb, w, seg[0], y0, seg[1] - seg[0], y1 - y0);
-                text.append((String) r[0]); confSum += (float) r[1]; segs++;
+            Line l = recLine(argb, w, x0, y0, x1, y1);
+            if (l != null) out.add(l);
+        }
+        return out;
+    }
+
+    @Override public Line reread(int[] argb, int w, int h, Line box) {
+        return recLine(argb, w, box.x0(), box.y0(), box.x1(), box.y1());
+    }
+
+    private Line recLine(int[] argb, int w, int x0, int y0, int x1, int y1) {
+        if (x1 - x0 < 3 || y1 - y0 < 3) return null;
+        StringBuilder text = new StringBuilder();
+        float confSum = 0; int segs = 0;
+        for (int[] seg : splitWide(argb, w, x0, y0, x1, y1)) {
+            Object[] r = recognize(argb, w, seg[0], y0, seg[1] - seg[0], y1 - y0);
+            text.append((String) r[0]); confSum += (float) r[1]; segs++;
+        }
+        if (text.toString().isBlank()) return null;
+        return new Line(text.toString(), confSum / segs, x0, y0, x1, y1);
+    }
+
+    /**
+     * Packs the regions into one image as wide as the screen (so the detector sees text at the same scale as a full
+     * frame), detects once over it and maps each box back into the region its centre falls in, clipped to that region.
+     */
+    private List<int[]> detectAtlas(int[] argb, int w, List<int[]> rects) {
+        final int gap = 12;
+        Integer[] order = new Integer[rects.size()];
+        for (int i = 0; i < order.length; i++) order[i] = i;
+        Arrays.sort(order, (a, b) -> Integer.compare(rects.get(b)[3] - rects.get(b)[1], rects.get(a)[3] - rects.get(a)[1]));
+        int aw = w + 2 * gap, x = gap, y = gap, rowH = 0;
+        int[][] at = new int[rects.size()][];
+        for (int i : order) {
+            int[] r = rects.get(i);
+            int rw = r[2] - r[0], rh = r[3] - r[1];
+            if (x + rw + gap > aw) { x = gap; y += rowH + gap; rowH = 0; }
+            at[i] = new int[]{x, y};
+            x += rw + gap; rowH = Math.max(rowH, rh);
+        }
+        int ah = y + rowH + gap;
+        int[] atlas = new int[aw * ah];
+        Arrays.fill(atlas, 0xffffffff);
+        for (int i = 0; i < at.length; i++) {
+            int[] r = rects.get(i);
+            for (int row = r[1]; row < r[3]; row++) System.arraycopy(argb, row * w + r[0], atlas, (at[i][1] + row - r[1]) * aw + at[i][0], r[2] - r[0]);
+        }
+        List<int[]> out = new ArrayList<>();
+        for (int[] b : detect(atlas, aw, ah)) {
+            int cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+            for (int i = 0; i < at.length; i++) {
+                int[] r = rects.get(i);
+                int ox = at[i][0], oy = at[i][1], rw = r[2] - r[0], rh = r[3] - r[1];
+                if (cx < ox || cx >= ox + rw || cy < oy || cy >= oy + rh) continue;
+                out.add(new int[]{r[0] + Math.max(0, b[0] - ox), r[1] + Math.max(0, b[1] - oy),
+                        r[0] + Math.min(rw, b[2] - ox), r[1] + Math.min(rh, b[3] - oy)});
+                break;
             }
-            if (text.toString().isBlank()) continue;
-            out.add(new Line(text.toString(), confSum / segs, x0, y0, x1, y1));
         }
         return out;
     }
@@ -98,10 +149,13 @@ final class Ocr implements AutoCloseable {
     private List<int[]> detect(int[] argb, int w, int h) {
         float sc = (float) detW / w;
         int rh = Math.round(h * sc);
+        long t = System.nanoTime();
         int[] rs = resize(argb, w, 0, 0, w, h, detW, rh);
+        resizeNs += System.nanoTime() - t;
         List<int[]> boxes = new ArrayList<>();
         int step = detH - TILE_OVERLAP;
         for (int y = 0; y < Math.max(1, rh - TILE_OVERLAP); y += step) {
+            long t0 = System.nanoTime();
             FloatBuffer in = detInF;
             int plane = detH * detW;
             for (int ty = 0; ty < detH; ty++) {
@@ -115,9 +169,13 @@ final class Ocr implements AutoCloseable {
                 }
             }
             detIn.rewind(); detOut.rewind();
+            long t1 = System.nanoTime();
             det.run(detIn, detOut);
+            long t2 = System.nanoTime();
             detRuns++;
-            for (int[] b : boxesFromProb(detOutF)) {
+            List<int[]> found = boxesFromProb(detOutF);
+            detPrepNs += t1 - t0; detNs += t2 - t1; detPostNs += System.nanoTime() - t2;
+            for (int[] b : found) {
                 if ((b[1] < TILE_EDGE && y > 0) || (b[3] > detH - TILE_EDGE && y + detH < rh)) continue;
                 boxes.add(new int[]{(int) (b[0] / sc), (int) ((b[1] + y) / sc), (int) (b[2] / sc), (int) ((b[3] + y) / sc)});
             }
@@ -181,6 +239,7 @@ final class Ocr implements AutoCloseable {
     }
 
     private Object[] recognize(int[] argb, int w, int cx, int cy, int cw, int ch) {
+        long t0 = System.nanoTime();
         int nw = Math.min(recW, Math.max(1, Math.round((float) cw * recH / ch)));
         int[] px = resize(argb, w, cx, cy, cw, ch, nw, recH);
         FloatBuffer in = recInF;
@@ -194,8 +253,10 @@ final class Ocr implements AutoCloseable {
             in.put(2 * plane + i, ((p >> 16) & 0xff) / 127.5f - 1f);
         }
         recIn.rewind(); recOut.rewind();
+        long t1 = System.nanoTime();
         rec.run(recIn, recOut);
         recRuns++;
+        recPrepNs += t1 - t0; recNs += System.nanoTime() - t1;
         FloatBuffer o = recOutF;
         StringBuilder s = new StringBuilder();
         float confSum = 0; int kept = 0, prev = 0;

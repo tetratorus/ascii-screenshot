@@ -31,9 +31,9 @@ The original service took a screenshot, ran OCR on it, and only then scheduled t
 next screenshot. With ~3 s OCR that gave one frame every ~4 s while claiming 1 fps.
 `CaptureService` now:
 
-- captures on a fixed 1 s clock on its own thread; OCR runs on a separate thread on
-  the newest changed frame, and any frame replaced before OCR reached it is logged as
-  `ocr_superseded_frame`;
+- captures on a fixed 1 s clock on its own thread and hands every changed frame, in
+  order, to a separate OCR thread (see "Incremental OCR" below). If OCR falls more than
+  4 frames behind, the oldest waiting frame is dropped and logged as `ocr_dropped_frame`;
 - logs `capture_ms`, `ocr_ms`, and `lag_ms` (capture to OCR result) separately;
 - logs a slot as `missed_slot: in_flight` while a screenshot request is outstanding,
   times requests out after 5 s (`SCREENSHOT_TIMEOUT`), drops late results of
@@ -76,6 +76,53 @@ Launcher 20 s, Chrome fixture 30 s (contains a counter that changes every second
 OCR is LiteRT on 4 CPU threads in an emulator. The earlier Samsung NPU profile (about
 6 ms per detector run, 4 ms per line) suggests real-phone OCR could run well under 1 s,
 but that has not been measured end to end on a phone.
+
+The run above is the first build (full-screen OCR on the newest frame). It was
+replaced by the incremental OCR below.
+
+## Incremental OCR (port of the macOS pipeline)
+
+`Pipeline.java` ports `macos/Sources/ascii-screen/Pipeline.swift`: keep the text already
+read, diff each frame against the previous one in 32 px tiles, and only read what changed.
+
+- **Change inside a line already read** (a counter, a clock): that line is re-recognised
+  directly; the detector does not run.
+- **Other changes**: the changed regions are grown until no cached line straddles an
+  edge, packed into one image as wide as the screen, and the detector runs once on it.
+  Padding is trimmed back off cached lines that the changed pixels don't touch, so a
+  scrollbar or caret beside text doesn't make that text be re-read.
+- **Scroll**: a vertical shift is found by matching row slices; cached lines move with the
+  page and only newly revealed rows (and anything that changed on top) are read.
+- **Full re-read** every 30 frames, when changes cover more than half the screen, or when
+  the screen size changes.
+- Every changed frame is read in order. Frames are only dropped when more than 4 are
+  waiting (each waiting frame is a ~10 MB copy), and every drop is logged.
+
+Each OCR log line now records `mode` (`full`, `regions`, `reread`, `scroll+...`),
+`rects`, `area_pct`, `scroll_dy`, `moved`, `backlog`, and a time breakdown `ms` =
+[resize, detector input, detector, detector postprocess, recogniser input, recogniser].
+
+Where the time goes on this emulator (from `ms`): the detector costs ~500 ms per pass and
+a full 1080x2424 screen needs two passes; each line costs ~60-80 ms to recognise. The
+detector has a fixed 1280x608 input (its upsampling layers have constant sizes, so LiteRT
+cannot resize it), so a small change still pays one ~500 ms pass unless it can skip the
+detector.
+
+| Workload | Before (full screen, newest frame) | After (incremental) |
+|---|---|---|
+| Chrome page with a counter ticking every second, 60 s | 28 of 70 changed frames read, median 2.9 s each | 60 of 60 read, 0 dropped; median 138 ms (counter re-read only), lag median 145 ms |
+| 10 fast swipes (~750 px each, 1.5 s apart), then launcher, Settings, back to Chrome | n/a | 41 of 46 changed frames read before the backlog limit, 8 dropped (logged); scroll frames read only the revealed ~32% of the screen in 1.5-3 s |
+
+([incremental-counter.jsonl](research/emulator-2026-11-10/incremental-counter.jsonl),
+[incremental-scroll-switch.jsonl](research/emulator-2026-11-10/incremental-scroll-switch.jsonl),
+[fixture-scroll.html](research/emulator-2026-11-10/fixture-scroll.html))
+
+On the emulator CPU, continuous fast scrolling and page loads (full re-reads at 2.5-5 s)
+still outrun 1 fps and cause drops. Text that is actually new has to go through the
+detector, so the remaining fix is a cheaper detector pass: a GPU/NPU delegate, or an
+extra detector exported at a smaller input size for small regions. Neither is done yet.
+The 30-frame full re-read (about 3.4 s here) builds a 3-frame backlog that clears within
+a few seconds.
 
 ## Testing gotcha
 

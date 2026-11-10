@@ -59,7 +59,7 @@ Bliss had custom kernel/root facilities and permissive SELinux; even if it had p
 
 **Current app uses LiteRT `Interpreter` with four CPU threads, no GPU/NPU delegate.** This is an emulator plumbing prototype, not compliance with the production accelerator requirement. Keep that distinction explicit. An emulator cannot prove Snapdragon NPU use, phone battery life, or OEM service reliability.
 
-The current loop is serial: screenshot -> OCR -> next screenshot, targeting a 1000 ms interval. If OCR is slow, capture will be slower than 1 fps. Consider a capture-only diagnostic mode first, or separating sampling from newest-frame-wins OCR, so emulator CPU speed is not mistaken for an accessibility API restriction. Log capture timestamps separately from OCR completion. Do not falsely report achieved 1 fps just because the timer is configured to 1000 ms.
+Fixed since: capture runs on its own 1 s clock and every changed frame is read in order through `Pipeline.java`, a port of the macOS incremental OCR pipeline (cached lines, dirty regions, scroll reuse). See `EMULATOR_RESULTS.md`.
 
 Other rough edges to inspect rather than assume fixed: cleanup/callback races when disabling or reconnecting, writer not closed in `onDestroy`, no receiver/exported log viewer, no boot receiver or foreground service/watchdog, sampled whole-frame hash rather than upstream tile diffs. Runtime exceptions go to Logcat; screenshot callback failures go to JSONL. No ASCII renderer, SQLite FTS, incremental-region OCR, or summaries have been ported into this Android prototype yet.
 

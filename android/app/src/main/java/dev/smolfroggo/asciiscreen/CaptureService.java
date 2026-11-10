@@ -26,13 +26,15 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Screenshot via the accessibility API on a fixed 1 s clock and append one JSON line per capture to
- * files/capture.jsonl. OCR runs on its own thread on the newest changed frame, so slow OCR shows up
- * as superseded frames instead of slowing the capture clock. Capture pauses while the display is off.
+ * files/capture.jsonl. Every changed frame is read, in order, on its own thread by {@link Pipeline}, which only
+ * re-reads what changed. If reading falls more than MAX_BACKLOG frames behind, the oldest waiting frame is dropped
+ * and logged. Capture pauses while the display is off.
  */
 public class CaptureService extends AccessibilityService {
     static final String TAG = "AsciiScreen";
@@ -41,16 +43,20 @@ public class CaptureService extends AccessibilityService {
     private static final long REQUEST_TIMEOUT_MS = 5000;
     /** The platform rejects requests closer than 333 ms apart with ERROR_TAKE_SCREENSHOT_INTERVAL_TIME_SHORT. */
     private static final long MIN_GAP_MS = 400;
+    /** Each waiting frame is a full-resolution copy (~10 MB at 1080x2424). */
+    private static final int MAX_BACKLOG = 4;
 
     private record Frame(long n, int[] px, int w, int h, long capturedAt) {}
 
     private HandlerThread captureThread, ocrThread;
     private Handler capture, ocrHandler;
     private Ocr ocr;
+    private Pipeline pipeline;
     private Writer log;
     private volatile String foregroundPackage = "?";
-    private final AtomicReference<Frame> pending = new AtomicReference<>();
-    private long lastHash, frames, nextAt, superseded, inFlightSince, lastRequestAt = -MIN_GAP_MS, requestId;
+    private final LinkedBlockingDeque<Frame> pending = new LinkedBlockingDeque<>();
+    private int[] lastPx;
+    private long frames, nextAt, dropped, inFlightSince, lastRequestAt = -MIN_GAP_MS, requestId;
     private boolean ticking, inFlight;
     private volatile boolean destroyed;
     private final Runnable tick = this::tick;
@@ -83,6 +89,7 @@ public class CaptureService extends AccessibilityService {
         ocrHandler.post(() -> {
             try {
                 ocr = new Ocr(this, 4);
+                pipeline = new Pipeline(ocr);
             } catch (IOException e) {
                 Log.e(TAG, "ocr init failed", e);
                 write(event("OCR_INIT_FAILED"));
@@ -174,20 +181,21 @@ public class CaptureService extends AccessibilityService {
     }
 
     private void captured(int[] px, int w, int h, long requestedAt) {
-        long hash = 1125899906842597L;
-        for (int i = 0; i < px.length; i += 7) hash = 31 * hash + px[i];
         long n = frames++;
         JSONObject j = base();
         put(j, "frame", n);
         put(j, "capture_ms", SystemClock.uptimeMillis() - requestedAt);
-        if (hash == lastHash) {
+        if (Arrays.equals(px, lastPx)) {
             put(j, "unchanged", true);
         } else {
-            lastHash = hash;
-            Frame old = pending.getAndSet(new Frame(n, px, w, h, SystemClock.uptimeMillis()));
-            if (old != null) {
-                superseded++;
-                put(j, "ocr_superseded_frame", old.n());
+            lastPx = px;
+            pending.addLast(new Frame(n, px, w, h, SystemClock.uptimeMillis()));
+            if (pending.size() > MAX_BACKLOG) {
+                Frame old = pending.pollFirst();
+                if (old != null) {
+                    dropped++;
+                    put(j, "ocr_dropped_frame", old.n());
+                }
             }
             ocrHandler.post(runOcr);
         }
@@ -195,12 +203,15 @@ public class CaptureService extends AccessibilityService {
     }
 
     private void runOcr() {
-        Frame f = pending.getAndSet(null);
-        if (f == null || ocr == null) return;
+        Frame f = pending.pollFirst();
+        if (f == null || pipeline == null) return;
         long t0 = SystemClock.uptimeMillis();
-        List<Ocr.Line> lines = ocr.run(f.px(), f.w(), f.h());
+        ocr.resetStats();
+        boolean changed = pipeline.process(f.px(), f.w(), f.h());
         long done = SystemClock.uptimeMillis();
         if (destroyed) return;
+        if (!changed) return;
+        List<Ocr.Line> lines = pipeline.lines();
         JSONArray arr = new JSONArray();
         for (Ocr.Line l : lines) {
             JSONObject o = new JSONObject();
@@ -210,10 +221,22 @@ public class CaptureService extends AccessibilityService {
         }
         JSONObject j = base();
         put(j, "ocr_frame", f.n());
+        put(j, "mode", pipeline.mode);
+        put(j, "regions", pipeline.regions);
+        put(j, "rereads", pipeline.rereads);
+        JSONArray rects = new JSONArray();
+        for (int[] r : pipeline.lastRects) rects.put(new JSONArray().put(r[0]).put(r[1]).put(r[2]).put(r[3]));
+        put(j, "rects", rects);
+        put(j, "scroll_dy", pipeline.scrollDy);
+        put(j, "moved", pipeline.moved);
+        put(j, "area_pct", Math.round(pipeline.areaPct * 10) / 10.0);
+        put(j, "backlog", pending.size());
         put(j, "ocr_ms", done - t0);
         put(j, "lag_ms", done - f.capturedAt());
         put(j, "det_runs", ocr.detRuns);
         put(j, "rec_runs", ocr.recRuns);
+        put(j, "ms", new JSONArray().put(ocr.resizeNs / 1000000).put(ocr.detPrepNs / 1000000).put(ocr.detNs / 1000000)
+                .put(ocr.detPostNs / 1000000).put(ocr.recPrepNs / 1000000).put(ocr.recNs / 1000000));
         put(j, "lines", arr);
         write(j);
     }
@@ -260,12 +283,12 @@ public class CaptureService extends AccessibilityService {
             unregisterReceiver(screenEvents);
             JSONObject j = event("SERVICE_DESTROYED");
             put(j, "frames", frames);
-            put(j, "ocr_superseded", superseded);
+            put(j, "ocr_dropped", dropped);
             write(j);
             capture.post(this::stopTicking);
             captureThread.quitSafely();
             // An OCR pass already running cannot be interrupted; its result is discarded and resources close after it.
-            pending.set(null);
+            pending.clear();
             ocrHandler.post(() -> {
                 if (ocr != null) ocr.close();
                 closeLog();
