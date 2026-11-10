@@ -17,6 +17,9 @@ Usage: ascii-screen [options]            live ASCII view of the screen, updated 
                                          when matching text was on screen, newest first (default: all history,
                                          20 results). Plain words match in any order and as word starts; also
                                          SQLite FTS5 syntax: invo*, a OR b, NOT, "exact phrase"
+       ascii-screen --delete --from <time> --to <time>
+                                         remove saved frames in that range as if the screen hadn't changed:
+                                         the frame before it stays up until the first one after it
 
 Options:
   --width <n>          Grid width in columns (default 240; --at/--play: your terminal's width)
@@ -71,6 +74,7 @@ while let a = args.next() {
   case "--at": mode = "at"; atTime = value(a)
   case "--play": mode = "play"
   case "--search": mode = "search"; query = value(a)
+  case "--delete": mode = "delete"
   case "--json": json = true
   case "--limit": limit = Int(value(a)).flatMap { $0 > 0 ? $0 : nil } ?? limit
   case "--from": fromTime = value(a)
@@ -147,6 +151,26 @@ case "search":
   for m in matches where !json {
     let span = (m.end > m.start ? " to \(History.stamp(m.end))" : "") + (m.frames > 1 ? "  (\(m.frames) frames)" : "")
     print("\(History.stamp(m.start))\(span)\n    \(m.line.prefix(160))")
+  }
+case "delete":
+  guard let fromTime, let toTime else { invalid("--delete needs both --from and --to") }
+  let start = Date(), from = time(fromTime, start), to = min(time(toTime, start), start)
+  guard from <= to else { invalid("--from must be before --to") }
+  let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
+  let history = History(dir: URL(fileURLWithPath: dir))
+  // A running recorder keeps frames in memory for up to 10 s (plus timer leeway); let recent ones reach disk.
+  let wait = to.timeIntervalSince(Date()) + 13
+  if wait > 0 {
+    log("waiting \(Int(wait.rounded(.up)))s for the recorder to save frames up to \(History.stamp(to))")
+    Thread.sleep(forTimeInterval: wait)
+  }
+  let n: Int
+  do { n = try history.delete(from: from, to: to) } catch { log("delete failed: \(error.localizedDescription)"); exit(2) }
+  guard n > 0 else { log("no saved frames between \(History.stamp(from)) and \(History.stamp(to)) in \(dir)"); exit(1) }
+  print("deleted \(n) frame\(n == 1 ? "" : "s") saved between \(History.stamp(from)) and \(History.stamp(to))")
+  var around = history.frames(from: to, to: Date())
+  if let held = around.next(), held.0 < from {
+    print("the frame saved at \(History.stamp(held.0)) now stays on screen until " + (around.next().map { History.stamp($0.0) } ?? "the next change"))
   }
 case "play":
   let from = time(fromTime, Calendar.current.startOfDay(for: Date())), to = time(toTime, Date())
