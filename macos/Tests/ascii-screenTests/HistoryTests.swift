@@ -245,6 +245,50 @@ final class HistoryTests: XCTestCase {
     XCTAssertEqual(try History(dir: dir).search("appended", from: .distantPast, to: .distantFuture, limit: 5).count, 1)
   }
 
+  func testDeleteLeavesHistoryAsIfTheScreenHadNotChanged() throws {
+    let t0 = Date(timeIntervalSince1970: 1_800_000_000)
+    var t = t0
+    let h = History(dir: dir, flushEvery: 300, now: { t })
+    try h.record("before"); t += 10; try h.record("zanzibarcode one"); try h.flush()
+    t += 10; try h.record("zanzibarcode two"); try h.flush()
+    t += 10; try h.record("after"); try h.flush()
+    let file = dir.appendingPathComponent("\(History.day(t0)).txt.gz")
+    let original = try Data(contentsOf: file)
+    var members = GzipMembers(data: original), lastStart = 0
+    while let (offset, _) = members.next() { lastStart = offset }
+    func indexBytes() -> Data {
+      ["index.sqlite", "index.sqlite-wal"].compactMap { try? Data(contentsOf: dir.appendingPathComponent($0)) }.reduce(Data(), +)
+    }
+    XCTAssertEqual(try h.search("zanzibarcode", from: .distantPast, to: .distantFuture, limit: 5).count, 1)
+    XCTAssertNotNil(indexBytes().range(of: Data("zanzibarcode".utf8)))
+
+    XCTAssertEqual(try h.delete(from: t0 + 5, to: t0 + 25), 2)
+
+    let data = try Data(contentsOf: file)
+    XCTAssertEqual(History.records(try gunzip(file)).map(\.1), ["before", "after"])
+    XCTAssertTrue(data.suffix(original.count - lastStart) == original[lastStart...], "untouched members are kept byte for byte")
+    XCTAssertEqual(h.frame(at: t0 + 20)?.1, "before", "the frame before the range stays on screen")
+    XCTAssertEqual(Array(h.frames(from: t0, to: t0 + 40)).map(\.1), ["before", "after"])
+    XCTAssertTrue(try h.search("zanzibarcode", from: .distantPast, to: .distantFuture, limit: 5).isEmpty)
+    XCTAssertEqual(try History(dir: dir).search("after", from: .distantPast, to: .distantFuture, limit: 5).count, 1)
+    XCTAssertNil(indexBytes().range(of: Data("zanzibarcode".utf8)), "deleted words are gone from the index file")
+    XCTAssertFalse(try FileManager.default.contentsOfDirectory(atPath: dir.path).contains { $0.hasSuffix(".deleting") })
+    XCTAssertEqual(try h.delete(from: t0 + 5, to: t0 + 25), 0)
+  }
+
+  func testDeletingAWholeDayRemovesItsFileAndRecordingContinues() throws {
+    var t = Date(timeIntervalSince1970: 1_800_000_000)
+    let h = History(dir: dir, flushEvery: 300, now: { t })
+    try h.record("only frame"); try h.flush()
+    let file = dir.appendingPathComponent("\(History.day(t)).txt.gz")
+    XCTAssertEqual(try h.delete(from: t - 1, to: t + 1), 1)
+    XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+    XCTAssertTrue(try h.search("only", from: .distantPast, to: .distantFuture, limit: 5).isEmpty)
+    t += 5; try h.record("later frame"); try h.flush()
+    XCTAssertEqual(History.records(try gunzip(file)).map(\.1), ["later frame"])
+    XCTAssertEqual(try History(dir: dir).search("later", from: .distantPast, to: .distantFuture, limit: 5).count, 1)
+  }
+
   func testPlaybackReadsLazilyAndKeepsABoundedWindow() {
     var pulled = 0
     let t = Date(timeIntervalSince1970: 0)

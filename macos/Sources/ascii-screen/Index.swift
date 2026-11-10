@@ -43,13 +43,30 @@ final class HistoryIndex {
     for day in days.sorted() { try catchUp(day: day) }
   }
 
-  func catchUp(day: String) throws {
+  func catchUp(day: String) throws { try withHistoryLock(dir) { try index(day: day, fresh: false) } }
+
+  /// Index `day` again from scratch, e.g. after its file was rewritten. The caller holds the history lock.
+  func reindex(day: String) throws { try index(day: day, fresh: true) }
+
+  /// Compact the word index and the database file so words of deleted frames are gone from both, not just
+  /// marked deleted or left on free pages and in the write-ahead log.
+  func scrub() throws {
+    try exec("PRAGMA secure_delete=ON; INSERT INTO words(words) VALUES('optimize');")
+    try exec("VACUUM")
+    try exec("PRAGMA wal_checkpoint(TRUNCATE)")
+  }
+
+  private func index(day: String, fresh: Bool) throws {
     let url = dir.appendingPathComponent("\(day).txt.gz")
-    guard let data = try? Data(contentsOf: url, options: .alwaysMapped) else { return }
+    let data = try? Data(contentsOf: url, options: .alwaysMapped)
     try exec("BEGIN IMMEDIATE")
     do {
-      var start = try query("SELECT indexed FROM files WHERE day = ?", [day]) { $0.int(0) }.first ?? 0
-      if start > data.count { try drop(day); start = 0 } // file was replaced
+      guard let data else {
+        if fresh { try drop(day) }
+        try exec("COMMIT"); return
+      }
+      var start = fresh ? 0 : try query("SELECT indexed FROM files WHERE day = ?", [day]) { $0.int(0) }.first ?? 0
+      if fresh || start > data.count { try drop(day); start = 0 } // file was replaced
       guard start < data.count else { try exec("COMMIT"); return }
       var members = GzipMembers(data: data, from: start)
       while let (offset, member) = members.next() {

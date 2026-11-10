@@ -63,15 +63,16 @@ final class History {
                                               attributes: [.posixPermissions: 0o700])
       let url = dir.appendingPathComponent("\(bufferDay).txt.gz")
       let member = try gzip(Data(buffer.utf8))
-      if !FileManager.default.fileExists(atPath: url.path) {
-        FileManager.default.createFile(atPath: url.path, contents: nil, attributes: [.posixPermissions: 0o600])
-        prune()
+      try withHistoryLock(dir) {
+        if !FileManager.default.fileExists(atPath: url.path) {
+          FileManager.default.createFile(atPath: url.path, contents: nil, attributes: [.posixPermissions: 0o600])
+          prune()
+        }
+        let fh = try FileHandle(forWritingTo: url)
+        defer { try? fh.close() }
+        try fh.seekToEnd()
+        try fh.write(contentsOf: member)
       }
-      let fh = try FileHandle(forWritingTo: url)
-      defer { try? fh.close() }
-      try fh.seekToEnd()
-      try fh.write(contentsOf: member)
-      try? fh.close()
       do { try index?.catchUp(day: bufferDay) } catch { log("cannot index history: \(error.localizedDescription)") }
     } catch {
       // Disk full or unwritable: retry with later frames, but don't let memory grow without bound.
@@ -95,6 +96,55 @@ final class History {
       try? FileManager.default.removeItem(at: dir.appendingPathComponent(f))
       try? index?.drop(String(f.prefix(10)))
     }
+  }
+
+  /// Remove every frame saved from `from` through `to` (inclusive), leaving history as if the screen had not
+  /// changed: only changed frames are ever saved, so the frame on screen at `from` simply stays up until the
+  /// first frame after `to`. Gzip members without such frames are kept byte for byte; the others are
+  /// recompressed without them, and the day file is swapped in atomically. The day is reindexed and the
+  /// index compacted so removed words leave no trace in it. Holds the history lock so a running recorder
+  /// can't append to the old file meanwhile. Frames still buffered in a recorder's memory aren't touched.
+  /// Returns how many frames were removed.
+  @discardableResult
+  func delete(from: Date, to: Date) throws -> Int {
+    guard let index else { throw NSError(domain: "ascii-screen", code: 5, userInfo: [NSLocalizedDescriptionKey: "no search index"]) }
+    guard from <= to else { return 0 }
+    try index.catchUp()
+    let cal = Calendar.current
+    var removed = 0, day = cal.startOfDay(for: from)
+    while day <= to {
+      let name = History.day(day)
+      let url = dir.appendingPathComponent("\(name).txt.gz")
+      day = cal.date(byAdding: .day, value: 1, to: day)!
+      removed += try withHistoryLock(dir) {
+        guard let data = try? Data(contentsOf: url) else { return 0 }
+        var members = GzipMembers(data: data), out = Data(), n = 0
+        while let (offset, member) = members.next() {
+          let recs = History.records(String(decoding: member, as: UTF8.self))
+          let kept = recs.filter { $0.0 < from || $0.0 > to }
+          n += recs.count - kept.count
+          if kept.count == recs.count { out += data[offset..<members.goodEnd]; continue }
+          if kept.isEmpty { continue }
+          out += try gzip(Data(kept.map { History.marker + History.stamp($0.0) + "\n" + $0.1 + "\n" }.joined().utf8))
+        }
+        guard n > 0 else { return 0 }
+        if out.isEmpty {
+          try FileManager.default.removeItem(at: url)
+        } else {
+          let tmp = dir.appendingPathComponent(".\(name).deleting")
+          try? FileManager.default.removeItem(at: tmp)
+          guard FileManager.default.createFile(atPath: tmp.path, contents: out, attributes: [.posixPermissions: 0o600]),
+                rename(tmp.path, url.path) == 0 else {
+            try? FileManager.default.removeItem(at: tmp)
+            throw NSError(domain: "ascii-screen", code: 4, userInfo: [NSLocalizedDescriptionKey: "cannot rewrite \(url.path)"])
+          }
+        }
+        try index.reindex(day: name)
+        return n
+      }
+    }
+    if removed > 0 { try index.scrub() }
+    return removed
   }
 
   /// The frame that was on screen at `time`: the last record at or before it.
@@ -294,6 +344,19 @@ func parseAgo(_ s: String) -> TimeInterval? {
     rest = rest.dropFirst(digits.count + 1)
   }
   return total
+}
+
+/// Run `body` holding an exclusive lock on `<dir>/.lock`, shared by every process that writes or indexes
+/// the day files (the recorder appending, `--delete` rewriting). Not reentrant: don't nest it.
+func withHistoryLock<T>(_ dir: URL, _ body: () throws -> T) throws -> T {
+  try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+  let fd = open(dir.appendingPathComponent(".lock").path, O_RDWR | O_CREAT, 0o600)
+  guard fd >= 0 else {
+    throw NSError(domain: "ascii-screen", code: 4, userInfo: [NSLocalizedDescriptionKey: "cannot lock \(dir.path): \(String(cString: strerror(errno)))"])
+  }
+  defer { close(fd) }
+  while flock(fd, LOCK_EX) != 0 && errno == EINTR {}
+  return try body()
 }
 
 /// One complete gzip member (zlib, windowBits 31 = gzip header and CRC32 included).
