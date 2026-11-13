@@ -53,6 +53,33 @@ final class PipelineTests: XCTestCase {
     XCTAssertEqual(p.obs.map(\.text), ["footer"])
   }
 
+  func testRereadTextKeepsItsPlaceWhenVisionNudgesTheBox() {
+    let first = Obs(text: "Inbox", x: 0.5, y: 0.5, w: 0.1, h: 0.04)
+    let nudged = Obs(text: "Inb0x", x: 0.5 + 3.0 / 800, y: 0.5 - 1.0 / 600, w: 0.1 + 5.0 / 800, h: 0.04)
+    let moved = Obs(text: "Inbox", x: 0.7, y: 0.5, w: 0.1, h: 0.04)
+    var reads = [[first], [nudged], [nudged], [moved]]
+    var opts = Options()
+    opts.fullEvery = 1
+    let p = Pipeline(opts) { _, rois in let r = reads.removeFirst(); return rois.map { _ in r } }
+    p.process(frame())
+    p.process(frame([(440, 290)]))
+    XCTAssertEqual(p.obs, [Obs(text: "Inb0x", x: 0.5, y: 0.5, w: 0.1, h: 0.04)])
+    p.process(frame([(450, 290)]))
+    XCTAssertEqual(p.obs, [Obs(text: "Inb0x", x: 0.5, y: 0.5, w: 0.1, h: 0.04)])
+    p.process(frame([(460, 290)]))
+    XCTAssertEqual(p.obs, [moved])
+  }
+
+  func testLongerRereadKeepsLeftEdgeButTakesNewRightEdge() {
+    let old = Obs(text: "12:41", x: 0.5, y: 0.5, w: 0.05, h: 0.04)
+    let new = Obs(text: "12:41 PM", x: 0.5 + 2.0 / 800, y: 0.5, w: 0.08, h: 0.04)
+    let kept = keepPlaces([new], [old], 800, 600)
+    XCTAssertEqual(kept.count, 1)
+    XCTAssertEqual(kept[0].x, 0.5)
+    XCTAssertEqual(kept[0].x + kept[0].w, new.x + new.w, accuracy: 1e-12)
+    XCTAssertEqual(kept[0].text, "12:41 PM")
+  }
+
   func testRegionsGrowToCoverWholeCachedTextBoxesAndMerge() {
     let words = [
       Obs(text: "first", x: 0.15, y: 0.60, w: 0.2, h: 0.08),

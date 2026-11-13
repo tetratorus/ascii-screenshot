@@ -91,11 +91,13 @@ final class Pipeline {
     if let rects = regions {
       let rois = rects.map { CGRect(x: $0.minX / W, y: 1 - $0.maxY / H, width: $0.width / W, height: $0.height / H) }
       let fresh = opts.atlas && rects.count > 1 ? ocr.recognizeAtlas(pb, rects, using: recognize) : Array(recognize(pb, rois).joined())
-      obs.removeAll { o in rois.contains { $0.intersects(CGRect(x: o.x, y: o.y, width: o.w, height: o.h)) } }
-      obs += fresh
+      let hit = { (o: Obs) in rois.contains { $0.intersects(CGRect(x: o.x, y: o.y, width: o.w, height: o.h)) } }
+      let gone = obs.filter(hit)
+      obs.removeAll(where: hit)
+      obs += keepPlaces(fresh, gone, W, H)
       sinceFull += 1
     } else {
-      obs = recognize(pb, [CGRect(x: 0, y: 0, width: 1, height: 1)])[0]
+      obs = keepPlaces(recognize(pb, [CGRect(x: 0, y: 0, width: 1, height: 1)])[0], obs, W, H)
       sinceFull = 0
     }
     if opts.stats {
@@ -277,6 +279,22 @@ func cpuTime() -> Double {
 func log(_ s: String) { FileHandle.standardError.write((s + "\n").data(using: .utf8)!) }
 
 /// Decode an image file into a BGRA pixel buffer without colour conversion.
+/// Vision places unchanged text a few pixels differently depending on the area it reads, which can flip it
+/// between neighbouring columns. Keep the earlier box edges that barely moved; the text is the new read.
+func keepPlaces(_ fresh: [Obs], _ old: [Obs], _ W: Double, _ H: Double) -> [Obs] {
+  var pool = old
+  return fresh.map { o in
+    let px = max(8, o.h * H / 2), tx = px / W, ty = px / H
+    guard let i = pool.firstIndex(where: {
+      abs($0.x - o.x) <= tx && abs($0.y - o.y) <= ty && abs($0.y + $0.h - o.y - o.h) <= ty
+    }) else { return o }
+    var kept = pool.remove(at: i)
+    if abs(kept.x + kept.w - o.x - o.w) > tx { kept.w = o.x + o.w - kept.x }
+    kept.text = o.text
+    return kept
+  }
+}
+
 func loadImage(_ path: String) -> CVPixelBuffer? {
   guard let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil),
         let img = CGImageSourceCreateImageAtIndex(src, 0, nil) else { return nil }
