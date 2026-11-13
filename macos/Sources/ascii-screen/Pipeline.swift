@@ -32,6 +32,9 @@ final class Pipeline {
   private var sinceFull = 0
   private(set) var imageSize = (0, 0)
   private var reference: [UInt8] = []
+  /// Per tile: pixels changed since that area was last read.
+  private var stale: [Bool] = [], staleCols = 0
+  private var changedTiles: [Bool] = []
   static let tile = 32
 
   init(_ opts: Options, recognize: ((CVPixelBuffer, [CGRect]) -> [[Obs]])? = nil) {
@@ -75,6 +78,11 @@ final class Pipeline {
         return false
       }
       if sinceFull < opts.fullEvery { regions = dirty }
+      if let dy = scrolled { scrollStale(dy, h) }
+      for i in stale.indices where changedTiles[i] { stale[i] = true }
+    } else {
+      staleCols = (w + Pipeline.tile - 1) / Pipeline.tile
+      stale = [Bool](repeating: true, count: staleCols * ((h + Pipeline.tile - 1) / Pipeline.tile))
     }
     prev = pb
     imageSize = (w, h)
@@ -94,10 +102,12 @@ final class Pipeline {
       let hit = { (o: Obs) in rois.contains { $0.intersects(CGRect(x: o.x, y: o.y, width: o.w, height: o.h)) } }
       let gone = obs.filter(hit)
       obs.removeAll(where: hit)
-      obs += keepPlaces(fresh, gone, W, H)
+      obs += settle(fresh, gone, W, H)
+      clearStale(rects)
       sinceFull += 1
     } else {
-      obs = keepPlaces(recognize(pb, [CGRect(x: 0, y: 0, width: 1, height: 1)])[0], obs, W, H)
+      obs = settle(recognize(pb, [CGRect(x: 0, y: 0, width: 1, height: 1)])[0], obs, W, H)
+      stale = stale.map { _ in false }
       sinceFull = 0
     }
     if opts.stats {
@@ -128,6 +138,7 @@ final class Pipeline {
         if memcmp(ra + x0 * 4, rbp + x0 * 4, n * 4) != 0 { dirty[ty * cols + tx] = true }
       }
     }
+    changedTiles = dirty
     // 8-connected components of dirty tiles.
     var seen = dirty.map { !$0 }, rects: [CGRect] = []
     for start in 0..<dirty.count where !seen[start] {
@@ -145,6 +156,57 @@ final class Pipeline {
     }
     let bounds = CGRect(x: 0, y: 0, width: a.width, height: a.height)
     return rects.map { $0.intersection(bounds) }
+  }
+
+  /// Vision places the same text a few pixels differently depending on the area it reads, and sometimes reads it
+  /// slightly differently, which made unchanged text hop between columns. Text whose pixels haven't changed since
+  /// it was read stays exactly as it was. Changed text takes the new read, but an end whose pixels didn't change
+  /// keeps its place.
+  private func settle(_ fresh: [Obs], _ old: [Obs], _ W: Double, _ H: Double) -> [Obs] {
+    let px = { (o: Obs) in CGRect(x: o.x * W, y: (1 - o.y - o.h) * H, width: o.w * W, height: o.h * H) }
+    let still = { (r: CGRect) in !self.touchesStale(r) }
+    func overlaps(_ a: Obs, _ b: Obs) -> Bool {
+      let i = px(a).intersection(px(b))
+      return !i.isNull && i.width * i.height > 0.3 * min(a.w * a.h, b.w * b.h) * W * H
+    }
+    let changedFresh = fresh.filter { !still(px($0)) }
+    let kept = old.filter { o in still(px(o)) && !changedFresh.contains { overlaps($0, o) } }
+    let found = fresh.filter { f in still(px(f)) && !kept.contains { overlaps(f, $0) } }
+    return kept + keepPlaces(changedFresh, old.filter { !still(px($0)) }, W, H, still: still) + found
+  }
+
+  private func touchesStale(_ r: CGRect) -> Bool {
+    let T = CGFloat(Pipeline.tile), rows = staleCols > 0 ? stale.count / staleCols : 0
+    let r = r.insetBy(dx: -2, dy: -2)
+    guard rows > 0, [r.minX, r.minY, r.maxX, r.maxY].allSatisfy(\.isFinite) else { return true }
+    let x0 = max(0, Int(r.minX / T)), x1 = min(staleCols - 1, Int(r.maxX / T))
+    let y0 = max(0, Int(r.minY / T)), y1 = min(rows - 1, Int(r.maxY / T))
+    guard x0 <= x1, y0 <= y1 else { return true }
+    for y in y0...y1 { for x in x0...x1 where stale[y * staleCols + x] { return true } }
+    return false
+  }
+
+  /// Tiles wholly inside the areas just read are up to date.
+  private func clearStale(_ rects: [CGRect]) {
+    let T = Pipeline.tile
+    for r in rects {
+      let x0 = Int((r.minX / CGFloat(T)).rounded(.up)), x1 = Int((r.maxX / CGFloat(T)).rounded(.down))
+      let y0 = Int((r.minY / CGFloat(T)).rounded(.up)), y1 = Int((r.maxY / CGFloat(T)).rounded(.down))
+      for y in max(0, y0)..<max(max(0, y0), min(stale.count / max(staleCols, 1), y1)) {
+        for x in max(0, x0)..<max(max(0, x0), min(staleCols, x1)) { stale[y * staleCols + x] = false }
+      }
+    }
+  }
+
+  /// After a scroll by dy the page moved under the tiles; text moved with it keeps its own staleness.
+  private func scrollStale(_ dy: Int, _ h: Int) {
+    let T = Pipeline.tile, rows = stale.count / staleCols, old = stale
+    for ty in 0..<rows {
+      let a = (ty * T + dy), b = (ty * T + T - 1 + dy)
+      for tx in 0..<staleCols {
+        stale[ty * staleCols + tx] = a < 0 || b >= h || old[(a / T) * staleCols + tx] || old[min(rows - 1, b / T) * staleCols + tx]
+      }
+    }
   }
 
   /// Vertical scroll between frames: the shift dy such that new row y shows old row y+dy, found by matching
@@ -279,19 +341,23 @@ func cpuTime() -> Double {
 func log(_ s: String) { FileHandle.standardError.write((s + "\n").data(using: .utf8)!) }
 
 /// Decode an image file into a BGRA pixel buffer without colour conversion.
-/// Vision places unchanged text a few pixels differently depending on the area it reads, which can flip it
-/// between neighbouring columns. Keep the earlier box edges that barely moved; the text is the new read.
-func keepPlaces(_ fresh: [Obs], _ old: [Obs], _ W: Double, _ H: Double) -> [Obs] {
+/// Pairs each new read with the earlier box it barely moved from, and keeps that box's left edge (and line) or
+/// right end when `still` says the pixels there didn't change. The text is the new read.
+func keepPlaces(_ fresh: [Obs], _ old: [Obs], _ W: Double, _ H: Double,
+                still: (CGRect) -> Bool = { _ in true }) -> [Obs] {
   var pool = old
   return fresh.map { o in
     let px = max(8, o.h * H / 2), tx = px / W, ty = px / H
     guard let i = pool.firstIndex(where: {
       abs($0.x - o.x) <= tx && abs($0.y - o.y) <= ty && abs($0.y + $0.h - o.y - o.h) <= ty
     }) else { return o }
-    var kept = pool.remove(at: i)
-    if abs(kept.x + kept.w - o.x - o.w) > tx { kept.w = o.x + o.w - kept.x }
-    kept.text = o.text
-    return kept
+    let b = pool.remove(at: i)
+    let bx = b.x * W, by = (1 - b.y - b.h) * H, bw = b.w * W, end = min(bw, Double(Pipeline.tile))
+    var k = o
+    if still(CGRect(x: bx, y: by, width: end, height: b.h * H)) { k.x = b.x; k.y = b.y; k.h = b.h }
+    let rightStill = still(CGRect(x: bx + bw - end, y: by, width: end, height: b.h * H))
+    k.w = (rightStill && abs(b.x + b.w - o.x - o.w) <= tx ? b.x + b.w : o.x + o.w) - k.x
+    return k
   }
 }
 
