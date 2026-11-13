@@ -53,6 +53,53 @@ final class PipelineTests: XCTestCase {
     XCTAssertEqual(p.obs.map(\.text), ["footer"])
   }
 
+  func testUnchangedTextKeepsItsBoxAndReadWhenVisionNudgesIt() {
+    let first = Obs(text: "Inbox", x: 0.5, y: 0.5, w: 0.1, h: 0.04) // pixels 400-480 x 276-300
+    let nudged = Obs(text: "Inb0x", x: 0.5 + 3.0 / 800, y: 0.5 - 1.0 / 600, w: 0.1 + 5.0 / 800, h: 0.04)
+    let moved = Obs(text: "Inbox", x: 0.7, y: 0.5, w: 0.1, h: 0.04)
+    var reads = [[first], [nudged], [nudged], [moved]]
+    var opts = Options()
+    opts.fullEvery = 1
+    let p = Pipeline(opts) { _, rois in
+      let r = reads.removeFirst()
+      return rois.map { _ in r }
+    }
+    p.process(frame())
+    p.process(frame([(520, 290)])) // a change next to the text: the area read includes it
+    XCTAssertEqual(p.obs, [first])
+    p.process(frame([(525, 290)])) // full read
+    XCTAssertEqual(p.obs, [first])
+    p.process(frame([(440, 290)])) // its own pixels changed: take the new read
+    XCTAssertEqual(p.obs, [moved])
+  }
+
+  func testChangedTextKeepsTheEndWhosePixelsDidNotChange() {
+    let old = Obs(text: "12:41", x: 0.5, y: 0.5, w: 0.1, h: 0.04) // pixels 400-480
+    let new = Obs(text: "12:41 PM", x: 0.5 + 2.0 / 800, y: 0.5 + 1.0 / 600, w: 0.12, h: 0.04)
+    var reads = [[old], [new]]
+    let p = Pipeline(Options()) { _, rois in
+      let r = reads.removeFirst()
+      return rois.map { _ in r }
+    }
+    p.process(frame())
+    p.process(frame([(470, 290)]))
+    XCTAssertEqual(p.obs.count, 1)
+    XCTAssertEqual(p.obs[0].x, 0.5)
+    XCTAssertEqual(p.obs[0].y, 0.5)
+    XCTAssertEqual(p.obs[0].x + p.obs[0].w, new.x + new.w, accuracy: 1e-12)
+    XCTAssertEqual(p.obs[0].text, "12:41 PM")
+  }
+
+  func testLongerRereadKeepsLeftEdgeButTakesNewRightEdge() {
+    let old = Obs(text: "12:41", x: 0.5, y: 0.5, w: 0.05, h: 0.04)
+    let new = Obs(text: "12:41 PM", x: 0.5 + 2.0 / 800, y: 0.5, w: 0.08, h: 0.04)
+    let kept = keepPlaces([new], [old], 800, 600)
+    XCTAssertEqual(kept.count, 1)
+    XCTAssertEqual(kept[0].x, 0.5)
+    XCTAssertEqual(kept[0].x + kept[0].w, new.x + new.w, accuracy: 1e-12)
+    XCTAssertEqual(kept[0].text, "12:41 PM")
+  }
+
   func testRegionsGrowToCoverWholeCachedTextBoxesAndMerge() {
     let words = [
       Obs(text: "first", x: 0.15, y: 0.60, w: 0.2, h: 0.08),
