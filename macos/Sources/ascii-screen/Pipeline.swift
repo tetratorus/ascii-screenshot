@@ -73,7 +73,8 @@ final class Pipeline {
         dirty = dirtyRegions(old, bm)
       }
       CVPixelBufferUnlockBaseAddress(prev, .readOnly)
-      if dirty.isEmpty {
+      // A scroll that reveals nothing new still moved the cached text, so this frame must become `prev`.
+      if dirty.isEmpty && scrolled == nil {
         if opts.stats { log(String(format: "frame %dx%d unchanged; OCR skipped cpu=%.2fms", w, h, (cpuTime() - t0) * 1000)) }
         return false
       }
@@ -96,7 +97,9 @@ final class Pipeline {
       let grown = expandOverText(rects, W, H)
       regions = grown.flatMap { $0.reduce(0, { $0 + $1.width * $1.height }) > 0.5 * W * H ? nil : $0 }
     }
-    if let rects = regions {
+    if let rects = regions, rects.isEmpty {
+      sinceFull += 1
+    } else if let rects = regions {
       let rois = rects.map { CGRect(x: $0.minX / W, y: 1 - $0.maxY / H, width: $0.width / W, height: $0.height / H) }
       let fresh = opts.atlas && rects.count > 1 ? ocr.recognizeAtlas(pb, rects, using: recognize) : Array(recognize(pb, rois).joined())
       let hit = { (o: Obs) in rois.contains { $0.intersects(CGRect(x: o.x, y: o.y, width: o.w, height: o.h)) } }
