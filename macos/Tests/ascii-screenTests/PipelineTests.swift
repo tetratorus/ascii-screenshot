@@ -188,7 +188,8 @@ final class PipelineTests: XCTestCase {
   }
 
   /// A page of "text": rows of pseudo-random pixels from document row `top + y`, with a fixed header on top.
-  private func page(scrolledBy top: Int, width: Int = 800, height: Int = 600, header: Int = 60) -> CVPixelBuffer {
+  private func page(scrolledBy top: Int, width: Int = 800, height: Int = 600, header: Int = 60,
+                    blankFrom: Int = .max) -> CVPixelBuffer {
     var pb: CVPixelBuffer?
     XCTAssertEqual(CVPixelBufferCreate(nil, width, height, kCVPixelFormatType_32BGRA, nil, &pb), kCVReturnSuccess)
     let buffer = pb!
@@ -200,7 +201,7 @@ final class PipelineTests: XCTestCase {
       for x in 0..<width {
         var v = UInt32(truncatingIfNeeded: doc &* 73_856_093 ^ x &* 19_349_663)
         v ^= v >> 13; v = v &* 0x5bd1e995; v ^= v >> 15
-        memset(base + y * stride + x * 4, Int32(v & 0xFF), 4)
+        memset(base + y * stride + x * 4, doc >= blankFrom ? 255 : Int32(v & 0xFF), 4)
       }
     }
     CVPixelBufferUnlockBaseAddress(buffer, [])
@@ -225,6 +226,22 @@ final class PipelineTests: XCTestCase {
     XCTAssertTrue(requests[1].allSatisfy { $0.minY < 0.2 }, "the revealed strip is at the bottom")
     XCTAssertEqual(p.obs.map(\.text), ["kept"])
     XCTAssertEqual(p.obs[0].y, line.y + 40 / H, accuracy: 1e-9)
+  }
+
+  func testScrollThatRevealsNothingMovesTextOnce() {
+    let H = 600.0
+    let line = Obs(text: "kept", x: 0.1, y: 0.5, w: 0.3, h: 0.04)
+    var reads = 0
+    let p = Pipeline(Options()) { _, rois in
+      reads += 1
+      return reads == 1 ? [[line]] : rois.map { _ in [] }
+    }
+    p.process(page(scrolledBy: 0, blankFrom: 400))
+    XCTAssertTrue(p.process(page(scrolledBy: 7, blankFrom: 400)), "the text moved, so the output changed")
+    XCTAssertFalse(p.process(page(scrolledBy: 7, blankFrom: 400)), "same picture again")
+    XCTAssertEqual(reads, 1, "only blank page scrolled into view, so nothing to read")
+    XCTAssertEqual(p.obs.map(\.text), ["kept"])
+    XCTAssertEqual(p.obs[0].y, line.y + 7 / H, accuracy: 1e-9)
   }
 
   func testInPlaceChangeIsNotMistakenForScroll() {
