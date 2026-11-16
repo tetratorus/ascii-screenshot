@@ -11,26 +11,17 @@ final class Live: NSObject, SCStreamOutput, SCStreamDelegate {
   private let queue = DispatchQueue(label: "ascii-screen", qos: .utility)
   private var stream: SCStream?
   private var displayBounds = CGRect.zero
-  private let output: FrameOutput
   private var lastCursorCell: (Int, Int)?
-  private var lastSaved: (obs: [Obs], lines: [DLine])?
   private var timer: DispatchSourceTimer?
   private var running = false
   private var deliveredFrames = 0
-  let history: History?
+  private let sink: Sink
 
   init(_ opts: Options) {
     self.opts = opts
     pipeline = Pipeline(opts)
-    history = opts.history.map { History(dir: URL(fileURLWithPath: $0), keepDays: opts.keepDays) }
-    let tty = isatty(STDOUT_FILENO) != 0
-    output = FrameOutput { text in
-      if let out = opts.out {
-        try text.write(toFile: out, atomically: true, encoding: .utf8)
-      } else {
-        try FileHandle.standardOutput.write(contentsOf: Data(((tty ? "\u{1B}[H\u{1B}[2J" : "") + text + (tty ? "" : "\n\u{0C}\n")).utf8))
-      }
-    }
+    let history = opts.history.map { History(dir: URL(fileURLWithPath: $0), keepDays: opts.keepDays) }
+    sink = Sink(opts: opts, pipeline: pipeline, output: frameOutput(opts), history: history)
   }
 
   func start() async throws {
@@ -108,21 +99,11 @@ final class Live: NSObject, SCStreamOutput, SCStreamDelegate {
   private func emit() {
     let c = cursor()
     lastCursorCell = c.map { (jsRound(Double($0.x) * Double(opts.width)), jsRound(Double($0.y) * Double(pipeline.canvasHeight))) }
-    let frame = pipeline.frame(cursor: c)
-    let text = frame.render(columns: opts.width, rows: pipeline.canvasHeight)
-    let shown: Bool
-    do { shown = try output.emit(text) } catch {
-      log("cannot write ASCII output: \(error.localizedDescription)")
-      exit(1)
-    }
-    // Also save text changes too small to show at this grid: history can be drawn bigger later.
-    guard shown || lastSaved.map({ $0.obs != frame.obs || $0.lines != frame.lines }) ?? true else { return }
-    lastSaved = (frame.obs, frame.lines)
-    do { try history?.record(frame.encode()) } catch { log("cannot write history: \(error.localizedDescription)") }
+    sink.emit(cursor: c)
   }
 
   func flushHistory() {
-    do { try history?.flush() } catch { log("cannot write history: \(error.localizedDescription)") }
+    sink.flushHistory()
   }
 
   /// Stop capturing entirely while the screen is locked or asleep.
