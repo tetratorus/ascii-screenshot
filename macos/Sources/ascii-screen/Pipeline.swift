@@ -6,6 +6,7 @@ import ImageIO
 struct Options {
   var width = 240
   var height: Int?
+  var fit = false
   var interval = 1.0
   var scale = 1.0
   var fast = false
@@ -123,7 +124,7 @@ final class Pipeline {
     return true
   }
 
-  func render(cursor: CGPoint?) -> String { frame(cursor: cursor).render(columns: opts.width, rows: canvasHeight) }
+  func render(cursor: CGPoint?) -> String { frame(cursor: cursor).render(columns: opts.width, rows: canvasHeight, fit: opts.fit) }
 
   func frame(cursor: CGPoint?) -> Frame {
     Frame(width: imageSize.0, height: imageSize.1, obs: obs, lines: lines, cursor: cursor).quantized()

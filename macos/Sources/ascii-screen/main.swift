@@ -28,6 +28,7 @@ Options:
   --height <n>         Grid height in rows (default: keeps the screen's shape, at most 100;
                        --at/--play: your terminal's height). History keeps every text box and line at
                        its position, so saved frames can be shown again at any --width/--height
+  --fit               Preserve each frame's proportions within the grid (including orientation changes)
   --interval <s>       Minimum seconds between frames (default 1)
   --scale <f>          Capture scale relative to display points (default 1; 2 = Retina pixels)
   --fast               Faster, less accurate OCR
@@ -69,6 +70,7 @@ while let a = args.next() {
   switch a {
   case "--width": opts.width = Int(value(a)) ?? opts.width; gridGiven = true
   case "--height": opts.height = Int(value(a)); gridGiven = true
+  case "--fit": opts.fit = true
   case "--interval": opts.interval = Double(value(a)) ?? opts.interval
   case "--scale": opts.scale = Double(value(a)) ?? opts.scale
   case "--fast": opts.fast = true
@@ -189,7 +191,7 @@ case "at":
   }
   log("frame saved at \(History.stamp(when))")
   let (w, h) = showGrid(spare: 1)
-  print(History.display(frame, columns: w, rows: h))
+  print(History.display(frame, columns: w, rows: h, fit: opts.fit))
 case "search":
   let from = time(fromTime, .distantPast), to = time(toTime, Date())
   let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
@@ -233,7 +235,7 @@ case "play":
   var player = Playback(frames: History(dir: URL(fileURLWithPath: dir)).frames(from: from, to: to),
                         speed: speed, maxGap: maxGap) { body, zoom in
     History.display(body, columns: min(1000, max(10, Int((Double(w) * zoom).rounded()))),
-                    rows: h.map { min(1000, max(3, Int((Double($0) * zoom).rounded()))) })
+                    rows: h.map { min(1000, max(3, Int((Double($0) * zoom).rounded()))) }, fit: opts.fit)
   }
   guard player.frame(0) != nil else {
     log("no saved frames between \(History.stamp(from)) and \(History.stamp(to)) in \(dir)"); exit(1)
