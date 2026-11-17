@@ -176,6 +176,7 @@ ascii-screen                         # live view in the terminal
 ascii-screen --out /tmp/screen.txt   # atomically rewrite a file on each change
 ascii-screen --once                  # one capture
 ascii-screen --image shot.png        # convert an image file
+ascii-screen --image shot.png --cursor 0.5,0.25  # mark the pointer halfway across, a quarter down
 ascii-screen --stats                 # per-frame timing/CPU on stderr
 ascii-screen --history ~/screen-history   # also keep every changed frame, compressed
 ascii-screen --help                  # all options

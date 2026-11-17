@@ -33,6 +33,13 @@ Options:
   --auto-language      Detect the language of each read instead of English only (Chinese, Japanese,
                        Korean, Thai, Russian, Arabic, ...; ~15% more CPU, ~90MB more memory)
   --no-cursor          Don't draw the pointer
+  --cursor <x,y>       Pointer position for a single --image, as fractions of its width/height
+                       from the top-left (0 <= x,y < 1). --no-cursor hides it.
+  --region <x,y,w,h>   Crop --once in global screen points, or --image in image pixels (top-left).
+                       Prints the actual crop and grid-to-coordinate mapping to stderr.
+  --raster            Draw pixels as ASCII luminance instead of OCR (--once/--image).
+                       Use --region to inspect small icons; mouse is @ (OCR view uses 👆).
+  --coordinates       Print capture bounds, grid mapping and mouse position to stderr (--once/--image)
   --full-every <n>     Full-screen OCR after n incremental frames (default 30)
   --no-atlas           OCR each changed region with its own Vision call (default: pack them into one)
   --out <file>         Write each frame atomically to <file> instead of stdout
@@ -48,6 +55,8 @@ Options:
 
 var opts = Options(), gridGiven = false
 var mode = "live", imagePath = "", images: [String] = [], atTime = ""
+var region: CGRect?, raster = false, coordinates = false
+var imageCursor: CGPoint?
 var fromTime: String?, toTime: String?, speed = 10.0, maxGap = 2.0, query = "", limit = 20, json = false
 var args = CommandLine.arguments.dropFirst().makeIterator()
 func value(_ flag: String) -> String {
@@ -64,6 +73,22 @@ while let a = args.next() {
   case "--correction": opts.languageCorrection = true
   case "--auto-language": opts.autoLanguage = true
   case "--no-cursor": opts.cursor = false
+  case "--cursor":
+    let fields = value(a).split(separator: ",", omittingEmptySubsequences: false)
+    let parts = fields.compactMap { Double($0) }
+    guard fields.count == 2, parts.count == 2, parts.allSatisfy({ $0.isFinite && $0 >= 0 && $0 < 1 }) else {
+      log("--cursor needs x,y fractions with 0 <= x,y < 1"); exit(2)
+    }
+    imageCursor = CGPoint(x: parts[0], y: parts[1])
+  case "--region":
+    let parts = value(a).split(separator: ",", omittingEmptySubsequences: false).compactMap { Double($0) }
+    guard parts.count == 4, parts.allSatisfy({ $0.isFinite }), parts[2] > 0, parts[3] > 0,
+          (parts[0] + parts[2]).isFinite, (parts[1] + parts[3]).isFinite else {
+      log("--region needs finite x,y,width,height with positive width and height"); exit(2)
+    }
+    region = CGRect(x: parts[0], y: parts[1], width: parts[2], height: parts[3])
+  case "--raster": raster = true
+  case "--coordinates": coordinates = true
   case "--full-every": opts.fullEvery = Int(value(a)) ?? opts.fullEvery
   case "--no-atlas": opts.atlas = false
   case "--out": opts.out = value(a)
@@ -97,6 +122,15 @@ if opts.display < 0 { invalid("--display must be 0 or more") }
 if opts.fullEvery < 0 { invalid("--full-every must be 0 or more") }
 if opts.keepDays < 0 { invalid("--keep-days must be 0 or more") }
 if !(maxGap >= 0) { invalid("--max-gap must be 0 or more") }
+if imageCursor != nil && (mode != "image" || images.count != 1) {
+  invalid("--cursor requires a single --image")
+}
+if (region != nil || raster || coordinates) && mode != "once" && mode != "image" {
+  invalid("--region, --raster and --coordinates require --once or --image")
+}
+if (region != nil || raster || coordinates) && images.count > 1 {
+  invalid("--region, --raster and --coordinates take a single --image")
+}
 // Frames and history hold whatever was on screen; keep everything we create private to this user.
 umask(0o077)
 
@@ -116,9 +150,26 @@ func time(_ s: String?, _ fallback: Date) -> Date {
   return t
 }
 
+func showSnapshot(_ capture: Snapshot, units: String) throws {
+  let snapshot = try region.map { try capture.cropped(to: $0) } ?? capture
+  if coordinates || region != nil || raster { log(snapshot.geometry(opts, units: units)) }
+  print(snapshot.render(opts, raster: raster))
+}
+
 switch mode {
 case "image":
   guard let pb = loadImage(imagePath) else { log("cannot read \(imagePath)"); exit(1) }
+  if region != nil || raster || coordinates {
+    do {
+      try showSnapshot(Snapshot(pixels: pb, bounds: CGRect(x: 0, y: 0, width: CVPixelBufferGetWidth(pb),
+                                                         height: CVPixelBufferGetHeight(pb)),
+                                cursor: imageCursor.map {
+                                  CGPoint(x: $0.x * Double(CVPixelBufferGetWidth(pb)),
+                                          y: $0.y * Double(CVPixelBufferGetHeight(pb)))
+                                }), units: "image pixels")
+    } catch { log(error.localizedDescription); exit(1) }
+    break
+  }
   // Several --image flags are processed as consecutive frames (exercises incremental OCR).
   let p = Pipeline(opts)
   p.process(pb)
@@ -126,7 +177,7 @@ case "image":
     guard let next = loadImage(path) else { log("cannot read \(path)"); exit(1) }
     p.process(next)
   }
-  print(p.render(cursor: nil))
+  print(p.render(cursor: opts.cursor ? imageCursor : nil))
 case "at":
   guard let t = parseTime(atTime) else { log("cannot parse time \(atTime)"); exit(2) }
   let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
@@ -155,7 +206,7 @@ case "search":
 case "delete":
   guard let fromTime, let toTime else { invalid("--delete needs both --from and --to") }
   let start = Date(), from = time(fromTime, start), to = min(time(toTime, start), start)
-  guard from <= to else { invalid("--from must be before --to") }
+  guard from.timeIntervalSince1970 <= to.timeIntervalSince1970 else { invalid("--from must be before --to") }
   let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
   let history = History(dir: URL(fileURLWithPath: dir))
   // A running recorder keeps frames in memory for up to 10 s (plus timer leeway); let recent ones reach disk.
@@ -189,9 +240,7 @@ case "once":
   try checkPermission()
   Task {
     do {
-      let p = Pipeline(opts)
-      p.process(try await captureOnce(opts))
-      print(p.render(cursor: nil))
+      try showSnapshot(try await captureOnce(opts), units: "screen points")
       exit(0)
     } catch { log("capture failed: \(error.localizedDescription)"); exit(1) }
   }

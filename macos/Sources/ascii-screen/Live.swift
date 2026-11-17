@@ -138,7 +138,7 @@ final class Live: NSObject, SCStreamOutput, SCStreamDelegate {
   }
 }
 
-func captureOnce(_ opts: Options) async throws -> CVPixelBuffer {
+func captureOnce(_ opts: Options) async throws -> Snapshot {
   let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
   guard opts.display < content.displays.count else { throw NSError(domain: "ascii-screen", code: 1, userInfo: [NSLocalizedDescriptionKey: "no display \(opts.display)"]) }
   let display = content.displays[opts.display]
@@ -150,5 +150,6 @@ func captureOnce(_ opts: Options) async throws -> CVPixelBuffer {
   let sb = try await SCScreenshotManager.captureSampleBuffer(
     contentFilter: SCContentFilter(display: display, excludingWindows: []), configuration: cfg)
   guard let pb = sb.imageBuffer else { throw NSError(domain: "ascii-screen", code: 2) }
-  return pb
+  return Snapshot(pixels: pb, bounds: CGDisplayBounds(display.displayID),
+                  cursor: opts.cursor ? CGEvent(source: nil)?.location : nil)
 }
