@@ -11,6 +11,7 @@ LABEL=com.tetratorus.ascii-screen
 # the Screen Recording list.
 HOME_DIR="$HOME/Library/Application Support/ASCII Screen"
 BIN="$HOME_DIR/ASCII Screen"
+UPTIME="$HOME_DIR/uptime.py"
 OLD_APP="$HOME/Applications/ASCII Screen.app"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 DATA="$HOME/.ascii-screen"
@@ -20,9 +21,14 @@ DOMAIN="gui/$(id -u)"
 CLI_DIRS=("$HOME/.local/bin" "$HOME/bin" /opt/homebrew/bin /usr/local/bin)
 
 launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
+for ((attempt = 0; attempt < 50; attempt++)); do
+  launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1 || break
+  sleep 0.1
+done
 if [[ "${1:-}" == "--uninstall" ]]; then
   for d in "${CLI_DIRS[@]}"; do
     case "$(readlink "$d/ascii-screen" 2>/dev/null)" in "$BIN"|"$OLD_APP"/*) rm -f "$d/ascii-screen";; esac
+    case "$(readlink "$d/ascii-screen-uptime" 2>/dev/null)" in "$UPTIME") rm -f "$d/ascii-screen-uptime";; esac
   done
   rm -rf "$HOME_DIR" "$OLD_APP" "$PLIST"
   echo "Removed. Output in $DATA and log $LOG were kept."
@@ -33,10 +39,14 @@ cd "$(dirname "$0")"
 swift build -c release
 mkdir -p "$HOME_DIR" "$DATA" "$(dirname "$PLIST")" "$(dirname "$LOG")"
 rm -rf "$OLD_APP"
-cp .build/release/ascii-screen "$BIN"
+# Replace the inode: overwriting a signed executable in place can get it killed as tainted.
+cp .build/release/ascii-screen "$BIN.update"
 # Ad-hoc signatures default to a cdhash requirement, which breaks the Screen Recording grant on every
 # rebuild; requiring only the identifier keeps it (macOS keys the grant by this path plus the requirement).
-codesign --force --sign - --identifier "$LABEL" -r="designated => identifier \"$LABEL\"" "$BIN"
+codesign --force --sign - --identifier "$LABEL" -r="designated => identifier \"$LABEL\"" "$BIN.update"
+mv "$BIN.update" "$BIN"
+cp uptime.py "$UPTIME"
+chmod 755 "$UPTIME"
 
 xml() { local s=${1//&/&amp;}; s=${s//</&lt;}; printf '%s' "${s//>/&gt;}"; }
 # Frames and history contain whatever was on screen: owner-only.
@@ -83,7 +93,9 @@ if [[ -z "$CLI" ]]; then
   echo "Added ~/.local/bin to PATH in ~/.zshrc; open a new terminal to use 'ascii-screen'."
 fi
 ln -sf "$BIN" "$CLI/ascii-screen"
+ln -sf "$UPTIME" "$CLI/ascii-screen-uptime"
 
 echo "Running as $LABEL. Output: ${ARGS[*]}  Log: $LOG  CLI: $CLI/ascii-screen"
+echo "Capture activity: ascii-screen-uptime (Python 3.9+, --help lists options)."
 echo "First run: allow 'ASCII Screen' in System Settings > Privacy & Security > Screen Recording; it restarts itself within 30s."
 echo "If it isn't listed there, click + and pick: $BIN (Cmd-Shift-G to type the path)."

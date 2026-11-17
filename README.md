@@ -55,6 +55,31 @@ Keys while `--play` runs:
 | `=` / `-` | redraw at a higher / lower resolution (25% more or fewer columns and rows per press) |
 | q | quit |
 
+## Capture activity
+
+The installer also provides `ascii-screen-uptime` (Python 3.9 or later):
+
+```bash
+ascii-screen-uptime              # live chart of the last hour
+ascii-screen-uptime 24h          # start with a 24-hour window
+ascii-screen-uptime --once       # one snapshot
+ascii-screen-uptime --json       # counts and timestamps for other tools
+```
+
+The chart refreshes every five seconds and shows saved frames, distinct indexed
+words per frame, recent capture groups, and the Mac recorder's service status.
+Use `+`/`-` to zoom, left/right arrows to move through history, `L` to return to
+live, and `Q` to quit. Zoom ranges run from one minute to seven days.
+Piped output and `--json` print once; `--watch` explicitly requests refreshes.
+
+It reads `~/.ascii-screen/history/index.sqlite` in read-only mode and does not
+display captured screen text. `--history <dir>` selects another history directory;
+the service status still refers to the Mac recorder. Gaps can mean an unchanged
+or locked screen, so this measures capture activity, not an uptime percentage.
+History may take up to ten seconds to reach disk.
+
+Without installing, run `python3 macos/uptime.py --help` from this checkout.
+
 ## Change settings, update, uninstall
 
 Any flags you give `install.sh` are passed to the service. It always keeps the live file (`--out ~/.ascii-screen/screen.txt`) and history (`--history ~/.ascii-screen/history`) on, unless you give your own `--out` or `--history`.
