@@ -55,6 +55,50 @@ Keys while `--play` runs:
 | `=` / `-` | redraw at a higher / lower resolution (25% more or fewer columns and rows per press) |
 | q | quit |
 
+## Set up the `ap` shortcut
+
+After running `macos/install.sh`, add this shell function to `~/.zshrc`
+(macOS's default shell). It uses the installed `ascii-screen` and
+`ascii-screen-uptime` commands on your PATH.
+
+```zsh
+ap() {
+  if [[ "${1:-}" == "--uptime" ]]; then
+    shift
+    ascii-screen-uptime "$@"
+    return $?
+  fi
+  local args=(--play)
+  if (( $# > 2 )); then
+    printf 'Usage: ap [from [to]] | ap --uptime [from [to]] [--once|--json|--watch]\n' >&2
+    return 2
+  fi
+  if (( $# >= 1 )); then
+    args+=(--from "$1")
+  fi
+  if (( $# == 2 )); then
+    args+=(--to "$2")
+  fi
+  ascii-screen "${args[@]}"
+}
+```
+
+Reload the configuration, or open a new terminal, then use lowercase `ap`:
+
+```sh
+source ~/.zshrc
+ap 5m                      # replay the last five minutes
+ap 14:00 14:30             # replay a time range today
+ap --uptime                # live capture activity chart
+ap --uptime 24h
+ap --uptime --once
+ap --uptime --json
+```
+
+With no arguments, `ap` replays history from midnight today. `ap --uptime`
+accepts the [capture activity](#capture-activity) options below. For iPhone
+history, see the [`aip` setup in ASCII iPhone](https://github.com/tetratorus/ascii-iphone-screenshot#set-up-the-aip-shortcut).
+
 ## Capture activity
 
 The installer also provides `ascii-screen-uptime` (Python 3.9 or later):
