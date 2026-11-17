@@ -108,11 +108,11 @@ final class History {
   @discardableResult
   func delete(from: Date, to: Date) throws -> Int {
     guard let index else { throw NSError(domain: "ascii-screen", code: 5, userInfo: [NSLocalizedDescriptionKey: "no search index"]) }
-    guard from <= to else { return 0 }
+    guard from.timeIntervalSince1970 <= to.timeIntervalSince1970 else { return 0 }
     try index.catchUp()
     let cal = Calendar.current
     var removed = 0, day = cal.startOfDay(for: from)
-    while day <= to {
+    while day.timeIntervalSince1970 <= to.timeIntervalSince1970 {
       let name = History.day(day)
       let url = dir.appendingPathComponent("\(name).txt.gz")
       day = cal.date(byAdding: .day, value: 1, to: day)!

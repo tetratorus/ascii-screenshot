@@ -4,6 +4,8 @@ macOS only: the Swift app in `macos/` is the whole product. There are no other p
 
 - Build: `swift build -c release --package-path macos`.
 - Test the renderer, line detector, pipeline and history/search: `swift test -c release --package-path macos`.
+- The history privacy test can select a SQLite index file and fail under a permissive shell umask; run `(umask 077; swift test -c release --package-path macos)` to match the app's startup umask. Check live file permissions separately.
+- On this Mac, Swift 6.4.2 with macOS 27.2 build 26B5091g resolves direct `Date <= Date` to a missing Foundation symbol and crashes. Comparing `timeIntervalSince1970` values avoids it; the deletion tests and an installed-CLI synthetic-history smoke test cover this path.
 - Test the benchmark summarizer: `python3 -m unittest discover -s tests -v` (standard library only).
 - Check benchmark-runner syntax with `node --check macos/benchmarks/energy.mjs`. The runner requires a Node version with built-in `fetch` and `WebSocket` support, such as Node 22+.
 - Check the installer: `bash -n macos/install.sh`.
