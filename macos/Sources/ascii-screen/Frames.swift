@@ -30,9 +30,17 @@ final class Frames {
   /// Reads frames until the command ends or fails; exits the process like
   /// Live does when its stream stops.
   func run() -> Never {
+    // The reader blocks when the phone stops changing. Flush independently so
+    // the final changed frames reach disk even while the pipe is idle.
+    let events = DispatchQueue(label: "ascii-screen.frames.events")
+    let flushTimer = DispatchSource.makeTimerSource(queue: events)
+    flushTimer.schedule(deadline: .now() + 5, repeating: 5)
+    flushTimer.setEventHandler { [sink] in sink.flushHistory() }
+    flushTimer.resume()
+    defer { flushTimer.cancel() }
     for sig in [SIGTERM, SIGINT, SIGHUP] {
       signal(sig, SIG_IGN)
-      let src = DispatchSource.makeSignalSource(signal: sig, queue: .main)
+      let src = DispatchSource.makeSignalSource(signal: sig, queue: events)
       src.setEventHandler { [weak self] in
         self?.sink.flushHistory()
         self?.process.terminate()

@@ -26,6 +26,28 @@ final class PipelineTests: XCTestCase {
     XCTAssertEqual(calls, 1)
   }
 
+  func testRotationIsSavedEvenWhenTextAndRenderedOutputStayTheSame() throws {
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent("rotation-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: dir) }
+    var opts = Options()
+    opts.width = 40
+    opts.height = 20
+    let pipeline = Pipeline(opts) { _, rois in rois.map { _ in [] } }
+    let history = History(dir: dir, flushEvery: 300)
+    var writes = 0
+    let sink = Sink(opts: opts, pipeline: pipeline, output: FrameOutput { _ in writes += 1 }, history: history)
+    for (w, h) in [(200, 400), (400, 200), (200, 400)] {
+      XCTAssertTrue(pipeline.process(frame(width: w, height: h)))
+      sink.emit(cursor: nil)
+    }
+    sink.flushHistory()
+    let saved = Array(history.frames(from: Date().addingTimeInterval(-60), to: Date().addingTimeInterval(60)))
+    XCTAssertEqual(saved.count, 3)
+    XCTAssertEqual(writes, 1)
+    XCTAssertEqual(saved.compactMap { Frame.decode($0.1)?.width }, [200, 400, 200])
+    XCTAssertEqual(saved.compactMap { Frame.decode($0.1)?.height }, [400, 200, 400])
+  }
+
   func testRefreshThresholdOnlyAppliesToChangedFrames() {
     var opts = Options()
     opts.fullEvery = 1

@@ -41,6 +41,23 @@ final class FrameTests: XCTestCase {
     XCTAssertEqual(History.text("I̲n̲v̲o̲i̲c̲e̲ #42"), "Invoice #42")
   }
 
+  func testPlaybackFitsEachRecordedOrientation() throws {
+    let sizes = [(1216, 2656), (2656, 1216), (1216, 2656)]
+    let frames = sizes.enumerated().map { index, size in
+      (Date(timeIntervalSince1970: Double(index)),
+       Frame(width: size.0, height: size.1, obs: [], lines: [], cursor: nil).encode())
+    }
+    var player = Playback(frames: frames, speed: 1, maxGap: 0) { body, _ in
+      History.display(body, columns: 120, rows: 39, fit: true)
+    }
+    for (i, expected) in [(0, (35, 38)), (1, (120, 27)), (2, (35, 38))] {
+      let rows = try XCTUnwrap(player.shown(i)).split(separator: "\n", omittingEmptySubsequences: false)
+      XCTAssertEqual(rows.count, expected.1)
+      XCTAssertTrue(rows.allSatisfy { $0.count == expected.0 })
+    }
+    XCTAssertEqual(History.display("old frame", columns: 120, rows: 39, fit: true), "old frame")
+  }
+
   func testSearchFindsTextACrampedGridWouldHaveCut() throws {
     let dir = FileManager.default.temporaryDirectory.appendingPathComponent("frame-\(UUID().uuidString)")
     defer { try? FileManager.default.removeItem(at: dir) }

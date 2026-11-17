@@ -31,8 +31,17 @@ struct Frame {
                  cursor: cursor.map { CGPoint(x: q(Double($0.x)), y: q(Double($0.y))) })
   }
 
-  func render(columns: Int, rows: Int? = nil) -> String {
-    renderAscii(obs, lines, cursor.map { Double($0.x) }, cursor.map { Double($0.y) }, columns,
+  func render(columns: Int, rows: Int? = nil, fit: Bool = false) -> String {
+    if fit, width > 0, height > 0 {
+      // Terminal cells are approximately twice as tall as they are wide.
+      let cellAspect = 2 * Double(width) / Double(height)
+      let maxRows = rows ?? 100
+      let fittedColumns = max(1, min(columns, Int((Double(maxRows) * cellAspect).rounded(.down))))
+      let fittedRows = max(1, min(maxRows, Int((Double(fittedColumns) / cellAspect).rounded())))
+      return renderAscii(obs, lines, cursor.map { Double($0.x) }, cursor.map { Double($0.y) },
+                         fittedColumns, fittedRows).finalText
+    }
+    return renderAscii(obs, lines, cursor.map { Double($0.x) }, cursor.map { Double($0.y) }, columns,
                 rows ?? Frame.rows(columns: columns, width: width, height: height)).finalText
   }
 
@@ -79,8 +88,8 @@ struct Frame {
 
 extension History {
   /// A record as it is shown: saved frames drawn at the given grid, older (pre-drawn) records unchanged.
-  static func display(_ body: String, columns: Int, rows: Int?) -> String {
-    Frame.decode(body)?.render(columns: columns, rows: rows) ?? body
+  static func display(_ body: String, columns: Int, rows: Int?, fit: Bool = false) -> String {
+    Frame.decode(body)?.render(columns: columns, rows: rows, fit: fit) ?? body
   }
 
   /// A record's text for searching.

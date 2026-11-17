@@ -43,6 +43,7 @@ ascii-screen --delete --from 14:05 --to 14:20  # remove 14:05-14:20 as if the sc
 - **The live file** `~/.ascii-screen/screen.txt` is replaced in one step on every change, so a reader never sees half a frame. It is drawn 240 columns wide, with as many rows as keep the screen's shape (at most 100).
 - **Times** for `--at`, `--from` and `--to` can be how long ago (`30s`, `5m`, `1h30m`, `2d`), `HH:MM[:SS]` today, `now`, or a full ISO 8601 time.
 - **`--at` and `--play`** draw saved frames to fit your terminal, or at `--width`/`--height` if you give them.
+- Add **`--fit`** to preserve each frame's proportions inside that grid. Portrait and landscape frames use their saved pixel dimensions, so playback adapts when the phone turns. This also works with `--frames` for the live text output.
 
 Keys while `--play` runs:
 
