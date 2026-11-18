@@ -5,7 +5,7 @@ A macOS background service that keeps a text copy of your screen, about once a s
 ## Everything stays on your Mac
 
 - Capture uses Apple's ScreenCaptureKit, and text is read by Apple Vision, which runs on the Mac itself.
-- Screen content is not uploaded to a server, and there is no account or telemetry. The optional iPhone source communicates with your paired phone over macOS's CoreDevice connection.
+- Screen content is not uploaded to a server, and there is no account or telemetry.
 - The output and history live in `~/.ascii-screen/`, readable only by your user account.
 - It records **everything** on screen, including private windows and any password shown in plain text. There is no list of apps to skip. When that matters, pause it:
   ```bash
@@ -15,7 +15,7 @@ A macOS background service that keeps a text copy of your screen, about once a s
 
 ## Quick start
 
-1. Install full Xcode and select it with `xcode-select`. The build includes iPhone support linked against Apple's CoreDevice framework.
+1. Install the Xcode command line tools if you don't have `swift`: `xcode-select --install`.
 2. Build and install. This starts it now and at every login, and puts `ascii-screen` on your PATH:
    ```bash
    git clone https://github.com/tetratorus/ascii-screenshot && cd ascii-screenshot
@@ -26,12 +26,6 @@ A macOS background service that keeps a text copy of your screen, about once a s
 5. Replay the last few minutes: `ascii-screen --play --from 5m`.
 
 While it records, macOS shows a small purple dot next to Control Center. That's macOS, and it can't be turned off.
-
-### Paired iPhone capture
-
-`ascii-screen --iphone <name-or-UUID>` records a paired iPhone through macOS's existing CoreDevice connection. SwiftPM builds the pinned [LightpinkyCore](https://github.com/tetratorus/lightpinky) library into the executable, sharing its CoreDevice state checks and screenshots. No separate lightpinky server or Go process is started. Discovery uses Apple's `devicectl`; the capture loop uses CoreDevice requests without spawning commands. Each frame is a full PNG, so on a slow link the loop waits three times as long as a capture took before the next one. While the lightpinky controller is streaming the display for input, the recorder takes that stream's frames instead; they are compressed and stretched by two rows, so detected lines can differ until the controller goes idle.
-
-The source captures only when the phone is known to be unlocked with its display on. It sends no wake or unlock input. Failures identify whether device connection, state reading, or screenshot capture failed. The [ASCII iPhone installer](https://github.com/tetratorus/ascii-iphone-screenshot) runs this source as a separate LaunchAgent with its own output and history.
 
 ## Use
 
