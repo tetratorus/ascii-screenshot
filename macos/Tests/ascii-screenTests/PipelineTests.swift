@@ -3,6 +3,17 @@ import XCTest
 @testable import ascii_screen
 
 final class PipelineTests: XCTestCase {
+  func testPhoneCaptureRequiresKnownUnlockedAndLitState() {
+    XCTAssertTrue(IPhone.canCapture(lock: ["passcodeRequired": false], displays: ["backlightState": "on"]))
+    XCTAssertTrue(IPhone.canCapture(lock: ["passcodeRequired": false], displays: ["backlightState": "activeOn"]))
+    for lock: [String: Any] in [[:], ["passcodeRequired": true], ["passcodeRequired": "false"]] {
+      XCTAssertFalse(IPhone.canCapture(lock: lock, displays: ["backlightState": "on"]))
+    }
+    for displays: [String: Any] in [[:], ["backlightState": "off"], ["backlightState": "unknown"]] {
+      XCTAssertFalse(IPhone.canCapture(lock: ["passcodeRequired": false], displays: displays))
+    }
+  }
+
   private func frame(_ points: [(Int, Int)] = [], width: Int = 800, height: Int = 600) -> CVPixelBuffer {
     var pb: CVPixelBuffer?
     XCTAssertEqual(CVPixelBufferCreate(nil, width, height, kCVPixelFormatType_32BGRA, nil, &pb), kCVReturnSuccess)
@@ -277,5 +288,12 @@ final class PipelineTests: XCTestCase {
     }
     XCTAssertNil(p.scrollShift(bm[0], bm[1]))
     XCTAssertEqual(p.scrollShift(bm[0], bm[2]), -25)
+  }
+
+  func testIPhoneTimeoutBacksOffAfterTheCommandFinishes() {
+    XCTAssertEqual(IPhone.pollDelay(interval:1,elapsed:8,failures:1),5)
+    XCTAssertEqual(IPhone.pollDelay(interval:1,elapsed:8,failures:2),10)
+    XCTAssertEqual(IPhone.pollDelay(interval:1,elapsed:8,failures:4),30)
+    XCTAssertEqual(IPhone.pollDelay(interval:1,elapsed:0.4,failures:0),0.6,accuracy:0.001)
   }
 }

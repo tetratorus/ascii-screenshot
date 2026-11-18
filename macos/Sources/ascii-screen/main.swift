@@ -5,6 +5,7 @@ import Foundation
 let usage = """
 Usage: ascii-screen [options]            live ASCII view of the screen, updated when it changes
        ascii-screen --once [options]     capture the screen once and exit
+       ascii-screen --iphone <device>    record a paired iPhone through macOS CoreDevice (name or UUID)
        ascii-screen --image <file>...    convert an image file (more files = successive frames)
        ascii-screen --frames <command>   read "W H" + W*H*4 BGRA frames from a command's stdout
                                          (e.g. phoneframes) into the same pipeline, --out and --history
@@ -57,7 +58,7 @@ Options:
 """
 
 var opts = Options(), gridGiven = false
-var mode = "live", imagePath = "", images: [String] = [], atTime = "", frameCommand = ""
+var mode = "live", imagePath = "", images: [String] = [], atTime = "", frameCommand = "", iphoneDevice = ""
 var region: CGRect?, raster = false, coordinates = false
 var imageCursor: CGPoint?
 var fromTime: String?, toTime: String?, speed = 10.0, maxGap = 2.0, query = "", limit = 20, json = false
@@ -112,6 +113,7 @@ while let a = args.next() {
   case "--max-gap": maxGap = Double(value(a)) ?? maxGap
   case "--once": mode = "once"
   case "--frames": mode = "frames"; frameCommand = value(a)
+  case "--iphone": mode = "iphone"; iphoneDevice = value(a)
   case "--image": mode = "image"; images.append(value(a)); imagePath = images[0]
   case "-h", "--help": print(usage); exit(0)
   default: log("unknown option \(a)\n\n\(usage)"); exit(2)
@@ -241,6 +243,12 @@ case "play":
     log("no saved frames between \(History.stamp(from)) and \(History.stamp(to)) in \(dir)"); exit(1)
   }
   player.run()
+case "iphone":
+  guard !iphoneDevice.isEmpty else { invalid("--iphone needs a device name or UUID") }
+  setpriority(PRIO_DARWIN_PROCESS, 0, PRIO_DARWIN_BG)
+  do { try IPhone(opts: opts, device: iphoneDevice).run() } catch {
+    log("iPhone source failed: \(error.localizedDescription)"); exit(1)
+  }
 case "frames":
   guard !frameCommand.isEmpty else { invalid("--frames needs a command") }
   setpriority(PRIO_DARWIN_PROCESS, 0, PRIO_DARWIN_BG)
