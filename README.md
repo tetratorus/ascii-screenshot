@@ -29,7 +29,7 @@ While it records, macOS shows a small purple dot next to Control Center. That's 
 
 ### Paired iPhone capture
 
-`ascii-screen --iphone <name-or-UUID>` records a paired iPhone through macOS's existing CoreDevice connection. SwiftPM builds the pinned [LightpinkyCore](https://github.com/tetratorus/lightpinky) library into the executable, sharing its native state checks and connection recovery. No separate lightpinky server or Go process is started. Discovery and screenshots use Apple's `devicectl`; state checks reuse native connections.
+`ascii-screen --iphone <name-or-UUID>` records a paired iPhone through macOS's existing CoreDevice connection. SwiftPM builds the pinned [LightpinkyCore](https://github.com/tetratorus/lightpinky) library into the executable, sharing its CoreDevice state checks and screenshots. No separate lightpinky server or Go process is started. Discovery uses Apple's `devicectl`; the capture loop uses CoreDevice requests without spawning commands. Each frame is a full PNG, so on a slow link the loop waits three times as long as a capture took before the next one.
 
 The source captures only when the phone is known to be unlocked with its display on. It sends no wake or unlock input. Failures identify whether device connection, state reading, or screenshot capture failed. The [ASCII iPhone installer](https://github.com/tetratorus/ascii-iphone-screenshot) runs this source as a separate LaunchAgent with its own output and history.
 

@@ -45,7 +45,10 @@ final class IPhone {
       // completion instead of immediately opening another developer client.
       return max(interval,min(30,5 * pow(2,Double(min(failures-1,3)))))
     }
-    return max(0.05,interval-elapsed)
+    // A capture slower than the interval means the link is slow: each frame
+    // is a full PNG. Leave the link idle for three times as long as the
+    // capture took, so phone control still gets through.
+    return elapsed<=interval ? max(0.05,interval-elapsed) : min(15,3*elapsed)
   }
 
   func run() -> Never {

@@ -295,5 +295,7 @@ final class PipelineTests: XCTestCase {
     XCTAssertEqual(IPhone.pollDelay(interval:1,elapsed:8,failures:2),10)
     XCTAssertEqual(IPhone.pollDelay(interval:1,elapsed:8,failures:4),30)
     XCTAssertEqual(IPhone.pollDelay(interval:1,elapsed:0.4,failures:0),0.6,accuracy:0.001)
+    XCTAssertEqual(IPhone.pollDelay(interval:1,elapsed:4,failures:0),12)
+    XCTAssertEqual(IPhone.pollDelay(interval:1,elapsed:25,failures:0),15)
   }
 }
