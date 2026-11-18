@@ -368,6 +368,10 @@ func keepPlaces(_ fresh: [Obs], _ old: [Obs], _ W: Double, _ H: Double,
 func loadImage(_ path: String) -> CVPixelBuffer? {
   guard let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil),
         let img = CGImageSourceCreateImageAtIndex(src, 0, nil) else { return nil }
+  return pixelBuffer(image: img)
+}
+
+func pixelBuffer(image img: CGImage) -> CVPixelBuffer? {
   var pb: CVPixelBuffer?
   CVPixelBufferCreate(nil, img.width, img.height, kCVPixelFormatType_32BGRA,
                       [kCVPixelBufferIOSurfacePropertiesKey: [:]] as CFDictionary, &pb)

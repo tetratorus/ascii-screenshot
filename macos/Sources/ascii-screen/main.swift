@@ -246,9 +246,13 @@ case "play":
 case "iphone":
   guard !iphoneDevice.isEmpty else { invalid("--iphone needs a device name or UUID") }
   setpriority(PRIO_DARWIN_PROCESS, 0, PRIO_DARWIN_BG)
-  do { try IPhone(opts: opts, device: iphoneDevice).run() } catch {
-    log("iPhone source failed: \(error.localizedDescription)"); exit(1)
+  DispatchQueue.global(qos: .utility).async {
+    do { try IPhone(opts: opts, device: iphoneDevice).run() } catch {
+      log("iPhone source failed: \(error.localizedDescription)"); exit(1)
+    }
   }
+  // CoreDevice delivers discovery and connection callbacks on the main loop.
+  RunLoop.main.run()
 case "frames":
   guard !frameCommand.isEmpty else { invalid("--frames needs a command") }
   setpriority(PRIO_DARWIN_PROCESS, 0, PRIO_DARWIN_BG)

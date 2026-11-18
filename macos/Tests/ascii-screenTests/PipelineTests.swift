@@ -4,13 +4,13 @@ import XCTest
 
 final class PipelineTests: XCTestCase {
   func testPhoneCaptureRequiresKnownUnlockedAndLitState() {
-    XCTAssertTrue(IPhone.canCapture(lock: ["passcodeRequired": false], displays: ["backlightState": "on"]))
-    XCTAssertTrue(IPhone.canCapture(lock: ["passcodeRequired": false], displays: ["backlightState": "activeOn"]))
-    for lock: [String: Any] in [[:], ["passcodeRequired": true], ["passcodeRequired": "false"]] {
-      XCTAssertFalse(IPhone.canCapture(lock: lock, displays: ["backlightState": "on"]))
-    }
-    for displays: [String: Any] in [[:], ["backlightState": "off"], ["backlightState": "unknown"]] {
-      XCTAssertFalse(IPhone.canCapture(lock: ["passcodeRequired": false], displays: displays))
+    XCTAssertTrue(IPhone.canCapture(power: ["Locked": false, "ScreenOn": true]))
+    for state: [String: Any] in [
+      [:], ["Locked": false], ["ScreenOn": true],
+      ["Locked": true, "ScreenOn": true], ["Locked": false, "ScreenOn": false],
+      ["Locked": "false", "ScreenOn": true], ["Locked": false, "ScreenOn": "on"],
+    ] {
+      XCTAssertFalse(IPhone.canCapture(power: state))
     }
   }
 

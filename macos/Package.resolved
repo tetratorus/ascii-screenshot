@@ -1,0 +1,13 @@
+{
+  "pins" : [
+    {
+      "identity" : "lightpinky",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tetratorus/lightpinky.git",
+      "state" : {
+        "revision" : "cad22cd448e364be174a4f0e16fcfd367fc21848"
+      }
+    }
+  ],
+  "version" : 2
+}
