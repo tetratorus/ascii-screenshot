@@ -8,6 +8,8 @@ final class IPhone {
   private let pipeline: Pipeline
   private let sink: Sink
   private var phone: Phone?
+  private var controller: FrameReceiver?
+  private var sharedAt: Double = 0
   private var signals: [DispatchSourceSignal] = []
   private var lastState = ""
 
@@ -83,14 +85,25 @@ final class IPhone {
             delay = max(3, opts.interval)
             return
           }
+          // While the phone controller is streaming the display, use its
+          // frames: a screenshot would compete with it for the link.
+          if controller == nil { controller = try? FrameReceiver(udid: phone.info.udid) }
+          let shared = controller?.latest(maxAge: 3)
+          let now = ProcessInfo.processInfo.systemUptime
+          if shared != nil { sharedAt = now }
+          // The controller restarts its stream now and then. Wait out a
+          // short gap rather than switch source and re-read the whole
+          // screen twice.
+          if shared == nil, now - sharedAt < 8 { return }
           phase = "screenshot"
-          guard let pixels = pixelBuffer(image: try phone.screenshot()) else {
+          guard let pixels = pixelBuffer(image: try shared ?? phone.screenshot()) else {
             throw NSError(domain: "IPhone", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "cannot decode screenshot"])
           }
           if pipeline.process(pixels) { sink.emit(cursor: nil) }
           failures=0
-          state("capturing through CoreDevice (\(device))")
+          state(shared == nil ? "capturing through CoreDevice (\(device))"
+                              : "capturing from the phone controller's video stream")
         } catch {
           phone = nil
           failures=min(failures+1,4)
