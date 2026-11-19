@@ -36,8 +36,9 @@ if [[ "${1:-}" == "--uninstall" ]]; then
 fi
 
 cd "$(dirname "$0")"
-swift build -c release
+(umask 077; swift build -c release)
 mkdir -p "$HOME_DIR" "$DATA" "$(dirname "$PLIST")" "$(dirname "$LOG")"
+(umask 077; : >> "$LOG") && chmod 600 "$LOG"
 rm -rf "$OLD_APP"
 # Replace the inode: overwriting a signed executable in place can get it killed as tainted.
 cp .build/release/ascii-screen "$BIN.update"

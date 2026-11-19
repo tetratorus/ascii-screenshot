@@ -16,6 +16,12 @@ final class PipelineTests: XCTestCase {
     return buffer
   }
 
+  func testDefaultDisplayWaitsWhenDisplaysAreOfflineWhileExplicitIndexFails() {
+    XCTAssertTrue(Live.shouldWaitForDisplay(requested: 0, available: 0))
+    XCTAssertFalse(Live.shouldWaitForDisplay(requested: 1, available: 0))
+    XCTAssertFalse(Live.shouldWaitForDisplay(requested: 2, available: 1))
+  }
+
   func testIdenticalFrameSkipsOCRWhenEveryChangedFrameRequiresFullOCR() {
     var opts = Options()
     opts.fullEvery = 0

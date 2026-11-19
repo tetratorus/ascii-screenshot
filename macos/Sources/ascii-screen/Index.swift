@@ -17,7 +17,7 @@ final class HistoryIndex {
     guard sqlite3_open(path, &db) == SQLITE_OK else { throw error() }
     chmod(path, 0o600) // SQLite gives its -wal/-shm files the same mode
     sqlite3_busy_timeout(db, 5000)
-    if try query("PRAGMA user_version", []) { $0.int(0) }.first ?? 0 < 4 { // older layout: rebuild from the day files
+    if (try query("PRAGMA user_version", [], { $0.int(0) }).first ?? 0) < 4 { // older layout: rebuild from the day files
       try exec("DROP TABLE IF EXISTS vocab; DROP TABLE IF EXISTS words; DROP TABLE IF EXISTS frames; DROP TABLE IF EXISTS files; VACUUM;")
     }
     try exec("""

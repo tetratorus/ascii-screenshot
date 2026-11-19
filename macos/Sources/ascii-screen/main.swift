@@ -224,7 +224,7 @@ case "delete":
   do { n = try history.delete(from: from, to: to) } catch { log("delete failed: \(error.localizedDescription)"); exit(2) }
   guard n > 0 else { log("no saved frames between \(History.stamp(from)) and \(History.stamp(to)) in \(dir)"); exit(1) }
   print("deleted \(n) frame\(n == 1 ? "" : "s") saved between \(History.stamp(from)) and \(History.stamp(to))")
-  var around = history.frames(from: to, to: Date())
+  let around = history.frames(from: to, to: Date())
   if let held = around.next(), held.0 < from {
     print("the frame saved at \(History.stamp(held.0)) now stays on screen until " + (around.next().map { History.stamp($0.0) } ?? "the next change"))
   }
