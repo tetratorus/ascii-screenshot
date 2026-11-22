@@ -65,7 +65,27 @@ final class PipelineTests: XCTestCase {
     XCTAssertEqual(requests.count, 2)
     XCTAssertTrue(p.process(frame([(210, 200)])))
     XCTAssertEqual(requests.count, 3)
-    XCTAssertEqual(requests.last, [CGRect(x: 0, y: 0, width: 1, height: 1)])
+    XCTAssertEqual(requests.last?.count, 1)
+    XCTAssertNotEqual(requests.last, [CGRect(x: 0, y: 0, width: 1, height: 1)])
+  }
+
+  func testRefreshRereadsOnlyAreasNeverReadWholeInsteadOfTheFullScreen() {
+    var opts = Options()
+    opts.fullEvery = 1
+    opts.atlas = false
+    var requests: [[CGRect]] = []
+    let p = Pipeline(opts) { _, rois in requests.append(rois); return rois.map { _ in [] } }
+    p.process(page(scrolledBy: 0, blankFrom: 400))
+    // Blank page scrolls into the bottom rows: nothing to read, but those rows were never read whole.
+    XCTAssertTrue(p.process(page(scrolledBy: 7, blankFrom: 400)))
+    XCTAssertEqual(requests.count, 1)
+    XCTAssertTrue(p.process(page(scrolledBy: 7, header: 100, blankFrom: 400)))
+    let refresh = requests[1]
+    XCTAssertTrue(refresh.contains { $0.minY == 0 }, "the never-read bottom rows are read")
+    XCTAssertTrue(refresh.contains { $0.maxY > 0.8 }, "and the changed header")
+    XCTAssertLessThan(refresh.reduce(0.0) { $0 + $1.width * $1.height }, 0.5, "not the whole screen")
+    XCTAssertTrue(p.process(page(scrolledBy: 7, header: 120, blankFrom: 400)))
+    XCTAssertFalse(requests[2].contains { $0.minY == 0 }, "read once, the bottom rows are up to date")
   }
 
   func testCacheReplacementRemovesDeletedTextButKeepsUnchangedText() {

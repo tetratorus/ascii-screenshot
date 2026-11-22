@@ -62,6 +62,7 @@ final class Pipeline {
 
     var regions: [CGRect]? = nil // pixel rects, top-left origin; nil = everything
     var scrolled: Int?
+    var refresh = false
     if let prev, CVPixelBufferGetWidth(prev) == w, CVPixelBufferGetHeight(prev) == h {
       CVPixelBufferLockBaseAddress(prev, .readOnly)
       let old = Bitmap(base: CVPixelBufferGetBaseAddress(prev)!.assumingMemoryBound(to: UInt8.self),
@@ -79,9 +80,12 @@ final class Pipeline {
         if opts.stats { log(String(format: "frame %dx%d unchanged; OCR skipped cpu=%.2fms", w, h, (cpuTime() - t0) * 1000)) }
         return false
       }
-      if sinceFull < opts.fullEvery { regions = dirty }
       if let dy = scrolled { scrollStale(dy, h) }
       for i in stale.indices where changedTiles[i] { stale[i] = true }
+      // Unchanged text keeps its earlier read (see `settle`), so the periodic refresh only re-reads areas that
+      // changed but were never read whole, instead of the full screen.
+      refresh = sinceFull >= opts.fullEvery
+      regions = refresh ? dirty + tileRegions(stale, cols: staleCols, width: w, height: h) : dirty
     } else {
       staleCols = (w + Pipeline.tile - 1) / Pipeline.tile
       stale = [Bool](repeating: true, count: staleCols * ((h + Pipeline.tile - 1) / Pipeline.tile))
@@ -99,7 +103,7 @@ final class Pipeline {
       regions = grown.flatMap { $0.reduce(0, { $0 + $1.width * $1.height }) > 0.5 * W * H ? nil : $0 }
     }
     if let rects = regions, rects.isEmpty {
-      sinceFull += 1
+      sinceFull = refresh ? 0 : sinceFull + 1
     } else if let rects = regions {
       let rois = rects.map { CGRect(x: $0.minX / W, y: 1 - $0.maxY / H, width: $0.width / W, height: $0.height / H) }
       let fresh = opts.atlas && rects.count > 1 ? ocr.recognizeAtlas(pb, rects, using: recognize) : Array(recognize(pb, rois).joined())
@@ -108,7 +112,7 @@ final class Pipeline {
       obs.removeAll(where: hit)
       obs += settle(fresh, gone, W, H)
       clearStale(rects)
-      sinceFull += 1
+      sinceFull = refresh ? 0 : sinceFull + 1
     } else {
       obs = settle(recognize(pb, [CGRect(x: 0, y: 0, width: 1, height: 1)])[0], obs, W, H)
       stale = stale.map { _ in false }
@@ -143,9 +147,14 @@ final class Pipeline {
       }
     }
     changedTiles = dirty
-    // 8-connected components of dirty tiles.
-    var seen = dirty.map { !$0 }, rects: [CGRect] = []
-    for start in 0..<dirty.count where !seen[start] {
+    return tileRegions(dirty, cols: cols, width: a.width, height: a.height)
+  }
+
+  /// Bounding boxes of 8-connected marked tiles, padded so text that spills out of them is read whole.
+  private func tileRegions(_ marked: [Bool], cols: Int, width: Int, height: Int) -> [CGRect] {
+    let T = Pipeline.tile, rows = cols > 0 ? marked.count / cols : 0
+    var seen = marked.map { !$0 }, rects: [CGRect] = []
+    for start in 0..<marked.count where !seen[start] {
       var stack = [start], minX = cols, minY = rows, maxX = 0, maxY = 0
       seen[start] = true
       while let i = stack.popLast() {
@@ -158,7 +167,7 @@ final class Pipeline {
       }
       rects.append(CGRect(x: minX * T - 2 * T, y: minY * T - T / 2, width: (maxX - minX + 5) * T, height: (maxY - minY + 2) * T))
     }
-    let bounds = CGRect(x: 0, y: 0, width: a.width, height: a.height)
+    let bounds = CGRect(x: 0, y: 0, width: width, height: height)
     return rects.map { $0.intersection(bounds) }
   }
 
@@ -192,10 +201,11 @@ final class Pipeline {
 
   /// Tiles wholly inside the areas just read are up to date.
   private func clearStale(_ rects: [CGRect]) {
-    let T = Pipeline.tile
+    let T = Pipeline.tile, w = CGFloat(imageSize.0), h = CGFloat(imageSize.1)
     for r in rects {
-      let x0 = Int((r.minX / CGFloat(T)).rounded(.up)), x1 = Int((r.maxX / CGFloat(T)).rounded(.down))
-      let y0 = Int((r.minY / CGFloat(T)).rounded(.up)), y1 = Int((r.maxY / CGFloat(T)).rounded(.down))
+      // A read reaching the image edge covers the cut-off last tile too.
+      let x0 = Int((r.minX / CGFloat(T)).rounded(.up)), x1 = r.maxX >= w ? staleCols : Int((r.maxX / CGFloat(T)).rounded(.down))
+      let y0 = Int((r.minY / CGFloat(T)).rounded(.up)), y1 = r.maxY >= h ? Int.max : Int((r.maxY / CGFloat(T)).rounded(.down))
       for y in max(0, y0)..<max(max(0, y0), min(stale.count / max(staleCols, 1), y1)) {
         for x in max(0, x0)..<max(max(0, x0), min(staleCols, x1)) { stale[y * staleCols + x] = false }
       }
