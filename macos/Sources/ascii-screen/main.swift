@@ -43,7 +43,7 @@ Options:
   --raster            Draw pixels as ASCII luminance instead of OCR (--once/--image).
                        Use --region to inspect small icons; mouse is @ (OCR view uses 👆).
   --coordinates       Print capture bounds, grid mapping and mouse position to stderr (--once/--image)
-  --full-every <n>     Full-screen OCR after n incremental frames (default 30)
+  --full-every <n>     After n incremental frames, also re-read changed areas never read whole (default 30)
   --no-atlas           OCR each changed region with its own Vision call (default: pack them into one)
   --out <file>         Write each frame atomically to <file> instead of stdout
   --display <i>        Display index (default 0)
