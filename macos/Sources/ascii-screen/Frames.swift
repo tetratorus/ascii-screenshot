@@ -49,11 +49,13 @@ final class Frames {
       src.resume()
       signalSources.append(src)
     }
-    while let pb = reader.next() {
-      // Vision autoreleases per call; drain every frame so a long-running
-      // service doesn't creep.
-      autoreleasepool { if pipeline.process(pb) { sink.emit(cursor: nil) } }
-    }
+    while autoreleasepool(invoking: {
+      // FileHandle.read and Vision both autorelease per call; drain every frame
+      // so a long-running service doesn't creep.
+      guard let pb = reader.next() else { return false }
+      if pipeline.process(pb) { sink.emit(cursor: nil) }
+      return true
+    }) {}
     // A bad header or read error ends the loop while the command may still be
     // blocked on a full pipe; closing our end gives it EPIPE instead of hanging.
     try? reader.handle.close()
