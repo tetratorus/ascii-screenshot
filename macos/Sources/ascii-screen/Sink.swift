@@ -22,7 +22,7 @@ final class Sink {
     lock.lock()
     defer { lock.unlock() }
     let frame = pipeline.frame(cursor: cursor)
-    let text = frame.render(columns: opts.width, rows: pipeline.canvasHeight, fit: opts.fit)
+    let text = frame.render(columns: opts.width, rows: pipeline.canvasHeight, fit: opts.fit, cellAspect: opts.cellAspect)
     let shown: Bool
     do { shown = try output.emit(text) } catch {
       log("cannot write ASCII output: \(error.localizedDescription)")

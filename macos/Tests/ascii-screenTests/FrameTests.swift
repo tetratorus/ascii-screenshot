@@ -58,6 +58,16 @@ final class FrameTests: XCTestCase {
     XCTAssertEqual(History.display("old frame", columns: 120, rows: 39, fit: true), "old frame")
   }
 
+  func testCellAspectFromTerminalMetricsAndFit() {
+    XCTAssertEqual(Frame.cellAspect(cols: 100, rows: 40, xpixel: 720, ypixel: 680), 2.3611, accuracy: 0.001)
+    XCTAssertEqual(Frame.cellAspect(cols: 100, rows: 40, xpixel: 0, ypixel: 0), Frame.defaultCellAspect)
+    XCTAssertEqual(Frame.cellAspect(cols: 100, rows: 40, xpixel: 1000, ypixel: 100), Frame.defaultCellAspect)
+    let portrait = Frame(width: 1206, height: 2622, obs: [], lines: [], cursor: nil)
+    let monaco = portrait.render(columns: 120, rows: 40, fit: true, cellAspect: 2.36).split(separator: "\n")
+    let fallback = portrait.render(columns: 120, rows: 40, fit: true, cellAspect: 2.0).split(separator: "\n")
+    XCTAssertGreaterThan(monaco[0].count, fallback[0].count)
+  }
+
   func testSearchFindsTextACrampedGridWouldHaveCut() throws {
     let dir = FileManager.default.temporaryDirectory.appendingPathComponent("frame-\(UUID().uuidString)")
     defer { try? FileManager.default.removeItem(at: dir) }

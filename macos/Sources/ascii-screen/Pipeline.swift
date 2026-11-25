@@ -7,6 +7,7 @@ struct Options {
   var width = 240
   var height: Int?
   var fit = false
+  var cellAspect = Frame.defaultCellAspect
   var interval = 1.0
   var scale = 1.0
   var fast = false
@@ -46,7 +47,7 @@ final class Pipeline {
   }
 
   var canvasHeight: Int {
-    opts.height ?? Frame.rows(columns: opts.width, width: imageSize.0, height: imageSize.1)
+    opts.height ?? Frame.rows(columns: opts.width, width: imageSize.0, height: imageSize.1, cellAspect: opts.cellAspect)
   }
 
   /// Returns false when the frame is pixel-identical to the previous one.
@@ -128,7 +129,9 @@ final class Pipeline {
     return true
   }
 
-  func render(cursor: CGPoint?) -> String { frame(cursor: cursor).render(columns: opts.width, rows: canvasHeight, fit: opts.fit) }
+  func render(cursor: CGPoint?) -> String {
+    frame(cursor: cursor).render(columns: opts.width, rows: canvasHeight, fit: opts.fit, cellAspect: opts.cellAspect)
+  }
 
   func frame(cursor: CGPoint?) -> Frame {
     Frame(width: imageSize.0, height: imageSize.1, obs: obs, lines: lines, cursor: cursor).quantized()

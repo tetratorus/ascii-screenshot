@@ -13,14 +13,22 @@ import Foundation
 /// live and the same frame drawn from history come out identical.
 struct Frame {
   static let header = "#frame "
+  static let defaultCellAspect = 2.0
   var width: Int, height: Int
   var obs: [Obs]
   var lines: [DLine]
   var cursor: CGPoint?
 
+  /// Cell height/width ratio from terminal pixel dimensions, falling back to `defaultCellAspect`.
+  static func cellAspect(cols: Int, rows: Int, xpixel: Int, ypixel: Int) -> Double {
+    guard cols > 0, rows > 0, xpixel > 0, ypixel > 0 else { return defaultCellAspect }
+    let ratio = (Double(ypixel) / Double(rows)) / (Double(xpixel) / Double(cols))
+    return ratio.isFinite && ratio >= 1.0 && ratio <= 4.0 ? ratio : defaultCellAspect
+  }
+
   /// Rows that keep the screen's shape at `columns` (terminal cells are about twice as tall as wide).
-  static func rows(columns: Int, width: Int, height: Int) -> Int {
-    width > 0 ? min(100, max(1, jsFloor(Double(columns) * Double(height) / Double(width) * 0.5))) : 1
+  static func rows(columns: Int, width: Int, height: Int, cellAspect: Double = defaultCellAspect) -> Int {
+    width > 0 ? min(100, max(1, jsFloor(Double(columns) * Double(height) / Double(width) / cellAspect))) : 1
   }
 
   func quantized() -> Frame {
@@ -31,18 +39,17 @@ struct Frame {
                  cursor: cursor.map { CGPoint(x: q(Double($0.x)), y: q(Double($0.y))) })
   }
 
-  func render(columns: Int, rows: Int? = nil, fit: Bool = false) -> String {
+  func render(columns: Int, rows: Int? = nil, fit: Bool = false, cellAspect: Double = defaultCellAspect) -> String {
     if fit, width > 0, height > 0 {
-      // Terminal cells are approximately twice as tall as they are wide.
-      let cellAspect = 2 * Double(width) / Double(height)
+      let gridAspect = cellAspect * Double(width) / Double(height)
       let maxRows = rows ?? 100
-      let fittedColumns = max(1, min(columns, Int((Double(maxRows) * cellAspect).rounded(.down))))
-      let fittedRows = max(1, min(maxRows, Int((Double(fittedColumns) / cellAspect).rounded())))
+      let fittedColumns = max(1, min(columns, Int((Double(maxRows) * gridAspect).rounded(.down))))
+      let fittedRows = max(1, min(maxRows, Int((Double(fittedColumns) / gridAspect).rounded())))
       return renderAscii(obs, lines, cursor.map { Double($0.x) }, cursor.map { Double($0.y) },
                          fittedColumns, fittedRows).finalText
     }
     return renderAscii(obs, lines, cursor.map { Double($0.x) }, cursor.map { Double($0.y) }, columns,
-                rows ?? Frame.rows(columns: columns, width: width, height: height)).finalText
+                rows ?? Frame.rows(columns: columns, width: width, height: height, cellAspect: cellAspect)).finalText
   }
 
   /// The text that was read, one box per line, top to bottom.
@@ -88,8 +95,9 @@ struct Frame {
 
 extension History {
   /// A record as it is shown: saved frames drawn at the given grid, older (pre-drawn) records unchanged.
-  static func display(_ body: String, columns: Int, rows: Int?, fit: Bool = false) -> String {
-    Frame.decode(body)?.render(columns: columns, rows: rows, fit: fit) ?? body
+  static func display(_ body: String, columns: Int, rows: Int?, fit: Bool = false,
+                      cellAspect: Double = Frame.defaultCellAspect) -> String {
+    Frame.decode(body)?.render(columns: columns, rows: rows, fit: fit, cellAspect: cellAspect) ?? body
   }
 
   /// A record's text for searching.

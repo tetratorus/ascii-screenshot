@@ -138,6 +138,14 @@ if (region != nil || raster || coordinates) && images.count > 1 {
 }
 // Frames and history hold whatever was on screen; keep everything we create private to this user.
 umask(0o077)
+opts.cellAspect = terminalCellAspect()
+
+func terminalCellAspect() -> Double {
+  var ws = winsize()
+  guard isatty(1) != 0, ioctl(1, TIOCGWINSZ, &ws) == 0 else { return Frame.defaultCellAspect }
+  return Frame.cellAspect(cols: Int(ws.ws_col), rows: Int(ws.ws_row),
+                          xpixel: Int(ws.ws_xpixel), ypixel: Int(ws.ws_ypixel))
+}
 
 /// Grid for showing saved frames: --width/--height if given, else the terminal window (minus `spare` rows),
 /// else the default width.
@@ -191,7 +199,7 @@ case "at":
   }
   log("frame saved at \(History.stamp(when))")
   let (w, h) = showGrid(spare: 1)
-  print(History.display(frame, columns: w, rows: h, fit: opts.fit))
+  print(History.display(frame, columns: w, rows: h, fit: opts.fit, cellAspect: terminalCellAspect()))
 case "search":
   let from = time(fromTime, .distantPast), to = time(toTime, Date())
   let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
@@ -232,10 +240,12 @@ case "play":
   let from = time(fromTime, Calendar.current.startOfDay(for: Date())), to = time(toTime, Date())
   let dir = opts.history ?? NSString(string: "~/.ascii-screen/history").expandingTildeInPath
   let (w, h) = showGrid(spare: 1)
+  let cellAspect = terminalCellAspect()
   var player = Playback(frames: History(dir: URL(fileURLWithPath: dir)).frames(from: from, to: to),
                         speed: speed, maxGap: maxGap) { body, zoom in
     History.display(body, columns: min(1000, max(10, Int((Double(w) * zoom).rounded()))),
-                    rows: h.map { min(1000, max(3, Int((Double($0) * zoom).rounded()))) }, fit: opts.fit)
+                    rows: h.map { min(1000, max(3, Int((Double($0) * zoom).rounded()))) },
+                    fit: opts.fit, cellAspect: cellAspect)
   }
   guard player.frame(0) != nil else {
     log("no saved frames between \(History.stamp(from)) and \(History.stamp(to)) in \(dir)"); exit(1)
